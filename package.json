@@ -10,7 +10,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "oxlint",
-    "lint:fix": "oxlint --fix"
+    "lint:fix": "oxlint --fix",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",
