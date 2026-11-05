@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Status** | Draft for team review |
-| **Last updated** | 2026-11-04 |
-| **Related** | [Product Spec](./product-spec.md) · [Glossary](../GLOSSARY.md) · [ADR 0002: Ballots Linked to Voters](./adr/0002-ballots-linked-to-voters.md) (supersedes [ADR 0001](./adr/0001-unlinkable-ballots.md)) · [ADR 0003: Hardcoded Election Definition](./adr/0003-hardcoded-election-definition.md) · [ADR 0004: Own Person Table](./adr/0004-own-person-table-without-auth-adapter.md) · [ADR 0005: Turnout Public, Results Released](./adr/0005-turnout-public-results-released.md) |
+| **Last updated** | 2026-11-06 |
+| **Related** | [Product Spec](./product-spec.md) · [Glossary](./GLOSSARY.md) · [ADR 0002: Ballots Linked to Voters](./adr/0002-ballots-linked-to-voters.md) (supersedes [ADR 0001](./adr/0001-unlinkable-ballots.md)) · [ADR 0003: Hardcoded Election Definition](./adr/0003-hardcoded-election-definition.md) · [ADR 0004: Own Person Table](./adr/0004-own-person-table-without-auth-adapter.md) · [ADR 0005: Turnout Public, Results Released](./adr/0005-turnout-public-results-released.md) · [ADR 0006: Advisory OCR (proposed)](./adr/0006-advisory-ocr-on-study-loads.md) · [ADR 0007: tRPC API Layer](./adr/0007-trpc-api-layer.md) |
 
-This document describes *how* we build what the [Product Spec](./product-spec.md) describes. Domain terms (Election, Question, Year-Level Question, Candidate, Selection Limit, Registration, Registration Period, Applicant, Study Load, Year Level, Voter, Ballot, Abstention, Turnout, Results, Admin) are used exactly as defined in the [Glossary](../GLOSSARY.md).
+This document describes *how* we build what the [Product Spec](./product-spec.md) describes. Domain terms (Election, Question, Year-Level Question, Candidate, Selection Limit, Registration, Registration Period, Applicant, Study Load, Year Level, Voter, Ballot, Abstention, Turnout, Results, Admin) are used exactly as defined in the [Glossary](./GLOSSARY.md).
 
 ## 1. Architecture overview
 
@@ -17,7 +17,7 @@ flowchart TB
 
     subgraph App["Next.js App Router on Vercel"]
         Pages["Pages (RSC)<br/>Election · Register · Ballot · Results · Admin"]
-        Actions["Server Actions<br/>registration · castBallot · admin actions"]
+        Actions["tRPC procedures (/api/trpc)<br/>registration · ballot · results · audit · admin"]
         Turnout["GET /api/turnout<br/>(cached, 15s)"]
         Auth["/api/auth/*<br/>(Auth.js handler, no adapter)"]
         Config["src/election.ts<br/>(hardcoded Election definition)"]
@@ -44,15 +44,17 @@ flowchart TB
 | Auth | Auth.js (NextAuth v5), Google provider, JWT session strategy, no database adapter |
 | Database | Postgres on Supabase, accessed only through Prisma |
 | File storage | Supabase Storage, one private bucket for Study Loads |
-| Mutations | Next.js Server Actions |
-| Turnout reads | One cached GET route handler, polled with React Query |
+| API layer | tRPC v11 (reads and mutations), zod input schemas, `@trpc/tanstack-react-query` on the client (ADR 0007) |
+| Turnout reads | One cached GET route handler outside tRPC, polled with React Query |
 | Hosting | Vercel |
 
 **Why Auth.js without a database adapter:** sessions live in an encrypted cookie, so we don't need Auth.js's users, accounts and sessions tables. We do store each person's email and name, but in our own `Person` table, upserted on sign-in (§4.2), so the schema stays ours.
 
-**Why signed upload URLs for Study Loads:** Vercel functions reject request bodies over 4.5 MB, and Server Actions default to 1 MB. The browser uploads the image straight to Supabase Storage using a short-lived signed URL, and the Server Action only receives the storage path.
+**Why signed upload URLs for Study Loads:** Vercel functions reject request bodies over 4.5 MB. The browser uploads the image straight to Supabase Storage using a short-lived signed URL, and the tRPC procedure only receives the storage path.
 
-**Not using tRPC or Supabase Realtime.** There are only a handful of mutations and one public read. Server Actions give end-to-end types, and polling every 15 seconds is enough for Turnout.
+**Why tRPC (ADR 0007):** authorization is part of each procedure's type (`adminProcedure`, `voterProcedure`), so a missing guard shows up in review. Every procedure also requires a zod input schema, and each entity follows the same structure. Turnout stays a plain route handler so its cache is shared across every client.
+
+**Not using Supabase Realtime.** Polling every 15 seconds is enough for Turnout.
 
 ## 2. Election definition (hardcoded)
 
@@ -246,20 +248,33 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 | Cast Ballot | Valid session; own Registration is `APPROVED`; Election open |
 | Any Admin action (§7) | Valid session **and** a row in `Admin` for `session.user.email`, looked up on every call |
 
-`requireSession()`, `requireVoter()` and `requireAdmin()` live in `src/server/guards.ts`. Every Server Action calls the right one first; hiding UI is never the guard. Admin rights don't depend on Registration: an Admin who wants to vote registers like everyone else.
+Authorization is built into tRPC procedure types, defined in `src/server/trpc/init.ts` (ADR 0007):
+
+| Procedure type | Requirement | Adds to `ctx` |
+|---|---|---|
+| `publicProcedure` | None | — |
+| `protectedProcedure` | Valid session | `person` |
+| `voterProcedure` | Valid session; own Registration is `APPROVED` (read from the database) | `person`, `registration` |
+| `adminProcedure` | Valid session; a row in `Admin` for the session email (read from the database) | `person`, `adminEmail` |
+
+Every procedure is declared with the narrowest type that fits. Hiding UI is never the guard. Admin rights don't depend on Registration: an Admin who wants to vote registers like everyone else. Window checks (Registration Period open, Election open) stay inside each operation's transaction, not in middleware, so they can't race a concurrent close.
+
+**CSRF:** tRPC has no built-in origin check, so the `/api/trpc` route handler rejects any mutation whose `Origin` header doesn't match `AUTH_URL`.
+
+In the sections below, "`protectedProcedure`" and "`adminProcedure`" name the procedure type each operation uses.
 
 ## 5. Registration
 
 ### 5.1 Uploading a Study Load
 
-1. `createStudyLoadUpload()` Server Action: `requireSession()`, check Registration Period is open, then create a signed upload URL for `study-loads/{personId}/{uuid}` (valid 5 minutes).
+1. `registration.createStudyLoadUpload` (`protectedProcedure`): check Registration Period is open, then create a signed upload URL for `study-loads/{personId}/{uuid}` (valid 5 minutes).
 2. The browser uploads the image directly to that URL.
 3. The bucket is **private** and restricted to `image/jpeg`, `image/png` and `image/webp`, max **5 MB** (enforced in bucket settings, and checked in the browser for a friendly error).
 
 ### 5.2 `submitRegistration({ yearLevel, studyLoadPath })`
 
 ```
-1. person = requireSession()
+1. person = ctx.person  (protectedProcedure)
 2. validate: yearLevel ∈ YEAR_LEVELS; studyLoadPath starts with "{personId}/"; object exists in bucket
 3. transaction:
      a. registrationStatus must be OPEN (FOR SHARE on ElectionState)
@@ -273,9 +288,9 @@ Old Study Load objects from resubmissions are kept until after the Election (see
 
 ### 5.3 Review
 
-- `listRegistrations({ status?, yearLevel? })`: `requireAdmin()`. Returns name, email, Year Level, status and a signed **view** URL for each Study Load (valid 10 minutes).
-- `approveRegistration(id, yearLevel)`: `requireAdmin()`. Sets `APPROVED`, the (possibly corrected) Year Level, `reviewedBy`, `reviewedAt`. Writes `AuditLog`.
-- `rejectRegistration(id, reason)`: `requireAdmin()`. Reason is required and non-empty. Sets `REJECTED`. Writes `AuditLog`.
+- `listRegistrations({ status?, yearLevel? })`: `adminProcedure`. Returns name, email, Year Level, status and a signed **view** URL for each Study Load (valid 10 minutes).
+- `approveRegistration(id, yearLevel)`: `adminProcedure`. Sets `APPROVED`, the (possibly corrected) Year Level, `reviewedBy`, `reviewedAt`. Writes `AuditLog`.
+- `rejectRegistration(id, reason)`: `adminProcedure`. Reason is required and non-empty. Sets `REJECTED`. Writes `AuditLog`.
 - Review is allowed whether or not the Registration Period is open, so Admins can clear pending Registrations after it closes.
 - An approved Registration can't be changed once its Voter has cast a Ballot.
 
@@ -293,10 +308,12 @@ Given the Voter's approved Year Level and a submitted Ballot `{ [questionId]: { 
 
 Validation uses a Zod schema built from `questionsFor(yearLevel)`.
 
-### 6.2 `castBallot` Server Action
+### 6.2 `ballot.cast` procedure (`protectedProcedure`)
+
+Uses `protectedProcedure`, not `voterProcedure`, because the approval check must happen inside the transaction (step b).
 
 ```
-1. person = requireSession()
+1. person = ctx.person
 2. prisma.$transaction(async tx => {
      a. state = SELECT electionStatus FROM "ElectionState" WHERE id='main' FOR SHARE
         → if not OPEN: throw ElectionClosed
@@ -316,7 +333,7 @@ Validation uses a Zod schema built from `questionsFor(yearLevel)`.
 
 ### 6.3 What must never happen
 
-- Logging Ballot contents or Server Action inputs for casting. Only Admins, through the audited screens, should see choices.
+- Logging Ballot contents or `ballot.cast` inputs, including in tRPC error formatting and `onError` logging. Only Admins, through the audited screens, should see choices.
 - Returning another person's Ballot, Registration or Study Load URL to a non-Admin.
 - Exposing per-Candidate counts on any public route before `resultsReleasedAt` is set.
 
@@ -334,29 +351,29 @@ No per-Candidate data, ever. Caching keeps load flat on election day; the client
 
 ### 7.2 Results
 
-- `getResults()`: `requireAdmin()`, or public if `resultsReleasedAt` is set. Returns per Question, in config order: count per Candidate (zero counts included), Abstentions, and Ballots that saw the Question.
+- `results.get`: `publicProcedure` that returns Results only if `resultsReleasedAt` is set or the caller has a row in `Admin` (checked in the database); everyone else gets `FORBIDDEN`. Returns per Question, in config order: count per Candidate (zero counts included), Abstentions, and Ballots that saw the Question.
 - Admins see Results at any time on the Admin panel. Viewing them writes `AuditLog` (`VIEW_RESULTS`).
-- `releaseResults()`: `requireAdmin()`; the Election must be `CLOSED` and not already released. Sets `resultsReleasedAt`. Writes `AuditLog`. There is no un-release.
+- `releaseResults()`: `adminProcedure`; the Election must be `CLOSED` and not already released. Sets `resultsReleasedAt`. Writes `AuditLog`. There is no un-release.
 - The public `/results` page renders only when `resultsReleasedAt` is set.
 
 ### 7.3 Ballot audit
 
-- `listBallots({ yearLevel?, search? })`: `requireAdmin()`. Returns each Ballot with name, email, Year Level, `castAt` and choices. Paginated. Writes `AuditLog` (`VIEW_BALLOTS`) with the filters used.
-- `exportBallots()`: `requireAdmin()`. Returns a CSV with one row per Ballot and one column per Question. Writes `AuditLog` (`EXPORT_BALLOTS`).
-- `listAuditLog()`: `requireAdmin()`. So Admins can see who viewed what.
+- `listBallots({ yearLevel?, search? })`: `adminProcedure`. Returns each Ballot with name, email, Year Level, `castAt` and choices. Paginated. Writes `AuditLog` (`VIEW_BALLOTS`) with the filters used.
+- `exportBallots()`: `adminProcedure`. Returns a CSV with one row per Ballot and one column per Question. Writes `AuditLog` (`EXPORT_BALLOTS`).
+- `listAuditLog()`: `adminProcedure`. So Admins can see who viewed what.
 
 ## 8. Administration
 
 ### 8.1 Windows
 
-- `setRegistrationStatus("OPEN" | "CLOSED")` and `setElectionStatus("OPEN" | "CLOSED")`: `requireAdmin()`, update `ElectionState`, write `AuditLog`.
+- `setRegistrationStatus("OPEN" | "CLOSED")` and `setElectionStatus("OPEN" | "CLOSED")`: `adminProcedure`, update `ElectionState`, write `AuditLog`.
 - Reopening the Election is allowed (to extend past 5 PM) and doesn't touch Ballots. It's rejected once `resultsReleasedAt` is set.
 - The `ElectionState` row is created by the initial migration/seed with everything `CLOSED`.
 
 ### 8.2 Admin management
 
-- `grantAdmin(email)`: `requireAdmin()`, validate and normalise the email (organization domain, lowercased, trimmed), upsert `Admin`. Works before the person has signed in.
-- `revokeAdmin(email)`: `requireAdmin()`; in one transaction, reject if this is the last Admin, otherwise remove the row. Takes effect on that person's next action.
+- `grantAdmin(email)`: `adminProcedure`, validate and normalise the email (organization domain, lowercased, trimmed), upsert `Admin`. Works before the person has signed in.
+- `revokeAdmin(email)`: `adminProcedure`; in one transaction, reject if this is the last Admin, otherwise remove the row. Takes effect on that person's next action.
 - Both write `AuditLog`. The Admin panel lists Admins by email.
 
 ### 8.3 First Admin seed
@@ -377,12 +394,13 @@ It upserts the `Admin` row with `grantedBy = "seed"`, and with `--dry-run` print
 | Unregistered or rejected person votes | `castBallot` checks `APPROVED` inside the transaction (§6.2) |
 | Double voting | `Ballot.personId @unique` in the same transaction (§6.2) |
 | Wrong Year-Level Question | Server builds the allowed Questions from the approved Year Level; client input can't add others (§6.1) |
-| Ballots or Study Loads read by non-Admins | `requireAdmin()` on every read; private bucket with short-lived signed URLs; RLS on all tables blocks Supabase's public API (§3) |
+| Ballots or Study Loads read by non-Admins | `adminProcedure` on every read; private bucket with short-lived signed URLs; RLS on all tables blocks Supabase's public API (§3) |
 | Admin misuse of Ballot access | Every view and export is written to `AuditLog`, which Admins can read (§7.3) |
 | Results leaked before release | No public route returns per-Candidate counts until `resultsReleasedAt` is set (§7.2) |
 | Stolen session cookie | Encrypted, `HttpOnly`, `Secure`, `SameSite=Lax`; 8-hour expiry |
 | Privilege escalation | Admin and Registration status read from the database on every call; the cookie carries no role |
-| CSRF on Server Actions | Next.js Server Actions' built-in origin check; Auth.js CSRF token on sign-in |
+| CSRF on tRPC mutations | `/api/trpc` rejects mutations whose `Origin` doesn't match `AUTH_URL`; `SameSite=Lax` cookies; Auth.js CSRF token on sign-in |
+| Unguarded Admin operation | Authorization is the procedure type (`adminProcedure`), so it's visible in review; permission tests on every Admin procedure (§12) |
 | Oversized or non-image uploads | Bucket MIME and size restrictions; path ownership checked on submit (§5) |
 | Developer access to Ballots | Covered by the client's waiver |
 
@@ -414,18 +432,27 @@ src/
       ballots/page.tsx        # Ballot audit + export
       admins/page.tsx         # Grant/revoke, audit log
     api/auth/[...nextauth]/route.ts
-    api/turnout/route.ts
+    api/trpc/[trpc]/route.ts  # tRPC handler + Origin check on mutations
+    api/turnout/route.ts      # Public, cached; outside tRPC (ADR 0007)
   server/
-    auth.ts                   # Auth.js config (§4.2)
-    guards.ts                 # requireSession, requireVoter, requireAdmin
-    person.ts                 # upsertPerson
-    registration.ts           # upload URL, submit, review actions
+    auth/
+      config.ts               # Auth.js config (§4.2)
+      person.ts               # upsertPerson
+    trpc/
+      init.ts                 # initTRPC, context, public/protected/voter/adminProcedure
+      root.ts                 # appRouter: merges the v1 entity routers
+      server.ts               # server-side caller for Server Components
+      api/v1/
+        {entity}/             # registration, ballot, election, results, audit, admin
+          __tests__/          # core unit tests; procedure tests via createCaller
+          core/               # pure domain logic, no I/O
+          services/           # Prisma and Supabase Storage access
+          schema.ts           # zod input/output schemas
+          router.ts           # procedures (thin: call core + services)
     storage.ts                # Supabase Storage client (server-only)
-    ballot.ts                 # validateBallot + castBallot
-    results.ts                # turnout, results, release
-    audit.ts                  # listBallots, exportBallots, AuditLog writes
-    admin.ts                  # windows, grant/revoke
-  lib/db.ts                   # Prisma client
+  lib/
+    db.ts                     # Prisma client
+    trpc/client.tsx           # tRPC + React Query provider for Client Components
   types/next-auth.d.ts        # Session/JWT module augmentation
 prisma/schema.prisma
 scripts/seed-admin.ts
@@ -439,6 +466,7 @@ public/candidates/*
 | Unit | `validateBallot` (missing Question, another Year Level's Question, over limit, duplicates, cross-Question Candidate, picks plus Abstention, disclosure not accepted); `questionsFor`; election config invariants; email normalisation |
 | Integration (test Postgres) | Registration: submit only while open; resubmit after reject; approved can't resubmit; path ownership check. Review: non-Admin rejected; approve with corrected Year Level; reject requires reason; AuditLog written. `castBallot`: success; pending/rejected/no Registration → rejected; second cast → AlreadyVoted; **N concurrent casts by one Voter → exactly one Ballot**; cast while closed → rejected. Results: hidden publicly until released; release only when closed; no reopen after release. Audit: every `listBallots`/`exportBallots` writes AuditLog. Admin: revoked Admin rejected on next action; last-Admin revoke rejected |
 | Auth | `signIn` rejects missing/foreign `hd` and `email_verified=false`; session contains only `personId`, `email` and standard claims |
+| Procedure permissions | Through `createCaller` with fake contexts: every `adminProcedure` rejects signed-out, non-Admin and revoked-Admin callers; `voterProcedure` rejects pending, rejected and unregistered callers; mutations from a foreign `Origin` are rejected |
 | Manual / E2E | Full flow with Workspace test accounts in two Year Levels, an Admin, and one consumer account; dry-run election before Nov 20 |
 
 ## 13. Milestones
