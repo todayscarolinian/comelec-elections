@@ -418,22 +418,24 @@ It upserts the `Admin` row with `grantedBy = "seed"`, and with `--dry-run` print
 
 ## 11. Project structure (proposed)
 
+The App Router lives in a root `app/`. Everything else lives in `src/`, and `@/*` resolves to `./src/*` and then `./*`.
+
 ```
+app/
+  page.tsx                    # Election overview, Candidate profiles, Turnout
+  register/page.tsx           # Registration form + status
+  vote/page.tsx               # Disclosure, Ballot form, review/confirm
+  results/page.tsx            # Public Results once released
+  admin/
+    page.tsx                  # Windows, Turnout, Results, release
+    registrations/page.tsx    # Review queue
+    ballots/page.tsx          # Ballot audit + export
+    admins/page.tsx           # Grant/revoke, audit log
+  api/auth/[...nextauth]/route.ts
+  api/trpc/[trpc]/route.ts    # tRPC handler + Origin check on mutations
+  api/turnout/route.ts        # Public, cached; outside tRPC (ADR 0007)
 src/
   election.ts                 # Election definition, YEAR_LEVELS, questionsFor
-  app/
-    page.tsx                  # Election overview, Candidate profiles, Turnout
-    register/page.tsx         # Registration form + status
-    vote/page.tsx             # Disclosure, Ballot form, review/confirm
-    results/page.tsx          # Public Results once released
-    admin/
-      page.tsx                # Windows, Turnout, Results, release
-      registrations/page.tsx  # Review queue
-      ballots/page.tsx        # Ballot audit + export
-      admins/page.tsx         # Grant/revoke, audit log
-    api/auth/[...nextauth]/route.ts
-    api/trpc/[trpc]/route.ts  # tRPC handler + Origin check on mutations
-    api/turnout/route.ts      # Public, cached; outside tRPC (ADR 0007)
   server/
     auth/
       config.ts               # Auth.js config (§4.2)
@@ -441,18 +443,22 @@ src/
     trpc/
       init.ts                 # initTRPC, context, public/protected/voter/adminProcedure
       root.ts                 # appRouter: merges the v1 entity routers
-      server.ts               # server-side caller for Server Components
+      origin.ts               # Origin check for mutations (CSRF)
+      server.tsx              # server-side caller, prefetch proxy, HydrateClient
       api/v1/
         {entity}/             # registration, ballot, election, results, audit, admin
           __tests__/          # core unit tests; procedure tests via createCaller
-          core/               # pure domain logic, no I/O
+          core/               # shared domain logic, no I/O (e.g. validateBallot)
+            queries/          # one file per query procedure, e.g. ping.ts
+            mutations/        # one file per mutation procedure
           services/           # Prisma and Supabase Storage access
           schema.ts           # zod input/output schemas
-          router.ts           # procedures (thin: call core + services)
+          router.ts           # maps procedure names to the procedures in core/
     storage.ts                # Supabase Storage client (server-only)
   lib/
     db.ts                     # Prisma client
     trpc/client.tsx           # tRPC + React Query provider for Client Components
+    trpc/query-client.ts      # shared QueryClient factory (superjson)
   types/next-auth.d.ts        # Session/JWT module augmentation
 prisma/schema.prisma
 scripts/seed-admin.ts

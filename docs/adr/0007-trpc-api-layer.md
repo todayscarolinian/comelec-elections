@@ -8,10 +8,11 @@ Every read and write from the app goes through tRPC procedures, not Next.js Serv
 
 Code is organized per entity under `src/server/trpc/api/v1/{entity}/`:
 
-- `core/`: pure domain logic with no I/O, unit tested (for example `validateBallot`)
+- `core/`: shared domain logic with no I/O, unit tested (for example `validateBallot`)
+- `core/queries/` and `core/mutations/`: one file per procedure, named after it (for example `core/queries/ping.ts`). Each file exports the built procedure, such as `publicProcedure.query(...)`, using the narrowest procedure type. It calls shared `core` logic and `services`.
 - `services/`: database and Storage access through Prisma and Supabase
 - `schema.ts`: zod input and output schemas
-- `router.ts`: procedures, kept thin; they call `core` and `services`
+- `router.ts`: only maps procedure names to the procedures in `core/queries/` and `core/mutations/`
 - `__tests__/`: unit tests for `core`, and integration tests that call procedures through `createCaller`
 
 Auth.js config lives in `src/server/auth/`, outside tRPC.

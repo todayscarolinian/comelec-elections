@@ -9,13 +9,13 @@ Each area has an owner who reviews and approves changes to it. Paths follow [Sof
 
 | Area | Covers | Owners | Main paths |
 |---|---|---|---|
-| **Auth + Infrastructure** | Next.js, Auth.js, tRPC setup, procedure guards, CI/CD, deploys | Miguel | `src/server/auth/`, `src/server/trpc/init.ts`, `src/server/trpc/root.ts`, `src/server/trpc/server.ts`, `src/app/api/auth/`, `src/app/api/trpc/`, `src/lib/trpc/`, `src/types/next-auth.d.ts`, `next.config.ts`, CI config |
+| **Auth + Infrastructure** | Next.js, Auth.js, tRPC setup, procedure guards, CI/CD, deploys | Miguel | `src/server/auth/`, `src/server/trpc/init.ts`, `src/server/trpc/root.ts`, `src/server/trpc/server.tsx`, `src/server/trpc/origin.ts`, `app/api/auth/`, `app/api/trpc/`, `src/lib/trpc/`, `src/types/next-auth.d.ts`, `next.config.ts`, CI config |
 | **Data + Migrations** | Prisma, RLS | Jhanell | `prisma/`, `src/lib/db.ts` |
-| **Registration** | Upload, Register, OCR | Adrian | `v1/registration/`, `src/server/storage.ts`, `src/app/register/`, `src/app/admin/registrations/` |
-| **Voting** | Election config, Ballots, Turnout | Ethan | `src/election.ts`, `v1/election/`, `v1/ballot/`, `src/app/vote/`, `src/app/api/turnout/`, `public/candidates/` |
-| **Admin + Results** | Windows, Admin grant/revoke, Results release, Ballot audit, audit logs | Nina, Cliff | `v1/admin/`, `v1/results/`, `v1/audit/`, `src/app/admin/` (except `registrations/`), `src/app/results/` |
+| **Registration** | Upload, Register, OCR | Adrian | `v1/registration/`, `src/server/storage.ts`, `app/register/`, `app/admin/registrations/` |
+| **Voting** | Election config, Ballots, Turnout | Ethan | `src/election.ts`, `v1/election/`, `v1/ballot/`, `app/vote/`, `app/api/turnout/`, `public/candidates/` |
+| **Admin + Results** | Windows, Admin grant/revoke, Results release, Ballot audit, audit logs | Nina, Cliff | `v1/admin/`, `v1/results/`, `v1/audit/`, `app/admin/` (except `registrations/`), `app/results/` |
 | **QA + Dry Run** | Integration tests, concurrency, load check, dry run | Jhanell, Miguel, Charles | `v1/*/__tests__/` (shared with each area's owners), test setup, dry-run script |
-| **User Interface and Experience** | Page design, layout, components, mobile-first UX | Charles, Neah | `src/app/**/page.tsx`, `src/app/layout.tsx`, shared components, `src/app/globals.css` |
+| **User Interface and Experience** | Page design, layout, components, mobile-first UX | Charles, Neah | `app/**/page.tsx`, `app/layout.tsx`, shared components, `app/globals.css` |
 
 ## Review rules
 
