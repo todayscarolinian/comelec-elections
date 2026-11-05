@@ -80,7 +80,7 @@ To validate on every commit, update `lefthook.yml`:
 pre-commit:
   commands:
     validate-branch-name:
-      run: node scripts/validate-branch-name/index.js
+      run: node scripts/validate-branch-name/index.mjs
 ```
 
 This provides earlier feedback but runs more frequently.
@@ -171,7 +171,7 @@ which node
 
 ```bash
 # Test the script directly
-node scripts/validate-branch-name/index.js
+node scripts/validate-branch-name/index.mjs
 
 # Check current branch
 git branch --show-current

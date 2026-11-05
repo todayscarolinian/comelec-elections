@@ -3,12 +3,12 @@
 pre-push:
   commands:
     validate-branch-name:
-      run: node scripts/validate-branch-name/index.js
+      run: node scripts/validate-branch-name/index.mjs
 
 commit-msg:
   commands:
     validate-commit-message:
-      run: node scripts/validate-commit-msg/index.js {1}
+      run: node scripts/validate-commit-msg/index.mjs {1}
 
 pre-commit:
   piped: true
