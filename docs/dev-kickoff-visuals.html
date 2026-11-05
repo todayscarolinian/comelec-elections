@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Voting Kickoff</title>
+<style>
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #15181e;
+  --muted: #5b6270;
+  --line: #d9dde4;
+  --accent: #2357d9;
+  --accent-soft: #e4ebfb;
+  --warn: #b5530c;
+  --warn-soft: #fbeadb;
+  --ok: #1f7a4d;
+  --ok-soft: #dff1e7;
+  --bad: #b42335;
+  --bad-soft: #f8e1e4;
+  --s1: #6b7a99;
+  --s2: #2357d9;
+  --s3: #7a4cc2;
+  --s4: #b5530c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101318;
+    --surface: #181c23;
+    --ink: #e8ebf0;
+    --muted: #9aa3b2;
+    --line: #2c323d;
+    --accent: #7ea2ff;
+    --accent-soft: #1d2a4a;
+    --warn: #f0a46a;
+    --warn-soft: #3a2616;
+    --ok: #6fd3a0;
+    --ok-soft: #15301f;
+    --bad: #f28b98;
+    --bad-soft: #3a1a20;
+    --s1: #8e9bb8;
+    --s2: #7ea2ff;
+    --s3: #b391ec;
+    --s4: #f0a46a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101318; --surface: #181c23; --ink: #e8ebf0; --muted: #9aa3b2; --line: #2c323d;
+  --accent: #7ea2ff; --accent-soft: #1d2a4a; --warn: #f0a46a; --warn-soft: #3a2616;
+  --ok: #6fd3a0; --ok-soft: #15301f; --bad: #f28b98; --bad-soft: #3a1a20;
+  --s1: #8e9bb8; --s2: #7ea2ff; --s3: #b391ec; --s4: #f0a46a;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+nav {
+  position: sticky; top: 0; z-index: 5;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+nav .inner {
+  max-width: 1200px; margin: 0 auto; padding: 10px 16px;
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+}
+nav a {
+  color: var(--muted); text-decoration: none; font-size: 14px;
+  padding: 6px 10px; border-radius: 999px;
+}
+nav a:hover { background: var(--accent-soft); color: var(--accent); }
+nav .theme { margin-left: auto; }
+nav button {
+  font: inherit; font-size: 13px; color: var(--muted); background: transparent;
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer;
+}
+main { max-width: 1200px; margin: 0 auto; padding: 0 16px 80px; }
+section { padding-top: 56px; scroll-margin-top: 56px; }
+h1 { font-size: clamp(32px, 6vw, 56px); line-height: 1.05; margin: 0; letter-spacing: -0.02em; }
+h2 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
+.kicker { color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 20px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+
+/* Hero */
+.hero { padding-top: 48px; display: grid; gap: 24px; }
+.hero p { color: var(--muted); font-size: 20px; margin: 12px 0 0; max-width: 720px; }
+.dates { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.date { border-radius: 14px; padding: 20px; border: 1px solid var(--line); background: var(--surface); }
+.date .d { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; }
+.date .l { color: var(--muted); font-size: 14px; }
+.date.reg .d { color: var(--accent); }
+.date.elec .d { color: var(--warn); }
+.date.today .d { color: var(--muted); }
+
+/* Gantt */
+.gantt-wrap { overflow-x: auto; }
+.gantt {
+  display: grid;
+  grid-template-columns: 170px repeat(18, minmax(38px, 1fr));
+  min-width: 860px;
+  row-gap: 10px;
+  align-items: center;
+}
+.gantt .day { font-size: 12px; color: var(--muted); text-align: center; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.gantt .day.wk { color: color-mix(in srgb, var(--muted) 60%, transparent); }
+.gantt .day.key { color: var(--ink); font-weight: 700; }
+.gantt .lbl { grid-column: 1; font-size: 14px; font-weight: 600; padding-right: 8px; }
+.gantt .bar {
+  height: 34px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; padding: 0 10px; white-space: nowrap; overflow: hidden;
+}
+.b1 { background: var(--s1); } .b2 { background: var(--s2); } .b3 { background: var(--s3); } .b4 { background: var(--s4); }
+.breg { background: var(--accent-soft); color: var(--accent); border: 1px dashed var(--accent); }
+.brev { background: var(--ok-soft); color: var(--ok); border: 1px dashed var(--ok); }
+.belec { background: var(--warn); }
+.bpost { background: var(--line); color: var(--muted); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bar.b1, :root:not([data-theme="light"]) .bar.b2, :root:not([data-theme="light"]) .bar.b3, :root:not([data-theme="light"]) .bar.b4, :root:not([data-theme="light"]) .bar.belec { color: #101318; } }
+:root[data-theme="dark"] .bar.b1, :root[data-theme="dark"] .bar.b2, :root[data-theme="dark"] .bar.b3, :root[data-theme="dark"] .bar.b4, :root[data-theme="dark"] .bar.belec { color: #101318; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+/* Before / after */
+.changes { display: grid; gap: 12px; }
+.change { display: grid; grid-template-columns: 1fr 40px 1fr; align-items: stretch; gap: 0; }
+.change .was, .change .now { padding: 14px 16px; border-radius: 12px; font-size: 15px; }
+.change .was { background: var(--surface); border: 1px solid var(--line); color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 50%, transparent); }
+.change .now { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.change .arrow { display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.change .adr { display: block; font-size: 12px; font-weight: 500; color: var(--accent); margin-top: 2px; }
+@media (max-width: 640px) {
+  .change { grid-template-columns: 1fr; }
+  .change .arrow { transform: rotate(90deg); height: 28px; }
+}
+
+/* Visibility matrix */
+.matrix-wrap { overflow-x: auto; }
+table.matrix { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 620px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.matrix th, .matrix td { padding: 12px 14px; text-align: center; border-bottom: 1px solid var(--line); font-size: 14px; }
+.matrix tr:last-child td { border-bottom: 0; }
+.matrix th { font-size: 13px; color: var(--muted); font-weight: 600; background: color-mix(in srgb, var(--line) 30%, var(--surface)); }
+.matrix td:first-child, .matrix th:first-child { text-align: left; font-weight: 600; color: var(--ink); }
+.dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: middle; }
+.dot.yes { background: var(--ok); }
+.dot.no { background: transparent; border: 2px solid var(--line); }
+.dot.own { background: var(--accent); }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+.pill.after { background: var(--warn-soft); color: var(--warn); }
+.pill.logged { background: var(--bad-soft); color: var(--bad); }
+.pill.own { background: var(--accent-soft); color: var(--accent); }
+
+/* Flows */
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.step {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; min-width: 120px; text-align: center; font-weight: 600; font-size: 14px;
+}
+.step small { display: block; color: var(--muted); font-weight: 500; font-size: 12px; margin-top: 2px; }
+.step.who-a { border-color: var(--accent); }
+.step.who-admin { border-color: var(--warn); }
+.step.good { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.step.bad { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.step.key { background: var(--accent); border-color: var(--accent); color: #fff; }
+:root[data-theme="dark"] .step.key { color: #101318; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .step.key { color: #101318; } }
+.arr { color: var(--muted); flex: none; }
+.flows { display: grid; gap: 20px; }
+.flow-title { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 10px; font-weight: 600; }
+.loop { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: var(--bad); }
+.who-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+.who-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.who-legend i { width: 14px; height: 14px; border-radius: 4px; border: 2px solid; display: inline-block; }
+
+/* States */
+.states { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+
+/* Architecture */
+.arch svg { width: 100%; height: auto; display: block; }
+.arch .n { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.arch .grp { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.arch .t { fill: var(--ink); font: 600 15px system-ui, sans-serif; }
+.arch .s { fill: var(--muted); font: 500 12px system-ui, sans-serif; }
+.arch .g { fill: var(--accent); font: 700 13px system-ui, sans-serif; letter-spacing: 0.06em; }
+.arch .e { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+.arch .el { fill: var(--muted); font: 500 11px system-ui, sans-serif; }
+.arch .ah { fill: var(--muted); }
+
+/* Data model */
+.er { display: grid; gap: 20px; }
+.er-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0; }
+.entity { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; min-width: 200px; overflow: hidden; }
+.entity h4 { margin: 0; padding: 10px 14px; font-size: 15px; background: var(--accent-soft); color: var(--accent); }
+.entity.side h4 { background: color-mix(in srgb, var(--line) 40%, var(--surface)); color: var(--ink); }
+.entity ul { list-style: none; margin: 0; padding: 8px 14px 12px; font: 13px/1.7 ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--muted); }
+.entity li b { color: var(--ink); font-weight: 600; }
+.entity li.k::after { content: " unique"; color: var(--bad); font-size: 11px; font-family: system-ui, sans-serif; font-weight: 700; }
+.rel { display: flex; flex-direction: column; align-items: center; padding: 0 8px; color: var(--muted); font-size: 12px; font-weight: 700; min-width: 64px; }
+.rel svg { width: 56px; height: 14px; }
+.er-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+@media (max-width: 760px) {
+  .er-row { flex-direction: column; align-items: stretch; }
+  .rel { flex-direction: row; justify-content: center; gap: 6px; padding: 6px 0; }
+  .rel svg { transform: rotate(90deg); width: 28px; }
+}
+
+/* Rules */
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+.rule { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start; }
+.rule .ico { width: 44px; height: 44px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); display: flex; align-items: center; justify-content: center; }
+.rule .ico svg { width: 22px; height: 22px; }
+.rule b { display: block; font-size: 15px; }
+.rule span { font-size: 13px; color: var(--muted); }
+
+/* Client deps */
+.deps { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.dep { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; border-top: 4px solid var(--accent); }
+.dep.urgent { border-top-color: var(--bad); }
+.dep .when { font-size: 22px; font-weight: 700; }
+.dep.urgent .when { color: var(--bad); }
+.dep .what { font-size: 13px; color: var(--muted); }
+
+/* Election day */
+.clock { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+.slot { padding: 18px; background: var(--surface); border-right: 1px solid var(--line); }
+.slot:last-child { border-right: 0; }
+.slot .t { font-size: 26px; font-weight: 700; }
+.slot .a { font-size: 14px; font-weight: 600; margin-top: 4px; }
+.slot .w { font-size: 12px; color: var(--muted); }
+.slot.open .t { color: var(--ok); }
+.slot.close .t { color: var(--warn); }
+.slot.rel .t { color: var(--accent); }
+
+/* Owners */
+.owners { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.owner { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.owner b { font-size: 16px; }
+.owner .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
+.owner .tags span { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.owner .slotname { border: 1.5px dashed var(--line); border-radius: 10px; padding: 10px; color: var(--muted); font-size: 13px; }
+
+footer { margin-top: 64px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<nav aria-label="Sections">
+  <div class="inner">
+    <a href="#timeline">Timeline</a>
+    <a href="#changes">What changed</a>
+    <a href="#roles">Who sees what</a>
+    <a href="#flows">Flows</a>
+    <a href="#states">States</a>
+    <a href="#arch">Architecture</a>
+    <a href="#data">Data</a>
+    <a href="#rules">Rules</a>
+    <a href="#client">Client deps</a>
+    <a href="#day">Election day</a>
+    <a href="#owners">Owners</a>
+    <span class="theme"><button type="button" id="themeBtn">Toggle theme</button></span>
+  </div>
+</nav>
+
+<main>
+
+<section class="hero" aria-labelledby="t-hero">
+  <div>
+    <p class="kicker">Developer kickoff</p>
+    <h1 id="t-hero">Live Voting</h1>
+    <p>Replace the Google Form. Validate voters <b>before</b> election day, not after.</p>
+  </div>
+  <div class="dates">
+    <div class="date today"><div class="d">Nov 4</div><div class="l">Today · kickoff</div></div>
+    <div class="date reg"><div class="d">Nov 15</div><div class="l">Registration opens (Sun)</div></div>
+    <div class="date elec"><div class="d">Nov 20</div><div class="l">Election · 8 AM–5 PM (Fri)</div></div>
+  </div>
+</section>
+
+<section id="timeline" aria-labelledby="t-timeline">
+  <p class="kicker">Sprint plan</p>
+  <h2 id="t-timeline">16 days</h2>
+  <div class="card gantt-wrap" style="margin-top:16px">
+    <div class="gantt" role="img" aria-label="Gantt chart: Sprint 1 Nov 4 to 7, Sprint 2 Registration Nov 8 to 14, Sprint 3 Voting Nov 8 to 16 in parallel, Sprint 4 Nov 17 to 19, Registration open Nov 15 to 18, review until Nov 19, Election Nov 20.">
+      <div></div>
+      <div class="day">4</div><div class="day">5</div><div class="day">6</div><div class="day wk">7</div><div class="day wk">8</div>
+      <div class="day">9</div><div class="day">10</div><div class="day">11</div><div class="day">12</div><div class="day">13</div>
+      <div class="day wk">14</div><div class="day key">15</div><div class="day">16</div><div class="day">17</div><div class="day">18</div>
+      <div class="day">19</div><div class="day key">20</div><div class="day">21+</div>
+
+      <div class="lbl">1 · Foundation</div>
+      <div class="bar b1" style="grid-column: 2 / 6">Sign-in · schema · seed</div>
+
+      <div class="lbl">2 · Registration</div>
+      <div class="bar b2" style="grid-column: 6 / 13">Upload · register · review queue</div>
+
+      <div class="lbl">3 · Voting</div>
+      <div class="bar b3" style="grid-column: 6 / 15">Ballot · castBallot · Turnout (parallel)</div>
+
+      <div class="lbl">4 · Results + launch</div>
+      <div class="bar b4" style="grid-column: 15 / 18">Results · audit · dry run</div>
+
+      <div class="lbl" style="color:var(--accent)">Registration open</div>
+      <div class="bar breg" style="grid-column: 13 / 17">Applicants register</div>
+
+      <div class="lbl" style="color:var(--ok)">Admin review</div>
+      <div class="bar brev" style="grid-column: 13 / 18">Approve / reject</div>
+
+      <div class="lbl" style="color:var(--warn)">Election</div>
+      <div class="bar belec" style="grid-column: 18 / 19">Vote</div>
+      <div class="bar bpost" style="grid-column: 19 / 20">Post</div>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--s1)"></i>Platform</span>
+      <span><i class="sw" style="background:var(--s2)"></i>Registration track</span>
+      <span><i class="sw" style="background:var(--s3)"></i>Voting track</span>
+      <span><i class="sw" style="background:var(--s4)"></i>Launch</span>
+      <span>Dimmed dates = weekend</span>
+    </div>
+  </div>
+</section>
+
+<section id="changes" aria-labelledby="t-changes">
+  <p class="kicker">After the client meeting</p>
+  <h2 id="t-changes">What changed</h2>
+  <div class="changes" style="margin-top:16px">
+    <div class="change">
+      <div class="was">Anonymous, unlinkable Ballots</div>
+      <div class="arrow" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="now">Ballots stored under the Voter's name<span class="adr">ADR 0002</span></div>
+    </div>
+    <div class="change">
+      <div class="was">Any domain account can vote</div>
+      <div class="arrow" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="now">Only approved Registrations can vote<span class="adr">Study Load + Year Level</span></div>
+    </div>
+    <div class="change">
+      <div class="was">Public live per-Candidate tally</div>
+      <div class="arrow" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="now">Public Turnout only · Admins release Results<span class="adr">ADR 0005</span></div>
+    </div>
+    <div class="change">
+      <div class="was">Same Ballot for everyone</div>
+      <div class="arrow" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="now">Batch Rep shown only to that Year Level<span class="adr">Year-Level Question</span></div>
+    </div>
+    <div class="change">
+      <div class="was">Validate after voting (3–4 days)</div>
+      <div class="arrow" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="now">Validate before voting · Results same day</div>
+    </div>
+  </div>
+</section>
+
+<section id="roles" aria-labelledby="t-roles">
+  <p class="kicker">Roles</p>
+  <h2 id="t-roles">Who sees what</h2>
+  <div class="matrix-wrap" style="margin-top:16px">
+    <table class="matrix">
+      <thead>
+        <tr><th scope="col"></th><th scope="col">Visitor</th><th scope="col">Applicant</th><th scope="col">Voter</th><th scope="col">Admin</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Candidate profiles</td><td><span class="dot yes" aria-label="yes"></span></td><td><span class="dot yes" aria-label="yes"></span></td><td><span class="dot yes" aria-label="yes"></span></td><td><span class="dot yes" aria-label="yes"></span></td></tr>
+        <tr><td>Turnout</td><td><span class="dot yes" aria-label="yes"></span></td><td><span class="dot yes" aria-label="yes"></span></td><td><span class="dot yes" aria-label="yes"></span></td><td><span class="dot yes" aria-label="yes"></span></td></tr>
+        <tr><td>Register / resubmit</td><td><span class="dot no" aria-label="no"></span></td><td><span class="pill own">own</span></td><td><span class="dot no" aria-label="no"></span></td><td><span class="dot no" aria-label="no"></span></td></tr>
+        <tr><td>Cast a Ballot</td><td><span class="dot no" aria-label="no"></span></td><td><span class="dot no" aria-label="no"></span></td><td><span class="pill own">once</span></td><td><span class="pill own">if registered</span></td></tr>
+        <tr><td>Results</td><td><span class="pill after">after release</span></td><td><span class="pill after">after release</span></td><td><span class="pill after">after release</span></td><td><span class="pill logged">anytime · logged</span></td></tr>
+        <tr><td>Ballots with names</td><td><span class="dot no" aria-label="no"></span></td><td><span class="dot no" aria-label="no"></span></td><td><span class="dot no" aria-label="no"></span></td><td><span class="pill logged">logged</span></td></tr>
+        <tr><td>Study Loads</td><td><span class="dot no" aria-label="no"></span></td><td><span class="pill own">own</span></td><td><span class="pill own">own</span></td><td><span class="dot yes" aria-label="yes"></span></td></tr>
+        <tr><td>Open / close / release</td><td><span class="dot no" aria-label="no"></span></td><td><span class="dot no" aria-label="no"></span></td><td><span class="dot no" aria-label="no"></span></td><td><span class="dot yes" aria-label="yes"></span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="color:var(--muted);font-size:14px;margin-top:10px">Admin = Audit Commissioner · Chair · COMELEC at-large (same permissions)</p>
+</section>
+
+<section id="flows" aria-labelledby="t-flows">
+  <p class="kicker">User flows</p>
+  <h2 id="t-flows">Register, then vote</h2>
+  <div class="who-legend" style="margin-top:16px">
+    <span><i style="border-color:var(--accent)"></i>Applicant / Voter</span>
+    <span><i style="border-color:var(--warn)"></i>Admin</span>
+  </div>
+  <div class="flows">
+    <div class="card">
+      <p class="flow-title">Registration · Nov 15–18</p>
+      <div class="flow">
+        <div class="step who-a">Google sign-in<small>org domain only</small></div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step who-a">Pick Year Level</div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step who-a">Upload Study Load<small>image · ≤ 5 MB</small></div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step who-admin">Admin review<small>can fix Year Level</small></div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step good">Approved<small>now a Voter</small></div>
+      </div>
+      <div class="loop">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg>
+        Rejected with reason → fix and resubmit (while window open)
+      </div>
+    </div>
+    <div class="card">
+      <p class="flow-title">Voting · Nov 20</p>
+      <div class="flow">
+        <div class="step who-a">Sign in</div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step who-a">Accept disclosure<small>commission sees Ballot</small></div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step who-a">Fill Ballot<small>+ own Batch Rep only</small></div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step who-a">Review</div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step key">Cast · final</div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step good">"You have already voted"</div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="flow-title">Admin · Nov 20</p>
+      <div class="flow">
+        <div class="step who-admin">Open<small>8 AM</small></div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step who-admin">Watch Turnout</div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step who-admin">Close<small>5 PM or extend</small></div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step who-admin">Audit Ballots<small>logged</small></div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step key">Release Results</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="states" aria-labelledby="t-states">
+  <p class="kicker">State machines</p>
+  <h2 id="t-states">What can move where</h2>
+  <div class="states" style="margin-top:16px">
+    <div class="card">
+      <p class="flow-title">Registration</p>
+      <div class="flow">
+        <div class="step">Pending</div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step good">Approved<small>locked</small></div>
+      </div>
+      <div class="flow" style="margin-top:10px">
+        <div class="step">Pending</div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step bad">Rejected<small>+ reason</small></div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step">Pending<small>resubmitted</small></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="flow-title">Election</p>
+      <div class="flow">
+        <div class="step">Closed</div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 8h12M15 4l4 4-4 4M17 16H5M9 12l-4 4 4 4"/></svg>
+        <div class="step good">Open</div>
+      </div>
+      <div class="flow" style="margin-top:10px">
+        <div class="step">Closed</div>
+        <svg class="arr" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="step key">Results released<small>one-way · no reopen</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="arch" class="arch" aria-labelledby="t-arch">
+  <p class="kicker">Architecture</p>
+  <h2 id="t-arch">One Next.js app, two Supabase stores</h2>
+  <div class="card" style="margin-top:16px;overflow-x:auto">
+    <svg viewBox="0 0 1000 420" role="img" aria-label="Architecture: Browser talks to Google for sign-in and to the Next.js app on Vercel over HTTPS, and uploads Study Loads directly to Supabase Storage with a signed URL. The app contains pages, server actions, a cached turnout endpoint and the Auth.js handler, reads the hardcoded election config, and uses Prisma to reach Postgres and signed URLs for Storage." style="min-width:760px">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+      </defs>
+      <!-- Browser -->
+      <rect class="n" x="20" y="170" width="150" height="80" rx="12"/>
+      <text class="t" x="95" y="206" text-anchor="middle">Browser</text>
+      <text class="s" x="95" y="226" text-anchor="middle">phone-first</text>
+      <!-- Google -->
+      <rect class="n" x="20" y="20" width="150" height="70" rx="12"/>
+      <text class="t" x="95" y="52" text-anchor="middle">Google</text>
+      <text class="s" x="95" y="72" text-anchor="middle">Workspace OAuth</text>
+      <!-- App group -->
+      <rect class="grp" x="250" y="20" width="440" height="380" rx="16"/>
+      <text class="g" x="270" y="48">NEXT.JS ON VERCEL</text>
+      <rect class="n" x="270" y="64" width="190" height="62" rx="10"/>
+      <text class="t" x="365" y="92" text-anchor="middle">Pages (RSC)</text>
+      <text class="s" x="365" y="111" text-anchor="middle">register · vote · results · admin</text>
+      <rect class="n" x="480" y="64" width="190" height="62" rx="10"/>
+      <text class="t" x="575" y="92" text-anchor="middle">Auth.js</text>
+      <text class="s" x="575" y="111" text-anchor="middle">JWT cookie · no adapter</text>
+      <rect class="n" x="270" y="146" width="400" height="92" rx="10"/>
+      <text class="t" x="470" y="174" text-anchor="middle">Server Actions</text>
+      <text class="s" x="470" y="196" text-anchor="middle">submitRegistration · review · castBallot</text>
+      <text class="s" x="470" y="214" text-anchor="middle">windows · release · audit · grant/revoke</text>
+      <text class="s" x="470" y="230" text-anchor="middle">every one starts with a guard</text>
+      <rect class="n" x="270" y="258" width="190" height="62" rx="10"/>
+      <text class="t" x="365" y="286" text-anchor="middle">/api/turnout</text>
+      <text class="s" x="365" y="305" text-anchor="middle">public · cached 15s</text>
+      <rect class="n" x="480" y="258" width="190" height="62" rx="10"/>
+      <text class="t" x="575" y="286" text-anchor="middle">election.ts</text>
+      <text class="s" x="575" y="305" text-anchor="middle">hardcoded config</text>
+      <text class="s" x="470" y="372" text-anchor="middle">guards.ts → requireSession · requireVoter · requireAdmin</text>
+      <!-- Postgres -->
+      <rect class="n" x="790" y="90" width="190" height="90" rx="12"/>
+      <text class="t" x="885" y="124" text-anchor="middle">Postgres</text>
+      <text class="s" x="885" y="144" text-anchor="middle">Supabase · Prisma</text>
+      <text class="s" x="885" y="162" text-anchor="middle">RLS on, no policies</text>
+      <!-- Storage -->
+      <rect class="n" x="790" y="250" width="190" height="90" rx="12"/>
+      <text class="t" x="885" y="284" text-anchor="middle">Storage</text>
+      <text class="s" x="885" y="304" text-anchor="middle">private study-loads</text>
+      <text class="s" x="885" y="322" text-anchor="middle">signed URLs only</text>
+      <!-- Edges -->
+      <path class="e" d="M95 168 V92" marker-end="url(#ah)" marker-start="url(#ah)"/>
+      <text class="el" x="104" y="134">sign-in</text>
+      <path class="e" d="M172 200 H248" marker-end="url(#ah)"/>
+      <text class="el" x="182" y="192">HTTPS</text>
+      <path class="e" d="M672 160 H788 V150" marker-end="url(#ah)"/>
+      <text class="el" x="690" y="152">Prisma</text>
+      <path class="e" d="M462 289 C 560 330, 700 140, 788 140" marker-end="url(#ah)"/>
+      <path class="e" d="M672 220 C 730 220, 740 280, 788 285" marker-end="url(#ah)"/>
+      <text class="el" x="700" y="248">sign URL</text>
+      <path class="e" d="M95 252 C 95 410, 700 410, 885 342" marker-end="url(#ah)" stroke-dasharray="5 4"/>
+      <text class="el" x="560" y="414">direct upload with signed URL (bypasses 4.5 MB limit)</text>
+    </svg>
+  </div>
+</section>
+
+<section id="data" aria-labelledby="t-data">
+  <p class="kicker">Data model</p>
+  <h2 id="t-data">Person at the center</h2>
+  <div class="er" style="margin-top:16px">
+    <div class="er-row">
+      <div class="entity">
+        <h4>Registration</h4>
+        <ul>
+          <li class="k"><b>personId</b></li>
+          <li>yearLevel</li>
+          <li>studyLoadPath</li>
+          <li>status <b>P/A/R</b></li>
+          <li>rejectionReason</li>
+          <li>reviewedBy · At</li>
+        </ul>
+      </div>
+      <div class="rel" aria-label="one to one">
+        <svg viewBox="0 0 56 14" aria-hidden="true"><path d="M0 7H56" stroke="currentColor" stroke-width="2"/></svg>1 : 1
+      </div>
+      <div class="entity">
+        <h4>Person</h4>
+        <ul>
+          <li><b>id</b></li>
+          <li class="k">email</li>
+          <li>name</li>
+        </ul>
+      </div>
+      <div class="rel" aria-label="one to one">
+        <svg viewBox="0 0 56 14" aria-hidden="true"><path d="M0 7H56" stroke="currentColor" stroke-width="2"/></svg>1 : 1
+      </div>
+      <div class="entity">
+        <h4>Ballot</h4>
+        <ul>
+          <li class="k"><b>personId</b></li>
+          <li>yearLevel <b>snapshot</b></li>
+          <li>disclosureAcceptedAt</li>
+          <li>castAt</li>
+        </ul>
+      </div>
+      <div class="rel" aria-label="one to many">
+        <svg viewBox="0 0 56 14" aria-hidden="true"><path d="M0 7H56M46 1L56 7L46 13" stroke="currentColor" stroke-width="2" fill="none"/></svg>1 : N
+      </div>
+      <div class="entity">
+        <h4>BallotAnswer</h4>
+        <ul>
+          <li>questionId</li>
+          <li>candidateId <b>null = abstain</b></li>
+        </ul>
+      </div>
+    </div>
+    <div class="er-side">
+      <div class="entity side"><h4>Admin</h4><ul><li><b>email</b> (pre-grant)</li><li>grantedBy · At</li></ul></div>
+      <div class="entity side"><h4>AuditLog</h4><ul><li>adminEmail · action</li><li>target · detail · at</li><li><b>append-only</b></li></ul></div>
+      <div class="entity side"><h4>ElectionState</h4><ul><li>registrationStatus</li><li>electionStatus</li><li>resultsReleasedAt</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section id="rules" aria-labelledby="t-rules">
+  <p class="kicker">Non-negotiables</p>
+  <h2 id="t-rules">Rules we can't break</h2>
+  <div class="rules" style="margin-top:16px">
+    <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg></div><div><b>One Ballot = DB unique</b><span>Not the UI</span></div></div>
+    <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></div><div><b>Guard every action</b><span>DB check, never the cookie</span></div></div>
+    <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3 3.6M6.6 6.6C3.9 8.3 2 12 2 12s4 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/></svg></div><div><b>No public counts</b><span>Until Results released</span></div></div>
+    <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16v16H4zM8 9h8M8 13h5M3 21L21 3"/></svg></div><div><b>Never log Ballots</b><span>No payloads in logs</span></div></div>
+    <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 7v5l3 2M3 12a9 9 0 1 0 9-9"/><path d="M3 4v4h4"/></svg></div><div><b>Audit every view</b><span>AuditLog is append-only</span></div></div>
+    <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></div><div><b>Freeze config ids</b><span>After the Election opens</span></div></div>
+    <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M12 5v14" transform="rotate(45 12 12)"/><rect x="3" y="3" width="18" height="18" rx="3"/></svg></div><div><b>Migrations run by hand</b><span>Never on deploy</span></div></div>
+    <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><div><b>Study Loads private</b><span>Signed URLs, Admin only</span></div></div>
+    <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 15l2 2 4-4"/></svg></div><div><b>Prod DB needs waiver</b><span>Client drafts it</span></div></div>
+  </div>
+</section>
+
+<section id="client" aria-labelledby="t-client">
+  <p class="kicker">Blocked on the client</p>
+  <h2 id="t-client">Waiting for</h2>
+  <div class="deps" style="margin-top:16px">
+    <div class="dep urgent"><div class="when">Nov 5</div><div class="what">Workspace domain</div></div>
+    <div class="dep urgent"><div class="when">Nov 6</div><div class="what">First Admin email</div></div>
+    <div class="dep"><div class="when">Nov 10</div><div class="what">Year Levels list</div></div>
+    <div class="dep"><div class="when">Nov 12</div><div class="what">Registration close date · disclosure OK</div></div>
+    <div class="dep"><div class="when">Nov 13</div><div class="what">Questions + Candidate profiles</div></div>
+    <div class="dep"><div class="when">Nov 14</div><div class="what">Expected Voter count</div></div>
+    <div class="dep"><div class="when">Nov 15</div><div class="what">DB access waiver</div></div>
+    <div class="dep"><div class="when">Nov 19</div><div class="what">Data retention decision</div></div>
+  </div>
+</section>
+
+<section id="day" aria-labelledby="t-day">
+  <p class="kicker">Nov 20</p>
+  <h2 id="t-day">Election day</h2>
+  <div class="clock" style="margin-top:16px">
+    <div class="slot"><div class="t">7:30</div><div class="a">Pre-flight</div><div class="w">Dev + Admin</div></div>
+    <div class="slot open"><div class="t">8:00</div><div class="a">Open</div><div class="w">Admin</div></div>
+    <div class="slot"><div class="t">All day</div><div class="a">Monitor</div><div class="w">Dev on call</div></div>
+    <div class="slot close"><div class="t">5:00</div><div class="a">Close / extend</div><div class="w">Admin</div></div>
+    <div class="slot rel"><div class="t">After</div><div class="a">Audit → Release</div><div class="w">Admins</div></div>
+  </div>
+</section>
+
+<section id="owners" aria-labelledby="t-owners">
+  <p class="kicker">Assign in the room</p>
+  <h2 id="t-owners">Owners</h2>
+  <div class="owners" style="margin-top:16px">
+    <div class="owner"><b>Auth + platform</b><div class="tags"><span>Next.js</span><span>Auth.js</span><span>guards</span><span>deploys</span></div><div class="slotname">Owner: ________</div></div>
+    <div class="owner"><b>Data + migrations</b><div class="tags"><span>Prisma</span><span>RLS</span><span>seed</span></div><div class="slotname">Owner: ________</div></div>
+    <div class="owner"><b>Registration</b><div class="tags"><span>upload</span><span>register</span><span>review queue</span></div><div class="slotname">Owner: ________</div></div>
+    <div class="owner"><b>Voting</b><div class="tags"><span>config</span><span>castBallot</span><span>Turnout</span></div><div class="slotname">Owner: ________</div></div>
+    <div class="owner"><b>Admin · Results · audit</b><div class="tags"><span>windows</span><span>release</span><span>AuditLog</span></div><div class="slotname">Owner: ________</div></div>
+    <div class="owner"><b>QA + dry run</b><div class="tags"><span>integration</span><span>concurrency</span><span>load</span></div><div class="slotname">Owner: ________</div></div>
+  </div>
+</section>
+
+<footer>Details: docs/product-spec.md · docs/software-design.md · docs/sprint-plan.md · docs/adr/</footer>
+</main>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('themeBtn');
+  var saved = null;
+  try { saved = localStorage.getItem('lv-theme'); } catch (e) { saved = null; }
+  if (saved === 'light' || saved === 'dark') root.setAttribute('data-theme', saved);
+  btn.addEventListener('click', function () {
+    var isDark = root.getAttribute('data-theme') === 'dark' ||
+      (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var next = isDark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('lv-theme', next); } catch (e) { /* ignore */ }
+  });
+})();
+</script>
+</body>
+</html>
