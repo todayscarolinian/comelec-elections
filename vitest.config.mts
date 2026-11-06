@@ -9,5 +9,11 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
+    server: {
+      deps: {
+        // Auth.js imports Next.js entry points without extensions; Vite resolves them.
+        inline: ['next-auth'],
+      },
+    },
   },
 })
