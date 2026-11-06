@@ -1,0 +1,9 @@
+# Normalize line endings to LF (matches .prettierrc "endOfLine": "lf")
+* text=auto eol=lf
+
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.svg text eol=lf

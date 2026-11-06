@@ -1,6 +1,6 @@
 # Developer Kickoff: Meeting Guide
 
-A script for the kickoff meeting with the development team. Read-ahead for developers: [Product Spec](./product-spec.md), [Software Design](./software-design.md), [Sprint Plan](./sprint-plan.md), [Glossary](../GLOSSARY.md), [ADRs](./adr/).
+A script for the kickoff meeting with the development team. Read-ahead for developers: [Product Spec](./product-spec.md), [Software Design](./software-design.md), [Sprint Plan](./sprint-plan.md), [Glossary](./GLOSSARY.md), [ADRs](./adr/).
 
 **Goal of the meeting:** everyone understands what we're building and why, agrees on the plan to Nov 20, and leaves with Sprint 1 tasks assigned.
 
@@ -36,14 +36,14 @@ If anyone read the earlier design, walk through these. Each is recorded in an AD
 | Public live per-Candidate tally | Public Turnout only; Results released by Admins (ADR 0005) | Standings must not be revealed during voting |
 | Same Ballot for everyone | Batch Rep is a Year-Level Question, shown only to that Year Level | Voters only pick their own batch rep |
 
-Use the [Glossary](../GLOSSARY.md) terms in code and conversation: **Registration, Applicant, Voter, Ballot, Turnout, Results, Year-Level Question**. Not "user", "vote", "tally".
+Use the [Glossary](./GLOSSARY.md) terms in code and conversation: **Registration, Applicant, Voter, Ballot, Turnout, Results, Year-Level Question**. Not "user", "vote", "tally".
 
 ## 3. Rules we can't break
 
 Go through each one and check everyone agrees.
 
 1. **One Ballot per Voter is enforced by the database**, not the UI (`Ballot.personId @unique`, inside the transaction).
-2. **Every Admin action checks the database** with `requireAdmin()`. Never trust the cookie or hide a button as the guard.
+2. **Every Admin operation is an `adminProcedure`**, which checks the database on every call (ADR 0007). Never trust the cookie or hide a button as the guard.
 3. **No public route returns per-Candidate counts** until Results are released.
 4. **Never log Ballot contents** or `castBallot` inputs.
 5. **Every Admin view or export of Ballots writes to `AuditLog`**, and the app never edits or deletes audit rows.

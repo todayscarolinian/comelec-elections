@@ -5,7 +5,7 @@
 | **Status** | Draft for team review |
 | **Last updated** | 2026-11-04 |
 | **Election day** | 2026-11-20, 8 AM–5 PM (may be extended) |
-| **Related** | [Software Design Document](./software-design.md) · [Glossary](../GLOSSARY.md) · [ADR 0002: Ballots Linked to Voters](./adr/0002-ballots-linked-to-voters.md) · [Meeting notes](./meeting-discussions.md) |
+| **Related** | [Software Design Document](./software-design.md) · [Glossary](./GLOSSARY.md) · [ADR 0002: Ballots Linked to Voters](./adr/0002-ballots-linked-to-voters.md) · [Meeting notes](./meeting-discussions.md) |
 
 ## 1. Summary
 
@@ -45,7 +45,7 @@ All Admins have the same permissions for now.
 
 ## 4. Key concepts
 
-The full definitions live in the [Glossary](../GLOSSARY.md). In brief:
+The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 
 - **Election**: the single voting event. It is either *open* or *closed*.
 - **Question**: one item on the Ballot, such as "President."

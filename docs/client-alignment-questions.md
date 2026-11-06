@@ -1,6 +1,6 @@
 # Client Alignment Questions
 
-Meeting script to align the client's vision with the Live Voting design (see [GLOSSARY.md](../GLOSSARY.md), [product-spec.md](product-spec.md)).
+Meeting script to align the client's vision with the Live Voting design (see [GLOSSARY.md](./GLOSSARY.md), [product-spec.md](product-spec.md)).
 
 ⚠️ = confirms a decision already baked into the design — verify these first.
 
