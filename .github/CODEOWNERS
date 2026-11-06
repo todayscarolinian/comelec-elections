@@ -1,0 +1,42 @@
+# See docs/code-owners.md. Last matching rule wins.
+
+*                                       @npeteros @alessaaandraaa @cl1ffhan9er
+
+# User Interface and Experience
+/app/                                   @aeqqj @neys00
+/src/components/                        @aeqqj @neys00
+
+# Auth + Infrastructure
+/src/server/                            @DemonAcolyte
+/src/lib/                               @DemonAcolyte
+/src/types/                             @DemonAcolyte
+/app/api/                               @DemonAcolyte
+/.github/                               @DemonAcolyte
+/next.config.ts                         @DemonAcolyte
+/src/server/trpc/init.ts                @DemonAcolyte @alessaaandraaa @cl1ffhan9er
+
+# Data + Migrations
+/prisma/                                @Mingotrees
+/prisma.config.ts                       @Mingotrees
+/src/lib/db.ts                          @Mingotrees
+
+# Admin + Results
+/src/server/trpc/api/v1/admin/          @alessaaandraaa @cl1ffhan9er
+/src/server/trpc/api/v1/results/        @alessaaandraaa @cl1ffhan9er @DemonAcolyte
+/src/server/trpc/api/v1/audit/          @alessaaandraaa @cl1ffhan9er @DemonAcolyte
+/app/admin/                             @alessaaandraaa @cl1ffhan9er @aeqqj @neys00
+/app/results/                           @alessaaandraaa @cl1ffhan9er @aeqqj @neys00
+
+# Registration
+/src/server/trpc/api/v1/registration/   @DustyAdri
+/src/server/storage.ts                  @DustyAdri
+/app/register/                          @DustyAdri @aeqqj @neys00
+/app/admin/registrations/               @DustyAdri @aeqqj @neys00
+
+# Voting
+/src/election.ts                        @Ethvn-OS
+/src/server/trpc/api/v1/election/       @Ethvn-OS
+/src/server/trpc/api/v1/ballot/         @Ethvn-OS @DemonAcolyte
+/app/vote/                              @Ethvn-OS @aeqqj @neys00
+/app/api/turnout/                       @Ethvn-OS
+/public/candidates/                     @Ethvn-OS
