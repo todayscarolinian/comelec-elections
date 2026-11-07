@@ -1,15 +1,16 @@
 import type { NextAuthConfig } from 'next-auth'
 import Google from 'next-auth/providers/google'
-import { isAllowedGoogleProfile, normalizeEmail } from './policy'
+import { isAllowedGoogleProfile, normalizeEmail, normalizeHostedDomain } from './policy'
 
 export function createAuthConfig(allowedDomain: string | undefined): NextAuthConfig {
+  const domain = normalizeHostedDomain(allowedDomain)
   return {
     providers: [
       Google({
         authorization: {
           params: {
             prompt: 'select_account',
-            ...(allowedDomain ? { hd: allowedDomain } : {}),
+            ...(domain ? { hd: domain } : {}),
           },
         },
       }),
@@ -18,7 +19,7 @@ export function createAuthConfig(allowedDomain: string | undefined): NextAuthCon
     pages: { error: '/auth/error' },
     callbacks: {
       async signIn({ profile }) {
-        return isAllowedGoogleProfile(profile, allowedDomain)
+        return isAllowedGoogleProfile(profile, domain)
       },
       jwt({ token, profile, trigger }) {
         const email = trigger === 'signIn' || trigger === 'signUp' ? profile?.email : token.email

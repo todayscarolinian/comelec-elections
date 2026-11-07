@@ -1,8 +1,11 @@
+import { normalizeHostedDomain } from '@/server/auth/policy'
+
 export function AuthErrorMessage({
   error,
   allowedDomain,
 }: Readonly<{ error?: string; allowedDomain?: string }>) {
-  const configurationError = !allowedDomain?.trim() || error === 'Configuration'
+  const domain = normalizeHostedDomain(allowedDomain)
+  const configurationError = !domain || error === 'Configuration'
   const accessDenied = error === 'AccessDenied' && !configurationError
   const heading = configurationError
     ? 'Sign-in unavailable'
@@ -12,7 +15,7 @@ export function AuthErrorMessage({
   const message = configurationError
     ? 'Organization sign-in is not configured. Contact the election administrator.'
     : accessDenied
-      ? `Only @${allowedDomain} organization accounts can sign in.`
+      ? `Only @${domain} organization accounts can sign in.`
       : 'We could not complete your Google sign-in. Please try again.'
 
   return (

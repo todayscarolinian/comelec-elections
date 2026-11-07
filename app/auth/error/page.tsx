@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { AuthErrorMessage } from '@/components/auth/auth-error-message'
+import { allowedHostedDomain } from '@/server/auth'
 
 type ErrorPageProps = {
   searchParams: Promise<{ error?: string | string[] }>
@@ -10,7 +11,7 @@ async function ErrorContent({ searchParams }: ErrorPageProps) {
   return (
     <AuthErrorMessage
       error={typeof error === 'string' ? error : undefined}
-      allowedDomain={process.env.ALLOWED_HOSTED_DOMAIN}
+      allowedDomain={allowedHostedDomain}
     />
   )
 }

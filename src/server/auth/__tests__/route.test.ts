@@ -25,6 +25,16 @@ afterEach(() => {
 })
 
 describe('/api/auth routes', () => {
+  it.each([
+    [' ExAmPlE.CoM ', 'example.com'],
+    ['   ', undefined],
+    [undefined, undefined],
+  ])('exports the normalized configured domain for %j', async (domain, expected) => {
+    vi.stubEnv('ALLOWED_HOSTED_DOMAIN', domain)
+    const auth = await import('@/server/auth')
+    expect(auth).toHaveProperty('allowedHostedDomain', expected)
+  })
+
   it('exposes Google as the only sign-in provider', async () => {
     const { GET } = await import('@/app/api/auth/[...nextauth]/route')
     const res = await GET(new NextRequest(`${BASE}/api/auth/providers`))
@@ -70,46 +80,55 @@ describe('/api/auth routes', () => {
     expect(res.headers.get('set-cookie') ?? '').not.toContain('authjs.session-token=')
   })
 
-  it('sends the hosted-domain hint and account picker to Google without replacing OIDC protections', async () => {
-    vi.stubGlobal('fetch', async (input: URL | Request | string) => {
-      if (String(input) !== 'https://accounts.google.com/.well-known/openid-configuration') {
-        throw new Error('Unexpected external request in auth test')
-      }
-      return Response.json({
-        issuer: 'https://accounts.google.com',
-        authorization_endpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-        token_endpoint: 'https://oauth2.googleapis.com/token',
-        jwks_uri: 'https://www.googleapis.com/oauth2/v3/certs',
-        response_types_supported: ['code'],
-        subject_types_supported: ['public'],
-        id_token_signing_alg_values_supported: ['RS256'],
+  it.each([
+    ['example.com', 'example.com'],
+    [' ExAmPlE.CoM ', 'example.com'],
+    ['   ', null],
+    [undefined, null],
+  ])(
+    'normalizes the hosted-domain hint %j without replacing OIDC protections',
+    async (domain, expectedHint) => {
+      vi.stubEnv('ALLOWED_HOSTED_DOMAIN', domain)
+      vi.stubGlobal('fetch', async (input: URL | Request | string) => {
+        if (String(input) !== 'https://accounts.google.com/.well-known/openid-configuration') {
+          throw new Error('Unexpected external request in auth test')
+        }
+        return Response.json({
+          issuer: 'https://accounts.google.com',
+          authorization_endpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+          token_endpoint: 'https://oauth2.googleapis.com/token',
+          jwks_uri: 'https://www.googleapis.com/oauth2/v3/certs',
+          response_types_supported: ['code'],
+          subject_types_supported: ['public'],
+          id_token_signing_alg_values_supported: ['RS256'],
+        })
       })
-    })
-    const { GET, POST } = await import('@/app/api/auth/[...nextauth]/route')
-    const csrfRes = await GET(new NextRequest(`${BASE}/api/auth/csrf`))
-    const { csrfToken } = await csrfRes.json()
-    const cookie = csrfRes.headers
-      .getSetCookie()
-      .map((value) => value.split(';')[0])
-      .join('; ')
-    const res = await POST(
-      new NextRequest(`${BASE}/api/auth/signin/google`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/x-www-form-urlencoded', cookie },
-        body: new URLSearchParams({ csrfToken, callbackUrl: BASE }),
-      }),
-    )
-    expect(res.status).toBe(302)
-    const destination = new URL(res.headers.get('location')!)
-    expect(destination.origin).toBe('https://accounts.google.com')
-    expect(destination.searchParams.get('hd')).toBe('example.com')
-    expect(destination.searchParams.get('prompt')).toBe('select_account')
-    expect(destination.searchParams.get('client_id')).toBe('test-google-client')
-    expect(destination.searchParams.get('redirect_uri')).toBe(`${BASE}/api/auth/callback/google`)
-    expect(destination.searchParams.get('code_challenge_method')).toBe('S256')
-    expect(destination.searchParams.get('code_challenge')).toBeTruthy()
-    expect(res.headers.get('set-cookie')).toContain('pkce.code_verifier=')
-  })
+      const { GET, POST } = await import('@/app/api/auth/[...nextauth]/route')
+      const csrfRes = await GET(new NextRequest(`${BASE}/api/auth/csrf`))
+      const { csrfToken } = await csrfRes.json()
+      const cookie = csrfRes.headers
+        .getSetCookie()
+        .map((value) => value.split(';')[0])
+        .join('; ')
+      const res = await POST(
+        new NextRequest(`${BASE}/api/auth/signin/google`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded', cookie },
+          body: new URLSearchParams({ csrfToken, callbackUrl: BASE }),
+        }),
+      )
+      expect(res.status).toBe(302)
+      const destination = new URL(res.headers.get('location')!)
+      expect(destination.origin).toBe('https://accounts.google.com')
+      expect(destination.searchParams.get('hd')).toBe(expectedHint)
+      expect(destination.searchParams.get('prompt')).toBe('select_account')
+      expect(destination.searchParams.get('client_id')).toBe('test-google-client')
+      expect(destination.searchParams.get('redirect_uri')).toBe(`${BASE}/api/auth/callback/google`)
+      expect(destination.searchParams.get('code_challenge_method')).toBe('S256')
+      expect(destination.searchParams.get('code_challenge')).toBeTruthy()
+      expect(res.headers.get('set-cookie')).toContain('pkce.code_verifier=')
+    },
+  )
 
   it('exposes only the normalized email and expiry from an encrypted JWT', async () => {
     const { GET } = await import('@/app/api/auth/[...nextauth]/route')

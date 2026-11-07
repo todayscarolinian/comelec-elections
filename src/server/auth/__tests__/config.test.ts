@@ -26,6 +26,11 @@ describe('Auth.js configuration', () => {
     await expect(config.callbacks!.signIn!({ user, account, profile })).resolves.toBe(true)
   })
 
+  it('uses the normalized configured domain in the signIn callback', async () => {
+    const normalizedConfig = createAuthConfig(' ExAmPlE.CoM ')
+    expect(await normalizedConfig.callbacks!.signIn!({ user, account, profile })).toBe(true)
+  })
+
   it.each([
     undefined,
     { ...profile, hd: undefined },

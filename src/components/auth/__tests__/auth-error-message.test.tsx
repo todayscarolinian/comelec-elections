@@ -16,6 +16,11 @@ describe('authentication error message', () => {
     ).toBeTruthy()
   })
 
+  it('displays the normalized configured domain', () => {
+    render(<AuthErrorMessage error="AccessDenied" allowedDomain=" USC.EDU.PH " />)
+    expect(screen.getByText('Only @usc.edu.ph organization accounts can sign in.')).toBeTruthy()
+  })
+
   it.each([undefined, '', '   '])('reports missing domain configuration: %j', (allowedDomain) => {
     render(<AuthErrorMessage error="AccessDenied" allowedDomain={allowedDomain} />)
     expect(

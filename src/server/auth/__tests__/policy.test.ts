@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { isAllowedGoogleProfile, normalizeEmail } from '../policy'
+import { isAllowedGoogleProfile, normalizeEmail, normalizeHostedDomain } from '../policy'
 
 const member = {
   hd: 'example.com',
@@ -11,6 +11,13 @@ const member = {
 describe('Google sign-in policy', () => {
   it('accepts a verified Workspace member of the configured domain', () => {
     expect(isAllowedGoogleProfile(member, 'example.com')).toBe(true)
+  })
+
+  it('normalizes the configured domain before comparing it with the Google claim', () => {
+    expect(isAllowedGoogleProfile(member, ' ExAmPlE.CoM ')).toBe(true)
+    expect(isAllowedGoogleProfile({ ...member, hd: 'foreign.example' }, ' ExAmPlE.CoM ')).toBe(
+      false,
+    )
   })
 
   it.each([undefined, null, {}, 'profile', []])(
@@ -47,6 +54,19 @@ describe('Google sign-in policy', () => {
     expect(
       isAllowedGoogleProfile({ email: 'member@example.com', email_verified: true }, 'example.com'),
     ).toBe(false)
+  })
+})
+
+describe('normalizeHostedDomain', () => {
+  it.each([
+    [undefined, undefined],
+    ['', undefined],
+    [' \t\n ', undefined],
+    ['usc.edu.ph', 'usc.edu.ph'],
+    ['USC.EDU.PH', 'usc.edu.ph'],
+    [' USC.EDU.PH ', 'usc.edu.ph'],
+  ])('normalizes %j to %j', (domain, expected) => {
+    expect(normalizeHostedDomain(domain)).toBe(expected)
   })
 })
 
