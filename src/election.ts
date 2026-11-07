@@ -1,7 +1,11 @@
-// Add Year Levels and Year-Level Questions only after Batch Representatives are confirmed
+export const PARTIES = ['STAND', 'Tingog', 'SPP'] as const
+
+export type PartyId = (typeof PARTIES)[number]
+
 export type CandidateDef = {
   readonly id: string // stable, never changes once the Election has opened
   readonly name: string
+  readonly party?: PartyId // Omitted means that the Candidate is Independent
   readonly photo: string // path under /public/candidates
   readonly bio: string
 }
@@ -33,12 +37,14 @@ export const ELECTION = {
         {
           id: 'placeholder-question-1-candidate-a',
           name: 'Candidate A',
+          party: 'STAND',
           photo: '/candidates/placeholder-candidate-a.svg',
           bio: 'Placeholder biography for Candidate A.',
         },
         {
           id: 'placeholder-question-1-candidate-b',
           name: 'Candidate B',
+          party: 'Tingog',
           photo: '/candidates/placeholder-candidate-b.svg',
           bio: 'Placeholder biography for Candidate B.',
         },
@@ -52,6 +58,7 @@ export const ELECTION = {
         {
           id: 'placeholder-question-2-candidate-c',
           name: 'Candidate C',
+          party: 'SPP',
           photo: '/candidates/placeholder-candidate-c.svg',
           bio: 'Placeholder biography for Candidate C.',
         },
