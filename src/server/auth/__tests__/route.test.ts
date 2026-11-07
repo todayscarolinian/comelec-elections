@@ -8,8 +8,11 @@ vi.mock('server-only', () => ({}))
 
 const BASE = 'http://localhost:3000'
 const SECRET = 'test-only-auth-secret-at-least-thirty-two-characters'
+const SIGNED_IN_AT = Date.parse('2026-11-07T00:00:00.000Z')
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(SIGNED_IN_AT)
   vi.resetModules()
   vi.stubEnv('AUTH_URL', BASE)
   vi.stubEnv('AUTH_SECRET', SECRET)
@@ -19,6 +22,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllEnvs()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
@@ -135,8 +139,10 @@ describe('/api/auth routes', () => {
     const jwt = await encode({
       secret: SECRET,
       salt: 'authjs.session-token',
+      maxAge: 28_800,
       token: {
         email: ' Member@Example.com ',
+        signedInAt: SIGNED_IN_AT,
         sub: 'google-subject',
         name: 'Member',
         picture: 'https://example.com/avatar.png',
@@ -152,9 +158,76 @@ describe('/api/auth routes', () => {
     )
     expect(res.status).toBe(200)
     const session = await res.json()
-    expect(session).toEqual({ user: { email: 'member@example.com' }, expires: expect.any(String) })
-    const remaining = new Date(session.expires).getTime() - Date.now()
-    expect(remaining).toBeGreaterThan(28_790_000)
-    expect(remaining).toBeLessThanOrEqual(28_800_000)
+    expect(session).toEqual({
+      user: { email: 'member@example.com' },
+      expires: '2026-11-07T08:00:00.000Z',
+    })
+  })
+
+  it('reports the original deadline instead of extending public expiry on a session read', async () => {
+    const { GET } = await import('@/app/api/auth/[...nextauth]/route')
+    const jwt = await encode({
+      secret: SECRET,
+      salt: 'authjs.session-token',
+      maxAge: 28_800,
+      token: { email: 'member@example.com', signedInAt: SIGNED_IN_AT },
+    })
+    vi.setSystemTime(SIGNED_IN_AT + 25_200_000)
+    const res = await GET(
+      new NextRequest(`${BASE}/api/auth/session`, {
+        headers: { cookie: `authjs.session-token=${jwt}` },
+      }),
+    )
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      user: { email: 'member@example.com' },
+      expires: '2026-11-07T08:00:00.000Z',
+    })
+  })
+
+  it('rejects and clears a repeatedly refreshed cookie at the absolute deadline', async () => {
+    const { GET } = await import('@/app/api/auth/[...nextauth]/route')
+    const jwt = await encode({
+      secret: SECRET,
+      salt: 'authjs.session-token',
+      maxAge: 28_800,
+      token: { email: 'member@example.com', signedInAt: SIGNED_IN_AT },
+    })
+    let cookie = `authjs.session-token=${jwt}`
+    for (const elapsed of [3_600_000, 14_400_000, 25_200_000]) {
+      vi.setSystemTime(SIGNED_IN_AT + elapsed)
+      const res = await GET(new NextRequest(`${BASE}/api/auth/session`, { headers: { cookie } }))
+      expect(res.status).toBe(200)
+      expect((await res.json()).user.email).toBe('member@example.com')
+      cookie = res.headers
+        .getSetCookie()
+        .map((value) => value.split(';')[0])
+        .join('; ')
+      expect(cookie).toContain('authjs.session-token=')
+    }
+    vi.setSystemTime(SIGNED_IN_AT + 28_800_000)
+    const res = await GET(new NextRequest(`${BASE}/api/auth/session`, { headers: { cookie } }))
+    expect(res.status).toBe(200)
+    expect(await res.json()).toBeNull()
+    expect(res.headers.get('set-cookie')).toContain('authjs.session-token=;')
+    expect(res.headers.get('set-cookie')).toContain('Max-Age=0')
+  })
+
+  it('requires fresh sign-in for legacy cookies without a sign-in timestamp', async () => {
+    const { GET } = await import('@/app/api/auth/[...nextauth]/route')
+    const jwt = await encode({
+      secret: SECRET,
+      salt: 'authjs.session-token',
+      maxAge: 28_800,
+      token: { email: 'member@example.com' },
+    })
+    const res = await GET(
+      new NextRequest(`${BASE}/api/auth/session`, {
+        headers: { cookie: `authjs.session-token=${jwt}` },
+      }),
+    )
+    expect(res.status).toBe(200)
+    expect(await res.json()).toBeNull()
+    expect(res.headers.get('set-cookie')).toContain('Max-Age=0')
   })
 })

@@ -1,7 +1,9 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { JWT } from 'next-auth/jwt'
 import { createAuthConfig } from '../config'
 
+const SIGNED_IN_AT = Date.parse('2026-11-07T00:00:00.000Z')
 const profile = { hd: 'example.com', email_verified: true, email: ' Member@Example.com ' }
 const user = { id: 'google-subject', email: profile.email, name: 'Member' }
 const account = {
@@ -12,6 +14,13 @@ const account = {
   refresh_token: 'private-refresh-token',
   id_token: 'private-id-token',
 }
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(SIGNED_IN_AT)
+})
+
+afterEach(() => vi.useRealTimers())
 
 describe('Auth.js configuration', () => {
   const config = createAuthConfig('example.com')
@@ -59,32 +68,111 @@ describe('Auth.js configuration', () => {
         name: user.name,
         picture: 'https://example.com/avatar.png',
         access_token: account.access_token,
+        signedInAt: SIGNED_IN_AT - 28_800_000,
       },
       user,
       account,
       profile,
       trigger: 'signIn',
     })
-    expect(token).toEqual({ email: 'member@example.com' })
+    expect(token).toEqual({ email: 'member@example.com', signedInAt: SIGNED_IN_AT })
   })
 
   it('keeps the trusted email on client-triggered updates', async () => {
+    vi.setSystemTime(SIGNED_IN_AT + 14_400_000)
     const token = await config.callbacks!.jwt!({
-      token: { email: 'member@example.com', iat: 100, exp: 200, jti: 'jwt-id' },
+      token: {
+        email: 'member@example.com',
+        signedInAt: SIGNED_IN_AT,
+        iat: 100,
+        exp: 200,
+        jti: 'jwt-id',
+      },
       user,
       trigger: 'update',
       session: {
         email: 'attacker@foreign.example',
+        signedInAt: Date.now(),
         user: { email: 'attacker@foreign.example', personId: 'fake' },
       },
     })
-    expect(token).toEqual({ email: 'member@example.com' })
+    expect(token).toEqual({ email: 'member@example.com', signedInAt: SIGNED_IN_AT })
+  })
+
+  it('records server time on the initial sign-up callback', async () => {
+    const token = await config.callbacks!.jwt!({
+      token: { email: profile.email, signedInAt: SIGNED_IN_AT - 1_000 },
+      user,
+      account,
+      profile,
+      trigger: 'signUp',
+    })
+    expect(token).toEqual({ email: 'member@example.com', signedInAt: SIGNED_IN_AT })
+  })
+
+  it.each([
+    [0, true],
+    [28_799_999, true],
+    [28_800_000, false],
+    [28_800_001, false],
+  ])('enforces the absolute deadline at age %i milliseconds', async (age, valid) => {
+    vi.setSystemTime(SIGNED_IN_AT + age)
+    const token = await config.callbacks!.jwt!({
+      token: { email: 'member@example.com', signedInAt: SIGNED_IN_AT },
+      user,
+    })
+    expect(token).toEqual(valid ? { email: 'member@example.com', signedInAt: SIGNED_IN_AT } : null)
+  })
+
+  it('preserves the original sign-in time across repeated session reads', async () => {
+    let token: JWT = { email: 'member@example.com', signedInAt: SIGNED_IN_AT }
+    for (const elapsed of [3_600_000, 14_400_000, 25_200_000]) {
+      vi.setSystemTime(SIGNED_IN_AT + elapsed)
+      const refreshed = await config.callbacks!.jwt!({ token, user })
+      expect(refreshed).toEqual({ email: 'member@example.com', signedInAt: SIGNED_IN_AT })
+      token = refreshed!
+    }
+    vi.setSystemTime(SIGNED_IN_AT + 28_800_000)
+    expect(await config.callbacks!.jwt!({ token, user })).toBeNull()
+  })
+
+  it('does not revive an expired session through a client update', async () => {
+    vi.setSystemTime(SIGNED_IN_AT + 28_800_000)
+    expect(
+      await config.callbacks!.jwt!({
+        token: { email: 'member@example.com', signedInAt: SIGNED_IN_AT },
+        user,
+        trigger: 'update',
+        session: { signedInAt: Date.now(), user: { email: 'member@example.com' } },
+      }),
+    ).toBeNull()
+  })
+
+  it.each([
+    ['missing', undefined],
+    ['null', null],
+    ['string', String(SIGNED_IN_AT)],
+    ['NaN', NaN],
+    ['infinite', Infinity],
+    ['negative', -1],
+    ['fractional', SIGNED_IN_AT + 0.5],
+    ['future', SIGNED_IN_AT + 1],
+    ['unsafe integer', Number.MAX_SAFE_INTEGER + 1],
+  ])('rejects a %s sign-in timestamp', async (_label, signedInAt) => {
+    expect(
+      await config.callbacks!.jwt!({
+        token: { email: 'member@example.com', signedInAt },
+        user,
+      }),
+    ).toBeNull()
   })
 
   it.each([undefined, null, '', '   '])(
     'does not issue a token without a usable trusted email: %j',
     async (email) => {
-      expect(await config.callbacks!.jwt!({ token: { email }, user })).toBeNull()
+      expect(
+        await config.callbacks!.jwt!({ token: { email, signedInAt: SIGNED_IN_AT }, user }),
+      ).toBeNull()
     },
   )
 })

@@ -28,7 +28,8 @@ Before opening a PR, read [Contributing](./contributing.md).
 ## Google sign-in (S1-02)
 
 Auth.js is pinned to `next-auth@5.0.0-beta.32`. It uses the Google provider and
-encrypted, eight-hour JWT cookie sessions without a database adapter. Check
+encrypted JWT cookie sessions with an absolute eight-hour lifetime, without a
+database adapter. Check
 [Auth.js security guidance](https://authjs.dev/security) and dependency advisories
 when updating this beta dependency.
 
@@ -79,6 +80,14 @@ data; no Google API offline access or refresh-token storage is requested.
 - Inspect `/api/auth/session`: S1-02 exposes only `expires` and `user.email`, with
   the email trimmed and lowercased. It must not expose Google tokens, name, or photo.
 - `/api/auth/signout` provides the built-in sign-out flow.
+
+The encrypted JWT includes server-issued `signedInAt` metadata. Session reads and
+client-triggered updates never reset it: sign-in is required again at eight hours,
+even if the session endpoint is polled continuously. Public `expires` reports this
+fixed deadline; `signedInAt` and Google tokens are not exposed in the session.
+Cookies from before this expiry fix lack the timestamp and require fresh sign-in.
+Use `auth()` for server-side authentication; raw JWT decoding bypasses the callback
+that enforces this absolute deadline.
 
 `Person` persistence and the final `personId`/`email` identity contract are S1-03.
 S1-02's email-only sessions are not database-backed voter/admin authorization;
