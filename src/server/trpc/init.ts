@@ -2,6 +2,7 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import type { PrismaClient } from '@/generated/prisma/client'
 import prisma from '@/lib/prisma'
+import { auth } from '@/server/auth'
 
 export type Session = { user: { personId: string; email: string } } | null
 export type Db = PrismaClient
@@ -13,7 +14,7 @@ export type TRPCContext = {
 }
 
 export const createTRPCContext = async (opts: { headers: Headers }): Promise<TRPCContext> => {
-  const session: Session = null // TODO(S1-03): await auth(). Null fails closed.
+  const session: Session = await auth()
   return { headers: opts.headers, session, db: prisma }
 }
 

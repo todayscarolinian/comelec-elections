@@ -1,5 +1,9 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
+vi.mock('@/server/storage', () => ({ getSupabaseAdmin: vi.fn() }))
+
 import { GET, POST } from '@/app/api/trpc/[trpc]/route'
 
 const BASE = 'http://localhost:3000/api/trpc'

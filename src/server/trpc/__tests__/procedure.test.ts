@@ -3,6 +3,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/prisma', () => ({ default: {} }))
+vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
 
 import {
   adminProcedure,
