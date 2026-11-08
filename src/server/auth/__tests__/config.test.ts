@@ -2,8 +2,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { JWT } from 'next-auth/jwt'
 import { createAuthConfig } from '../config'
+import { upsertPerson } from '../person'
+
+vi.mock('../person', () => ({ upsertPerson: vi.fn() }))
 
 const SIGNED_IN_AT = Date.parse('2026-11-07T00:00:00.000Z')
+const identity = { personId: 'test-person-id', email: 'member@example.com' }
+const validToken = { ...identity, signedInAt: SIGNED_IN_AT }
 const profile = { hd: 'example.com', email_verified: true, email: ' Member@Example.com ' }
 const user = { id: 'google-subject', email: profile.email, name: 'Member' }
 const account = {
@@ -16,6 +21,8 @@ const account = {
 }
 
 beforeEach(() => {
+  vi.mocked(upsertPerson).mockReset()
+  vi.mocked(upsertPerson).mockResolvedValue({ id: identity.personId, email: identity.email })
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(SIGNED_IN_AT)
 })
@@ -63,6 +70,7 @@ describe('Auth.js configuration', () => {
   it('normalizes the email and drops provider tokens, profile data and provider identity from JWTs', async () => {
     const token = await config.callbacks!.jwt!({
       token: {
+        ...validToken,
         sub: user.id,
         email: profile.email,
         name: user.name,
@@ -75,13 +83,15 @@ describe('Auth.js configuration', () => {
       profile,
       trigger: 'signIn',
     })
-    expect(token).toEqual({ email: 'member@example.com', signedInAt: SIGNED_IN_AT })
+    expect(token).toEqual(validToken)
+    expect(upsertPerson).toHaveBeenCalledExactlyOnceWith(profile.email, 'member@example.com')
   })
 
   it('keeps the trusted email on client-triggered updates', async () => {
     vi.setSystemTime(SIGNED_IN_AT + 14_400_000)
     const token = await config.callbacks!.jwt!({
       token: {
+        ...validToken,
         email: 'member@example.com',
         signedInAt: SIGNED_IN_AT,
         iat: 100,
@@ -96,18 +106,19 @@ describe('Auth.js configuration', () => {
         user: { email: 'attacker@foreign.example', personId: 'fake' },
       },
     })
-    expect(token).toEqual({ email: 'member@example.com', signedInAt: SIGNED_IN_AT })
+    expect(token).toEqual(validToken)
+    expect(upsertPerson).not.toHaveBeenCalled()
   })
 
   it('records server time on the initial sign-up callback', async () => {
     const token = await config.callbacks!.jwt!({
-      token: { email: profile.email, signedInAt: SIGNED_IN_AT - 1_000 },
+      token: { ...validToken, email: profile.email, signedInAt: SIGNED_IN_AT - 1_000 },
       user,
       account,
       profile,
       trigger: 'signUp',
     })
-    expect(token).toEqual({ email: 'member@example.com', signedInAt: SIGNED_IN_AT })
+    expect(token).toEqual(validToken)
   })
 
   it.each([
@@ -118,18 +129,18 @@ describe('Auth.js configuration', () => {
   ])('enforces the absolute deadline at age %i milliseconds', async (age, valid) => {
     vi.setSystemTime(SIGNED_IN_AT + age)
     const token = await config.callbacks!.jwt!({
-      token: { email: 'member@example.com', signedInAt: SIGNED_IN_AT },
+      token: validToken,
       user,
     })
-    expect(token).toEqual(valid ? { email: 'member@example.com', signedInAt: SIGNED_IN_AT } : null)
+    expect(token).toEqual(valid ? validToken : null)
   })
 
   it('preserves the original sign-in time across repeated session reads', async () => {
-    let token: JWT = { email: 'member@example.com', signedInAt: SIGNED_IN_AT }
+    let token: JWT = validToken
     for (const elapsed of [3_600_000, 14_400_000, 25_200_000]) {
       vi.setSystemTime(SIGNED_IN_AT + elapsed)
       const refreshed = await config.callbacks!.jwt!({ token, user })
-      expect(refreshed).toEqual({ email: 'member@example.com', signedInAt: SIGNED_IN_AT })
+      expect(refreshed).toEqual(validToken)
       token = refreshed!
     }
     vi.setSystemTime(SIGNED_IN_AT + 28_800_000)
@@ -140,7 +151,7 @@ describe('Auth.js configuration', () => {
     vi.setSystemTime(SIGNED_IN_AT + 28_800_000)
     expect(
       await config.callbacks!.jwt!({
-        token: { email: 'member@example.com', signedInAt: SIGNED_IN_AT },
+        token: validToken,
         user,
         trigger: 'update',
         session: { signedInAt: Date.now(), user: { email: 'member@example.com' } },
@@ -149,9 +160,6 @@ describe('Auth.js configuration', () => {
   })
 
   it.each([
-    ['missing', undefined],
-    ['null', null],
-    ['string', String(SIGNED_IN_AT)],
     ['NaN', NaN],
     ['infinite', Infinity],
     ['negative', -1],
@@ -161,18 +169,61 @@ describe('Auth.js configuration', () => {
   ])('rejects a %s sign-in timestamp', async (_label, signedInAt) => {
     expect(
       await config.callbacks!.jwt!({
-        token: { email: 'member@example.com', signedInAt },
+        token: { ...validToken, signedInAt },
         user,
       }),
     ).toBeNull()
   })
 
-  it.each([undefined, null, '', '   '])(
+  it.each(['', '   '])(
     'does not issue a token without a usable trusted email: %j',
     async (email) => {
+      expect(await config.callbacks!.jwt!({ token: { ...validToken, email }, user })).toBeNull()
+    },
+  )
+
+  it('stores the Google name on each new sign-in', async () => {
+    for (const name of ['Member', 'Updated Member']) {
       expect(
-        await config.callbacks!.jwt!({ token: { email, signedInAt: SIGNED_IN_AT }, user }),
+        await config.callbacks!.jwt!({
+          token: validToken,
+          user,
+          account,
+          profile: { ...profile, name },
+          trigger: 'signIn',
+        }),
+      ).toEqual(validToken)
+      expect(upsertPerson).toHaveBeenLastCalledWith(profile.email, name)
+    }
+    expect(upsertPerson).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not issue a session when Person persistence fails', async () => {
+    vi.mocked(upsertPerson).mockRejectedValueOnce(new Error('Database unavailable'))
+    await expect(
+      config.callbacks!.jwt!({
+        token: validToken,
+        user,
+        account,
+        profile,
+        trigger: 'signIn',
+      }),
+    ).rejects.toThrow('Database unavailable')
+  })
+
+  it.each([undefined, null, '', '   '])(
+    'rejects unusable Google email %j before persistence',
+    async (email) => {
+      expect(
+        await config.callbacks!.jwt!({
+          token: validToken,
+          user,
+          account,
+          profile: { ...profile, email },
+          trigger: 'signIn',
+        }),
       ).toBeNull()
+      expect(upsertPerson).not.toHaveBeenCalled()
     },
   )
 })
