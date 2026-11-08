@@ -11,6 +11,16 @@ const identity = { personId: 'test-person-id', email: 'member@example.com' }
 const validToken = { ...identity, signedInAt: SIGNED_IN_AT }
 const profile = { hd: 'example.com', email_verified: true, email: ' Member@Example.com ' }
 const user = { id: 'google-subject', email: profile.email, name: 'Member' }
+const googleUser = (): { id: string; email: string; name: string; personId?: string } => ({
+  ...user,
+})
+const storedPerson = { id: 'db-person-id', email: 'member@example.com' }
+const signedInUser = { ...user, personId: storedPerson.id, email: storedPerson.email }
+const issuedToken = {
+  personId: storedPerson.id,
+  email: storedPerson.email,
+  signedInAt: SIGNED_IN_AT,
+}
 const account = {
   provider: 'google',
   type: 'oidc' as const,
@@ -22,7 +32,7 @@ const account = {
 
 beforeEach(() => {
   vi.mocked(upsertPerson).mockReset()
-  vi.mocked(upsertPerson).mockResolvedValue({ id: identity.personId, email: identity.email })
+  vi.mocked(upsertPerson).mockResolvedValue(storedPerson)
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(SIGNED_IN_AT)
 })
@@ -38,13 +48,20 @@ describe('Auth.js configuration', () => {
     expect(config.pages?.error).toBe('/auth/error')
   })
 
-  it('accepts a verified member through the actual signIn callback', async () => {
-    await expect(config.callbacks!.signIn!({ user, account, profile })).resolves.toBe(true)
+  it('accepts a verified member and attaches the stored Person to the user', async () => {
+    const signingIn = googleUser()
+    await expect(config.callbacks!.signIn!({ user: signingIn, account, profile })).resolves.toBe(
+      true,
+    )
+    expect(upsertPerson).toHaveBeenCalledExactlyOnceWith(profile.email, 'member@example.com')
+    expect(signingIn).toMatchObject({ personId: storedPerson.id, email: storedPerson.email })
   })
 
   it('uses the normalized configured domain in the signIn callback', async () => {
     const normalizedConfig = createAuthConfig(' ExAmPlE.CoM ')
-    expect(await normalizedConfig.callbacks!.signIn!({ user, account, profile })).toBe(true)
+    expect(
+      await normalizedConfig.callbacks!.signIn!({ user: googleUser(), account, profile }),
+    ).toBe(true)
   })
 
   it.each([
@@ -53,21 +70,66 @@ describe('Auth.js configuration', () => {
     { ...profile, hd: 'foreign.example' },
     { ...profile, email_verified: false },
   ])('rejects invalid claims through signIn: %j', async (invalidProfile) => {
-    expect(await config.callbacks!.signIn!({ user, account, profile: invalidProfile })).toBe(false)
+    expect(
+      await config.callbacks!.signIn!({ user: googleUser(), account, profile: invalidProfile }),
+    ).toBe(false)
+    expect(upsertPerson).not.toHaveBeenCalled()
   })
 
   it('fails closed without a configured domain', async () => {
     const missingDomain = createAuthConfig(undefined)
     expect(
       await missingDomain.callbacks!.signIn!({
-        user,
+        user: googleUser(),
         account,
         profile: { ...profile, hd: undefined },
       }),
     ).toBe(false)
   })
 
-  it('normalizes the email and drops provider tokens, profile data and provider identity from JWTs', async () => {
+  it('stores the Google name on each new sign-in', async () => {
+    for (const name of ['Member', 'Updated Member']) {
+      expect(
+        await config.callbacks!.signIn!({
+          user: googleUser(),
+          account,
+          profile: { ...profile, name },
+        }),
+      ).toBe(true)
+      expect(upsertPerson).toHaveBeenLastCalledWith(profile.email, name)
+    }
+    expect(upsertPerson).toHaveBeenCalledTimes(2)
+  })
+
+  it('redirects to a retryable error when Person persistence fails', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const failure = new Error('Database unavailable')
+    vi.mocked(upsertPerson).mockRejectedValueOnce(failure)
+    const signingIn = googleUser()
+
+    expect(await config.callbacks!.signIn!({ user: signingIn, account, profile })).toBe(
+      '/auth/error?error=SignInUnavailable',
+    )
+    expect(signingIn.personId).toBeUndefined()
+    expect(consoleError).toHaveBeenCalledWith('Failed to save Person during sign-in', failure)
+    consoleError.mockRestore()
+  })
+
+  it.each([undefined, null, '', '   '])(
+    'rejects unusable Google email %j before persistence',
+    async (email) => {
+      expect(
+        await config.callbacks!.signIn!({
+          user: googleUser(),
+          account,
+          profile: { ...profile, email },
+        }),
+      ).toBe(false)
+      expect(upsertPerson).not.toHaveBeenCalled()
+    },
+  )
+
+  it('issues the stored Person and drops provider tokens, profile data and provider identity from JWTs', async () => {
     const token = await config.callbacks!.jwt!({
       token: {
         ...validToken,
@@ -78,13 +140,13 @@ describe('Auth.js configuration', () => {
         access_token: account.access_token,
         signedInAt: SIGNED_IN_AT - 28_800_000,
       },
-      user,
+      user: signedInUser,
       account,
       profile,
       trigger: 'signIn',
     })
-    expect(token).toEqual(validToken)
-    expect(upsertPerson).toHaveBeenCalledExactlyOnceWith(profile.email, 'member@example.com')
+    expect(token).toEqual(issuedToken)
+    expect(upsertPerson).not.toHaveBeenCalled()
   })
 
   it('keeps the trusted email on client-triggered updates', async () => {
@@ -113,12 +175,12 @@ describe('Auth.js configuration', () => {
   it('records server time on the initial sign-up callback', async () => {
     const token = await config.callbacks!.jwt!({
       token: { ...validToken, email: profile.email, signedInAt: SIGNED_IN_AT - 1_000 },
-      user,
+      user: signedInUser,
       account,
       profile,
       trigger: 'signUp',
     })
-    expect(token).toEqual(validToken)
+    expect(token).toEqual(issuedToken)
   })
 
   it.each([
@@ -182,48 +244,19 @@ describe('Auth.js configuration', () => {
     },
   )
 
-  it('stores the Google name on each new sign-in', async () => {
-    for (const name of ['Member', 'Updated Member']) {
-      expect(
-        await config.callbacks!.jwt!({
-          token: validToken,
-          user,
-          account,
-          profile: { ...profile, name },
-          trigger: 'signIn',
-        }),
-      ).toEqual(validToken)
-      expect(upsertPerson).toHaveBeenLastCalledWith(profile.email, name)
-    }
-    expect(upsertPerson).toHaveBeenCalledTimes(2)
-  })
-
-  it('does not issue a session when Person persistence fails', async () => {
-    vi.mocked(upsertPerson).mockRejectedValueOnce(new Error('Database unavailable'))
-    await expect(
-      config.callbacks!.jwt!({
+  it.each([
+    ['without a stored Person', user],
+    ['without an email', { ...signedInUser, email: undefined }],
+    ['without a user', undefined],
+  ])('does not issue a token on sign-in %s', async (_label, signInUser) => {
+    expect(
+      await config.callbacks!.jwt!({
         token: validToken,
-        user,
+        user: signInUser as typeof user,
         account,
         profile,
         trigger: 'signIn',
       }),
-    ).rejects.toThrow('Database unavailable')
+    ).toBeNull()
   })
-
-  it.each([undefined, null, '', '   '])(
-    'rejects unusable Google email %j before persistence',
-    async (email) => {
-      expect(
-        await config.callbacks!.jwt!({
-          token: validToken,
-          user,
-          account,
-          profile: { ...profile, email },
-          trigger: 'signIn',
-        }),
-      ).toBeNull()
-      expect(upsertPerson).not.toHaveBeenCalled()
-    },
-  )
 })

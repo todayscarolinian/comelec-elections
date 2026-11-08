@@ -4,6 +4,7 @@ import { isAllowedGoogleProfile, normalizeEmail, normalizeHostedDomain } from '.
 import { upsertPerson } from './person'
 
 const SESSION_MAX_AGE = 8 * 60 * 60
+const SIGN_IN_UNAVAILABLE_URL = '/auth/error?error=SignInUnavailable'
 
 export function createAuthConfig(allowedDomain: string | undefined): NextAuthConfig {
   const domain = normalizeHostedDomain(allowedDomain)
@@ -21,24 +22,33 @@ export function createAuthConfig(allowedDomain: string | undefined): NextAuthCon
     session: { strategy: 'jwt', maxAge: SESSION_MAX_AGE },
     pages: { error: '/auth/error' },
     callbacks: {
-      async signIn({ profile }) {
-        return isAllowedGoogleProfile(profile, domain)
+      async signIn({ user, profile }) {
+        if (!isAllowedGoogleProfile(profile, domain)) return false
+
+        const email = profile?.email
+        if (typeof email !== 'string' || !email.trim()) return false
+
+        try {
+          const person = await upsertPerson(email, profile?.name ?? normalizeEmail(email))
+          user.personId = person.id
+          user.email = person.email
+        } catch (error) {
+          console.error('Failed to save Person during sign-in', error)
+          return SIGN_IN_UNAVAILABLE_URL
+        }
+
+        return true
       },
-      async jwt({ token, profile, trigger }) {
+      async jwt({ token, user, trigger }) {
         const initialSignIn = trigger === 'signIn' || trigger === 'signUp'
         const now = Date.now()
 
         if (initialSignIn) {
-          const email = profile?.email
-          if (typeof email !== 'string' || !email.trim()) return null
+          const personId = user?.personId
+          const email = user?.email
+          if (typeof personId !== 'string' || typeof email !== 'string') return null
 
-          const person = await upsertPerson(email, profile?.name ?? normalizeEmail(email))
-
-          return {
-            personId: person.id,
-            email: person.email,
-            signedInAt: now,
-          }
+          return { personId, email, signedInAt: now }
         }
 
         const { personId, email, signedInAt } = token

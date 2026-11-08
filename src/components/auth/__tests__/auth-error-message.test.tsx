@@ -41,7 +41,7 @@ describe('authentication error message', () => {
     ).toBeTruthy()
   })
 
-  it.each(['OAuthCallbackError', '<script>private-error</script>', undefined])(
+  it.each(['OAuthCallbackError', 'SignInUnavailable', '<script>private-error</script>', undefined])(
     'shows a safe generic message for other failures: %j',
     (error) => {
       render(<AuthErrorMessage error={error} allowedDomain="example.com" />)
