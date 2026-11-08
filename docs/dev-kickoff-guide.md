@@ -32,11 +32,10 @@ If anyone read the earlier design, walk through these. Each is recorded in an AD
 | Before | Now | Why |
 |---|---|---|
 | Anonymous, unlinkable Ballots (ADR 0001) | Ballots stored under the Voter's name; Admins can view them (ADR 0002) | The commission must audit individual Ballots with names |
-| Any domain account could vote | Only people with an approved Registration | Eligibility (study load, year level) is checked before voting |
+| Any domain account could vote | Only people with an approved Registration | Eligibility (Study Load) is checked before voting |
 | Public live per-Candidate tally | Public Turnout only; Results released by Admins (ADR 0005) | Standings must not be revealed during voting |
-| Same Ballot for everyone | Batch Rep is a Year-Level Question, shown only to that Year Level | Voters only pick their own batch rep |
 
-Use the [Glossary](./GLOSSARY.md) terms in code and conversation: **Registration, Applicant, Voter, Ballot, Turnout, Results, Year-Level Question**. Not "user", "vote", "tally".
+Use the [Glossary](./GLOSSARY.md) terms in code and conversation: **Registration, Applicant, Voter, Ballot, Turnout, Results, Party, Independent**. Not "user", "vote", "tally".
 
 ## 3. Rules we can't break
 
@@ -60,7 +59,7 @@ Open the [Sprint Plan](./sprint-plan.md) and go sprint by sprint.
 |---|---|---|
 | 1. Foundation | Nov 4–7 | "Sign-in, schema, seed. Everything else builds on this." |
 | 2. Registration | Nov 8–14 | "**This is the hard deadline.** Registration must be live in production on Nov 15." |
-| 3. Voting | Nov 8–16 | "Built in parallel with Registration by different owners. The core: Ballot, Year-Level filtering, one-Ballot guarantee, Turnout." |
+| 3. Voting | Nov 8–16 | "Built in parallel with Registration by different owners. The core: Ballot, one-Ballot guarantee, Turnout." |
 | 4. Results and launch | Nov 17–19 | "Results, audit, hardening, and a dry run with the commission." |
 
 Points to stress:
@@ -107,7 +106,7 @@ Fill in during the meeting. Splitting along these lines keeps people from blocki
 Still waiting on the client (see the Sprint Plan for dates):
 - Google Workspace domain (**needed by Nov 5**)
 - First Admin's email (**Nov 6**)
-- List of Year Levels (**Nov 10**)
+- List of Year Levels, information only (**Nov 10**)
 - Registration Period closing date
 - Final Questions and Candidate profiles (**Nov 13**)
 - Disclosure wording approval

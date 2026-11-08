@@ -6,7 +6,7 @@
 | **Last updated** | 2026-11-06 |
 | **Related** | [Product Spec](./product-spec.md) · [Glossary](./GLOSSARY.md) · [ADR 0002: Ballots Linked to Voters](./adr/0002-ballots-linked-to-voters.md) (supersedes [ADR 0001](./adr/0001-unlinkable-ballots.md)) · [ADR 0003: Hardcoded Election Definition](./adr/0003-hardcoded-election-definition.md) · [ADR 0004: Own Person Table](./adr/0004-own-person-table-without-auth-adapter.md) · [ADR 0005: Turnout Public, Results Released](./adr/0005-turnout-public-results-released.md) · [ADR 0006: Advisory OCR (proposed)](./adr/0006-advisory-ocr-on-study-loads.md) · [ADR 0007: tRPC API Layer](./adr/0007-trpc-api-layer.md) |
 
-This document describes *how* we build what the [Product Spec](./product-spec.md) describes. Domain terms (Election, Question, Year-Level Question, Candidate, Selection Limit, Registration, Registration Period, Applicant, Study Load, Year Level, Voter, Ballot, Abstention, Turnout, Results, Admin) are used exactly as defined in the [Glossary](./GLOSSARY.md).
+This document describes *how* we build what the [Product Spec](./product-spec.md) describes. Domain terms (Election, Question, Candidate, Party, Independent, Selection Limit, Registration, Registration Period, Applicant, Study Load, Year Level, Voter, Ballot, Abstention, Turnout, Results, Admin) are used exactly as defined in the [Glossary](./GLOSSARY.md).
 
 ## 1. Architecture overview
 
@@ -58,42 +58,45 @@ flowchart TB
 
 ## 2. Election definition (hardcoded)
 
-There is exactly one Election. Its Questions, Candidates and Year Levels live in a typed config file in the repo, not the database.
+There is exactly one Election. Its Parties, Questions and Candidates live in a typed config file in the repo, not the database. Every Voter sees the same Questions.
 
 ```ts
 // src/election.ts
-export const YEAR_LEVELS = ["1", "2", "3", "4"] as const; // pending client confirmation
-export type YearLevel = (typeof YEAR_LEVELS)[number];
+export const PARTIES = ["STAND", "Tingog", "SPP"] as const;
+export type PartyId = (typeof PARTIES)[number];
 
 export type CandidateDef = {
-  id: string;        // stable, never changes once the Election has opened
-  name: string;
-  photo: string;     // path under /public/candidates
-  bio: string;
+  readonly id: string;      // stable, never changes once the Election has opened
+  readonly name: string;
+  readonly party?: PartyId; // omitted = Independent
+  readonly photo: string;   // path under /public/candidates
+  readonly bio: string;
 };
 
 export type QuestionDef = {
-  id: string;        // stable, never changes once the Election has opened
-  title: string;
-  selectionLimit: number;   // 1 = single choice
-  yearLevel?: YearLevel;    // set = Year-Level Question, shown only to Voters of that Year Level
-  candidates: CandidateDef[]; // display order = array order
+  readonly id: string;      // stable, never changes once the Election has opened
+  readonly title: string;
+  readonly selectionLimit: number;      // 1 = single choice
+  readonly candidates: CandidateDef[];  // display order = array order
+};
+
+export type ElectionDef = {
+  readonly id: string;
+  readonly title: string;
+  readonly questions: readonly QuestionDef[];
 };
 
 export const ELECTION = {
   id: "main",
   title: "…",
-  questions: [/* … */] satisfies QuestionDef[],
-} as const;
-
-export function questionsFor(yearLevel: YearLevel): QuestionDef[] {
-  return ELECTION.questions.filter(q => q.yearLevel === undefined || q.yearLevel === yearLevel);
-}
+  questions: [/* … */],
+} as const satisfies ElectionDef;
 ```
 
 **Rules:**
 - Question and Candidate `id`s are stored in Ballot rows. **Never rename or remove an id after the Election has first opened**, or existing Ballots become orphaned.
-- A unit test asserts that ids are unique, every `selectionLimit` is ≥ 1 and ≤ the number of Candidates, every `yearLevel` is in `YEAR_LEVELS`, and every photo exists.
+- A Candidate's `party` must be one of `PARTIES`, or omitted for an Independent. The UI shows "Independent" when it's omitted.
+- A unit test asserts that ids are unique, every `selectionLimit` is ≥ 1 and ≤ the number of Candidates, and every photo exists. `party` is checked by the type.
 - Display order on the Ballot and in Results is the config array order.
 
 ## 3. Data model
@@ -189,7 +192,7 @@ model AuditLog {
 
 **Design notes**
 - `Ballot.personId @unique` replaces the old `Participation` table as the one-Ballot-per-Voter guard.
-- `Ballot.yearLevel` is a snapshot, so the audit shows which Year-Level Question the Voter actually saw, even if their Registration is edited later.
+- **Year Level is information only.** It doesn't affect which Questions a Voter sees. `Registration.yearLevel` is declared by the Applicant and can be corrected by an Admin; `Ballot.yearLevel` is a snapshot at casting, so the audit and export show the Year Level as it was, even if the Registration is edited later.
 - A Person with no Registration is just someone who signed in. Being an Applicant or Voter is derived from `Registration.status`.
 - `AuditLog` is append-only: the app never updates or deletes its rows.
 - **Row Level Security is enabled on every table with no policies.** Prisma connects as the table owner and bypasses it, but Supabase's public REST API (anon key) can read nothing.
@@ -275,7 +278,7 @@ In the sections below, "`protectedProcedure`" and "`adminProcedure`" name the pr
 
 ```
 1. person = ctx.person  (protectedProcedure)
-2. validate: yearLevel ∈ YEAR_LEVELS; studyLoadPath starts with "{personId}/"; object exists in bucket
+2. validate: yearLevel ∈ YEAR_LEVELS (zod enum in v1/registration/schema.ts, information only); studyLoadPath starts with "{personId}/"; object exists in bucket
 3. transaction:
      a. registrationStatus must be OPEN (FOR SHARE on ElectionState)
      b. existing = Registration for person
@@ -298,15 +301,15 @@ Old Study Load objects from resubmissions are kept until after the Election (see
 
 ### 6.1 Validation (pure function, unit tested)
 
-Given the Voter's approved Year Level and a submitted Ballot `{ [questionId]: { abstain: true } | { candidateIds: string[] } }`:
+Given a submitted Ballot `{ [questionId]: { abstain: true } | { candidateIds: string[] } }`:
 
-1. The keys are exactly the ids of `questionsFor(yearLevel)`. A missing Question, an unknown Question, or another Year Level's Question is rejected.
+1. The keys are exactly the ids of `ELECTION.questions`. A missing Question or an unknown Question is rejected.
 2. For each Question, exactly one of:
    - `abstain: true`, or
    - `1 ≤ candidateIds.length ≤ selectionLimit`, all ids belong to that Question, no duplicates.
 3. `disclosureAccepted === true`.
 
-Validation uses a Zod schema built from `questionsFor(yearLevel)`.
+Validation uses a Zod schema built from `ELECTION.questions`.
 
 ### 6.2 `ballot.cast` procedure (`protectedProcedure`)
 
@@ -319,8 +322,8 @@ Uses `protectedProcedure`, not `voterProcedure`, because the approval check must
         → if not OPEN: throw ElectionClosed
      b. reg = Registration for person
         → if not APPROVED: throw NotApproved
-     c. validated = validateBallot(input, reg.yearLevel) → reject on failure
-     d. INSERT INTO "Ballot" (personId, yearLevel, disclosureAcceptedAt)
+     c. validated = validateBallot(input) → reject on failure
+     d. INSERT INTO "Ballot" (personId, yearLevel = reg.yearLevel snapshot, disclosureAcceptedAt)
         → unique violation on personId: throw AlreadyVoted
      e. INSERT INTO "BallotAnswer" rows (candidateId null for Abstentions)
    })
@@ -393,7 +396,7 @@ It upserts the `Admin` row with `grantedBy = "seed"`, and with `--dry-run` print
 | Non-member signs in | `signIn` enforces `hd` and `email_verified` (§4.1) |
 | Unregistered or rejected person votes | `castBallot` checks `APPROVED` inside the transaction (§6.2) |
 | Double voting | `Ballot.personId @unique` in the same transaction (§6.2) |
-| Wrong Year-Level Question | Server builds the allowed Questions from the approved Year Level; client input can't add others (§6.1) |
+| Ballot with unknown Questions or Candidates | Server validates against `ELECTION.questions`; client input can't add others (§6.1) |
 | Ballots or Study Loads read by non-Admins | `adminProcedure` on every read; private bucket with short-lived signed URLs; RLS on all tables blocks Supabase's public API (§3) |
 | Admin misuse of Ballot access | Every view and export is written to `AuditLog`, which Admins can read (§7.3) |
 | Results leaked before release | No public route returns per-Candidate counts until `resultsReleasedAt` is set (§7.2) |
@@ -435,7 +438,7 @@ app/
   api/trpc/[trpc]/route.ts    # tRPC handler + Origin check on mutations
   api/turnout/route.ts        # Public, cached; outside tRPC (ADR 0007)
 src/
-  election.ts                 # Election definition, YEAR_LEVELS, questionsFor
+  election.ts                 # Election definition: PARTIES, Questions, Candidates
   server/
     auth/
       config.ts               # Auth.js config (§4.2)
@@ -469,11 +472,11 @@ public/candidates/*
 
 | Level | Coverage |
 |---|---|
-| Unit | `validateBallot` (missing Question, another Year Level's Question, over limit, duplicates, cross-Question Candidate, picks plus Abstention, disclosure not accepted); `questionsFor`; election config invariants; email normalisation |
+| Unit | `validateBallot` (missing Question, unknown Question, over limit, duplicates, cross-Question Candidate, picks plus Abstention, disclosure not accepted); election config invariants; email normalisation |
 | Integration (test Postgres) | Registration: submit only while open; resubmit after reject; approved can't resubmit; path ownership check. Review: non-Admin rejected; approve with corrected Year Level; reject requires reason; AuditLog written. `castBallot`: success; pending/rejected/no Registration → rejected; second cast → AlreadyVoted; **N concurrent casts by one Voter → exactly one Ballot**; cast while closed → rejected. Results: hidden publicly until released; release only when closed; no reopen after release. Audit: every `listBallots`/`exportBallots` writes AuditLog. Admin: revoked Admin rejected on next action; last-Admin revoke rejected |
 | Auth | `signIn` rejects missing/foreign `hd` and `email_verified=false`; session contains only `personId`, `email` and standard claims |
 | Procedure permissions | Through `createCaller` with fake contexts: every `adminProcedure` rejects signed-out, non-Admin and revoked-Admin callers; `voterProcedure` rejects pending, rejected and unregistered callers; mutations from a foreign `Origin` are rejected |
-| Manual / E2E | Full flow with Workspace test accounts in two Year Levels, an Admin, and one consumer account; dry-run election before Nov 20 |
+| Manual / E2E | Full flow with Workspace test accounts as Voters, an Admin, and one consumer account; dry-run election before Nov 20 |
 
 ## 13. Milestones
 
@@ -483,7 +486,7 @@ Registration opens **Nov 15** and the Election is **Nov 20**. After the foundati
 |---|---|---|
 | 1 | **Auth and data model**: Auth.js + Google with domain enforcement, `Person` upsert, Prisma schema and migrations (run manually), RLS, seed-admin script | Nov 7 |
 | 2 | **Registration**: Study Load upload, register/resubmit/status page, Admin review queue, Registration window toggle, Admin grant/revoke, AuditLog | **Nov 15** |
-| 3 | **Voting** (parallel with 2): Election config with real Candidates, disclosure, Ballot UI with Year-Level filtering, `castBallot`, Election window toggle, Turnout | Nov 16 |
+| 3 | **Voting** (parallel with 2): Election config with real Candidates, disclosure, Ballot UI with Party labels, `castBallot`, Election window toggle, Turnout | Nov 16 |
 | 4 | **Results and audit**: Admin Results view, release, public Results page, Ballot audit list and CSV export | Nov 17 |
 | 5 | **Hardening and dry run**: concurrency tests, load sanity check, logging review, end-to-end dry run with the commission | Nov 19 |
 

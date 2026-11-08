@@ -12,13 +12,17 @@ _Avoid_: Poll, vote, contest
 A single item on the Election that Voters answer, such as one office.
 _Avoid_: Race, position, item
 
-**Year-Level Question**:
-A Question shown only to Voters of one Year Level, such as a Batch Representative.
-_Avoid_: Restricted question, batch question
-
 **Candidate**:
-A person who can be picked on a Question, presented with a profile.
+A person who can be picked on a Question, presented with a profile; a Candidate belongs to at most one Party.
 _Avoid_: Option, choice, nominee
+
+**Party**:
+A political party that Candidates can run under; a Candidate with no Party is Independent.
+_Avoid_: Slate, group, alliance
+
+**Independent**:
+A Candidate who runs under no Party.
+_Avoid_: Unaffiliated, no party
 
 **Selection Limit**:
 The maximum number of Candidates a Voter may pick on a Question; a limit of one makes it a single-choice Question.
@@ -39,7 +43,7 @@ A screenshot of the person's current enrollment, submitted as proof that they ar
 _Avoid_: COR, enrollment proof, ID
 
 **Year Level**:
-The year a person declares they are in, which decides which Year-Level Questions appear on their Ballot.
+The year a person declares they are in, recorded on their Registration and Ballot for information only; it does not change which Questions appear on their Ballot.
 _Avoid_: Batch, year, grade
 
 **Registration Period**:

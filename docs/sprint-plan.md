@@ -29,11 +29,11 @@ Blocking items we need from the client, and the latest date each can arrive with
 |---|---|---|
 | Google Workspace domain | Nov 5 | Sprint 1 sign-in |
 | First Admin's email | Nov 8 | Sprint 2 first Admin setup (2.1) |
-| Whether there are batch reps, and if so the list of Year Levels | Nov 10 | Sprint 2 registration form |
+| List of Year Levels (information only; there are no batch reps) | Nov 10 | Sprint 2 registration form |
 | Agreement on where Study Loads are processed for OCR (especially a third-party API) | Nov 10 | Sprint 2 OCR (2.10) |
 | Registration Period closing date | Nov 12 | Registration announcement |
 | Disclosure wording approval (Product Spec §7) | Nov 12 | Sprint 3 Ballot screen |
-| Final Questions, Year-Level Questions, Selection Limits and Candidate profiles | **Nov 13** | Sprint 3 Election config |
+| Final Questions, Selection Limits and Candidate profiles (including Party) | **Nov 13** | Sprint 3 Election config |
 | Developer database access waiver | Before production data exists (Nov 15) | Developer access to production |
 | Data retention decision (Study Loads, Ballots) | Nov 19 | Post-election cleanup |
 | Expected number of Voters | Nov 14 | Sprint 4 load check |
@@ -50,7 +50,7 @@ Blocking items we need from the client, and the latest date each can arrive with
 | S1-02 | **Google sign-in with tests.** Auth.js; `signIn` checks `hd` and `email_verified`; FR-1.3 rejection page. Unit tests: missing or foreign `hd`, `email_verified=false`, email normalisation, session shape | S1-01 (conventions) | M | FR-1.1–1.3, §4.1, §12 |
 | S1-03 | **Create the Person on sign-in and keep the session small.** `upsertPerson`; session and JWT carry only `personId` and `email` (module augmentation, no casts); Google tokens are never stored | S1-01, S1-02 | S | FR-1.4, §4.2, ADR 0004 |
 | S1-04 | **Procedure guards.** `protectedProcedure`, `voterProcedure`, `adminProcedure` middleware in `trpc/init.ts`; Registration status and Admin rights read from the database on every call. Permission tests via `createCaller` | S1-03 | S | §4.3, §12, ADR 0007 |
-| S1-05 | **Election config.** `src/election.ts` with placeholder Questions and Candidates; no `YEAR_LEVELS` and no Year-Level Questions (batch reps not confirmed). Tests for unique ids, `1 ≤ selectionLimit ≤ number of Candidates`, and photos existing | S1-01 (conventions) | S | §2, ADR 0003 |
+| S1-05 | **Election config.** `src/election.ts` with placeholder Questions and Candidates; no `YEAR_LEVELS` and no Year-Level Questions (no batch reps). Tests for unique ids, `1 ≤ selectionLimit ≤ number of Candidates`, and photos existing | S1-01 (conventions) | S | §2, ADR 0003 |
 | S1-06 | **UI design for the landing and auth pages.** Landing page (Election overview, Turnout placeholder, sign-in button), sign-in page, "organization accounts only" rejection page, signed-in header with sign-out. Mobile-first | — | S | US-1, US-4 |
 | S1-07 | **`AuditLog` write helper.** `writeAudit({ adminEmail, action, target, detail })` in `trpc/api/v1/audit/services/` and a typed list of actions. Append-only: no update or delete path | S1-01 | XS | §3, ADR 0002 |
 | S1-08 | **Study Load upload.** `registration.createStudyLoadUpload` tRPC procedure (`protectedProcedure`, Registration Period open, signed URL for `{personId}/{uuid}` valid 5 minutes) and a browser upload component that checks type and size. Leave room for the post-upload OCR step (S1-09) | S1-01, S1-04 | M | §5.1 |
@@ -70,8 +70,8 @@ Blocking items we need from the client, and the latest date each can arrive with
 |---|---|---|
 | 2.1 | Set up the first Admin on staging (the seed script is skipped; method to be decided by Nov 8). Blocks 2.4–2.6 | FR-9.3 |
 | 2.2 | `submitRegistration` (create, resubmit after rejection, block when approved or window closed) | FR-2.1–2.6, §5.2 |
-| 2.3 | Register page: design and build; upload (from S1-08), status (pending/approved/rejected with reason). Year Level picker only if batch reps are confirmed | US-2 |
-| 2.4 | Admin review queue: design and build; filters, Study Load preview via signed URL, OCR results if available (2.10), approve (with Year Level correction if batch reps are confirmed), reject with reason | FR-3.1–3.4, §5.3 |
+| 2.3 | Register page: design and build; upload (from S1-08), status (pending/approved/rejected with reason). Year Level picker (information only) | US-2 |
+| 2.4 | Admin review queue: design and build; filters, Study Load preview via signed URL, OCR results if available (2.10), approve (with optional Year Level correction), reject with reason | FR-3.1–3.4, §5.3 |
 | 2.5 | Registration window open/close toggle | §8.1 |
 | 2.6 | Admin grant/revoke with last-Admin guard; Admin list | US-9, §8.2 |
 | 2.7 | Call `writeAudit` (S1-07) in every Admin action | §3, ADR 0002 |
@@ -88,15 +88,15 @@ Blocking items we need from the client, and the latest date each can arrive with
 | # | Task | Ref |
 |---|---|---|
 | 3.1 | Load the real Election config and Candidate photos (from client, due Nov 13) | §2, ADR 0003 |
-| 3.2 | Public Election page with Candidate profiles and open/closed state | US-4 |
-| 3.3 | `validateBallot` with Year-Level filtering and disclosure check, plus unit tests | §6.1 |
+| 3.2 | Public Election page with Candidate profiles (including Party or "Independent") and open/closed state | US-4 |
+| 3.3 | `validateBallot` (same Questions for every Voter) and disclosure check, plus unit tests | §6.1 |
 | 3.4 | `castBallot` transaction (window check, approval check, one Ballot per Voter) | FR-5.1–5.9, §6.2 |
-| 3.5 | Vote page: disclosure, Ballot form, review and confirm, already-voted and not-approved states | US-5, Product Spec §7 |
+| 3.5 | Vote page: disclosure, Ballot form with Party labels, review and confirm, already-voted and not-approved states | US-5, Product Spec §7 |
 | 3.6 | Election window open/close toggle; block reopen after release | FR-8.1–8.4, §8.1 |
 | 3.7 | `GET /api/turnout` (cached 15s) and public Turnout display | US-6, §7.1, ADR 0005 |
 | 3.8 | Integration tests, including **N concurrent casts → exactly one Ballot** | §12 |
 
-**Done when:** on staging, Voters in two Year Levels each see only their own Year-Level Question, cast once, and are blocked on a second attempt; Turnout updates.
+**Done when:** on staging, Voters see every Question with each Candidate's Party (or "Independent"), cast once, and are blocked on a second attempt; Turnout updates.
 
 ## Sprint 4: Results and launch (Nov 17–19)
 

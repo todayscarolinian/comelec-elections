@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | Draft for team review |
-| **Last updated** | 2026-11-04 |
+| **Last updated** | 2026-11-08 |
 | **Election day** | 2026-11-20, 8 AM–5 PM (may be extended) |
 | **Related** | [Software Design Document](./software-design.md) · [Glossary](./GLOSSARY.md) · [ADR 0002: Ballots Linked to Voters](./adr/0002-ballots-linked-to-voters.md) · [Meeting notes](./meeting-discussions.md) |
 
@@ -13,7 +13,7 @@ A web app for running one Election for members of the `example.com` organization
 
 ## 2. Problem and goals
 
-With Google Forms, the Audit Commissioner checks every response by hand in Google Sheets after voting closes (one vote per person, a valid study load, and the right year level for the batch rep they voted for). This takes 3–4 days, invites human error, and gives little protection against tampering.
+With Google Forms, the Audit Commissioner checks every response by hand in Google Sheets after voting closes (one vote per person and a valid study load). This takes 3–4 days, invites human error, and gives little protection against tampering.
 
 The new system must be:
 
@@ -29,7 +29,8 @@ The new system must be:
 - Changing or withdrawing a Ballot after it is cast.
 - Ranked-choice or weighted voting.
 - Paper or any other voting channel. This system is the only way to vote.
-- Automatically verifying a Study Load or Year Level. Admins check them by eye.
+- Automatically verifying a Study Load or Year Level. Admins check them by eye. (Partly superseded by ADR 0006, proposed: OCR assists Admins, who still decide.)
+- Questions shown only to some Voters. Every Voter sees the same Ballot.
 - Secrecy of Ballots from Admins (see ADR 0002).
 
 ## 3. Users and roles
@@ -49,12 +50,12 @@ The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 
 - **Election**: the single voting event. It is either *open* or *closed*.
 - **Question**: one item on the Ballot, such as "President."
-- **Year-Level Question**: a Question shown only to Voters of one Year Level, such as a Batch Representative. All other Questions are shown to everyone.
-- **Candidate**: a person who can be picked on a Question. Each has a name, photo and short bio/platform.
+- **Candidate**: a person who can be picked on a Question. Each has a name, photo, short bio/platform and, optionally, a Party.
+- **Party**: a political party Candidates run under (currently STAND, Tingog and SPP). A Candidate with no Party is **Independent**.
 - **Selection Limit**: the maximum number of Candidates a Voter can pick on a Question.
 - **Registration**: a request to become a Voter, carrying a Study Load and Year Level. It is *pending*, *approved* or *rejected*.
 - **Study Load**: a screenshot of the person's current enrollment.
-- **Year Level**: the year a person declares they are in. It decides which Year-Level Questions they see.
+- **Year Level**: the year a person declares they are in. Recorded for information only; every Voter sees the same Questions.
 - **Abstention**: an explicit "I choose no one" on a Question.
 - **Ballot**: a Voter's complete, final set of answers, recorded under their name.
 - **Turnout**: the public count of Ballots cast.
@@ -74,7 +75,7 @@ The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 
 - **US-2**: As an Applicant, I register during the Registration Period so I can vote on election day.
   - FR-2.1: The Registration Period opens on **2026-11-15** and closes before the Election opens (see §10).
-  - FR-2.2: A Registration requires a Year Level, picked from a fixed list, and a Study Load image upload.
+  - FR-2.2: A Registration requires a Year Level, picked from a fixed list, and a Study Load image upload. The Year Level is for information only and doesn't affect the Ballot.
   - FR-2.3: The Applicant can see their Registration status: pending, approved or rejected.
   - FR-2.4: A rejected Registration shows the reason the Admin gave. The Applicant can fix it and resubmit while the Registration Period is open.
   - FR-2.5: An approved Registration can't be changed by the Voter.
@@ -90,12 +91,13 @@ The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 
 - **US-4**: As anyone, I can see every Question and each Candidate's profile.
   - FR-4.1: Candidates appear in a fixed order (the order in the Election configuration), the same for everyone.
+  - FR-4.3: Each Candidate's profile shows their Party, or "Independent" if they have none.
   - FR-4.2: The page shows whether the Election is open or closed.
 
 ### 5.4 Casting a Ballot
 
 - **US-5**: As a Voter, I fill in my Ballot and submit it once.
-  - FR-5.1: The Ballot shows every Question open to everyone, plus only the Year-Level Questions for the Voter's approved Year Level.
+  - FR-5.1: The Ballot shows every Question, the same for every Voter. Each Candidate is shown with their Party or "Independent".
   - FR-5.2: On each Question, a Voter picks between 1 and the Selection Limit of Candidates, **or** marks an Abstention. They can't do both.
   - FR-5.3: The Voter can't submit until every Question shown is answered or abstained.
   - FR-5.4: Before voting, the Voter sees the disclosure in §7 and must acknowledge it.
@@ -167,7 +169,7 @@ Shown to every Voter before they vote (FR-5.4). Draft wording:
 | Risk | Status |
 |---|---|
 | Admins can see how any Voter voted, including each other | Accepted by the client (ADR 0002). Mitigated by the disclosure in §7 and logging of Ballot access |
-| A Voter declares the wrong Year Level and gets the wrong Year-Level Question | Mitigated by Admin review against the Study Load before approval (FR-3.3) |
+| A Voter declares the wrong Year Level | Low impact, since Year Level is information only. Admins can correct it against the Study Load before approval (FR-3.3) |
 | A Study Load screenshot can be edited or faked | Accepted; same as the current process. Admins review by eye |
 | The developer has database access to Ballots | Accepted under a waiver drafted by the client |
 | A sign-in session stays valid for up to 8 hours and can't be ended remotely | Accepted; it can only ever cast that one person's single Ballot, and Admin revocation still applies immediately |
@@ -179,7 +181,8 @@ Shown to every Voter before they vote (FR-5.4). Draft wording:
 - [ ] Registrations can only be submitted during the Registration Period, and require a Year Level and a Study Load image.
 - [ ] A rejected Applicant sees the reason and can resubmit during the Registration Period.
 - [ ] Only approved Voters can cast a Ballot.
-- [ ] A Voter sees only the Year-Level Questions for their approved Year Level; a Ballot with any other Year-Level Question is rejected.
+- [ ] Every Voter sees the same Questions; a Ballot with an unknown Question or Candidate is rejected.
+- [ ] Each Candidate is shown with their Party, or "Independent" if they have none.
 - [ ] A Voter can't cast a second Ballot, including with simultaneous submissions and after close and reopen.
 - [ ] A Ballot with an unanswered Question, too many picks, or picks plus Abstention on the same Question is rejected.
 - [ ] Ballots can't be cast while the Election is closed, or without acknowledging the disclosure.
@@ -191,8 +194,8 @@ Shown to every Voter before they vote (FR-5.4). Draft wording:
 ## 10. Open items for the client
 
 - When does the Registration Period close? Admins need time to review before Nov 20.
-- The list of Year Levels (1st–4th only, or also 5th year or others).
-- Final list of Questions, which ones are Year-Level Questions, Selection Limits and Candidate profiles (name, photo, bio). Candidate profiles are due from the client.
+- The list of Year Levels (1st–4th only, or also 5th year or others). Information only; there are no batch rep Questions.
+- Final list of Questions, Selection Limits and Candidate profiles (name, photo, bio, Party). Candidate profiles are due from the client.
 - The organization's Google Workspace domain, to replace `example.com`.
 - Who will be the first Admin.
 - Approval of the disclosure wording in §7.
