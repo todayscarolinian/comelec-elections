@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-labelledby="title">
+  <title id="title">Placeholder portrait for Candidate C</title>
+  <rect width="400" height="400" fill="#e5e7eb"/>
+  <circle cx="200" cy="145" r="70" fill="#9ca3af"/>
+  <path d="M80 370c10-90 55-135 120-135s110 45 120 135" fill="#9ca3af"/>
+  <text
+    x="200"
+    y="390"
+    fill="#374151"
+    font-family="sans-serif"
+    font-size="28"
+    text-anchor="middle"
+  >
+    Candidate C
+  </text>
+</svg>
