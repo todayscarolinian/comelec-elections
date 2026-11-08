@@ -90,8 +90,8 @@ Blocking items we need from the client, and the latest date each can arrive with
 | 3.1 | Load the real Election config and Candidate photos (from client, due Nov 13) | §2, ADR 0003 |
 | 3.2 | Public Election page with Candidate profiles (including Party or "Independent") and open/closed state | US-4 |
 | 3.3 | `validateBallot` (same Questions for every Voter) and disclosure check, plus unit tests | §6.1 |
-| 3.4 | `castBallot` transaction (window check, approval check, one Ballot per Voter) | FR-5.1–5.9, §6.2 |
-| 3.5 | Vote page: disclosure, Ballot form with Party labels, review and confirm, already-voted and not-approved states | US-5, Product Spec §7 |
+| 3.4 | `castBallot` transaction (window check, Registration check, Held Ballot acknowledgement, one Ballot per Voter); `submitRegistration` also accepted while the Election is open; `Ballot.heldAcknowledgedAt` migration (run manually) | FR-5.1–5.12, §5.2, §6.2, ADR 0008 |
+| 3.5 | Vote page: disclosure (plus Held Ballot acknowledgement), Ballot form with Party labels, review and confirm, already-voted, held and not-registered states; late Registration from the Vote page | US-5, Product Spec §7, ADR 0008 |
 | 3.6 | Election window open/close toggle; block reopen after release | FR-8.1–8.4, §8.1 |
 | 3.7 | `GET /api/turnout` (cached 15s) and public Turnout display | US-6, §7.1, ADR 0005 |
 | 3.8 | Integration tests, including **N concurrent casts → exactly one Ballot** | §12 |
@@ -104,9 +104,9 @@ Blocking items we need from the client, and the latest date each can arrive with
 
 | # | Task | Ref |
 |---|---|---|
-| 4.1 | Admin Results view (counts, Abstentions), audit-logged | FR-7.1, §7.2 |
-| 4.2 | Release Results (closed only, one-way) and public Results page | FR-7.4–7.5, §7.2, ADR 0005 |
-| 4.3 | Ballot audit list and CSV export, audit-logged; audit log viewer | FR-7.2–7.3, §7.3 |
+| 4.1 | Admin Results view (counts, Abstentions, Held Ballots left out), counting only approved Registrations, audit-logged | FR-7.1, §7.2, ADR 0008 |
+| 4.2 | Release Results (closed only, no pending Held Ballots, one-way) and public Results page | FR-7.4–7.5, §7.2, ADR 0005, ADR 0008 |
+| 4.3 | Ballot audit list and CSV export with Counted/Held status, audit-logged; audit log viewer | FR-7.2–7.3, §7.3 |
 | 4.4 | Hardening: logging review (no Ballot payloads), RLS check via Supabase's public API, permission tests on every Admin action | §9 |
 | 4.5 | Load sanity check at the expected Voter count | §14 |
 | 4.6 | **Dry run with the commission (Nov 18 or 19):** open, vote with test accounts, close, audit, release, then reset staging | — |
@@ -120,9 +120,9 @@ Blocking items we need from the client, and the latest date each can arrive with
 |---|---|---|
 | 7:30 AM | Check production: Election closed, Registrations reviewed, Turnout page loads | Dev + Admin |
 | 8:00 AM | Open the Election | Admin |
-| During | Watch Turnout, error logs and the database; respond to Voter issues | Dev on call + Admins |
-| 5:00 PM | Close the Election, or extend by keeping it open | Admin |
-| After close | Audit Ballots and Results, then release | Admins |
+| During | Watch Turnout, error logs and the database; respond to Voter issues; review late Registrations with a Held Ballot as they arrive | Dev on call + Admins |
+| 5:00 PM | Close the Election, or extend by keeping it open. Closing also ends late Registration and resubmission | Admin |
+| After close | Finish reviewing pending Registrations with a Held Ballot, audit Ballots and Results, then release | Admins |
 
 ## Post-election (Nov 21+)
 
@@ -138,6 +138,7 @@ Blocking items we need from the client, and the latest date each can arrive with
 | Candidate profiles arrive after Nov 13 | Sprint 3 slips | Build with placeholders; config swap is a small change (ADR 0003) |
 | Sprint 2 slips past Nov 15 | Registration Period shrinks further | Sprint 2 scope is fixed; Admin grant/revoke UI can fall back to the seed script |
 | Short Registration Period (Nov 15–18) | Eligible people miss registering, or the review queue isn't cleared by Nov 20 | Client announces Registration before Nov 15; close Nov 18 to leave Nov 19 for review; show the pending count on the Admin panel |
+| Many late Registrations on election day (ADR 0008) | The review queue delays the release of Results | Held Ballots are sorted first in the queue; schedule Admins to review during voting, not only after close |
 | Too few developers to run Sprints 2 and 3 in parallel | Voting slips into Sprint 4 | Prioritise Sprint 2 until Nov 14; move the public Results page (4.2) to post-election if needed |
 | Election-day load spike at 8 AM | Slow or failed submissions | Cached Turnout, load check in Sprint 4 |
 | Bug found during the dry run | Launch risk | Dry run on Nov 18 leaves a day to fix |

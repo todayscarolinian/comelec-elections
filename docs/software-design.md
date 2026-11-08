@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Status** | Draft for team review |
-| **Last updated** | 2026-11-06 |
-| **Related** | [Product Spec](./product-spec.md) · [Glossary](./GLOSSARY.md) · [ADR 0002: Ballots Linked to Voters](./adr/0002-ballots-linked-to-voters.md) (supersedes [ADR 0001](./adr/0001-unlinkable-ballots.md)) · [ADR 0003: Hardcoded Election Definition](./adr/0003-hardcoded-election-definition.md) · [ADR 0004: Own Person Table](./adr/0004-own-person-table-without-auth-adapter.md) · [ADR 0005: Turnout Public, Results Released](./adr/0005-turnout-public-results-released.md) · [ADR 0006: Advisory OCR (proposed)](./adr/0006-advisory-ocr-on-study-loads.md) · [ADR 0007: tRPC API Layer](./adr/0007-trpc-api-layer.md) |
+| **Last updated** | 2026-11-09 |
+| **Related** | [Product Spec](./product-spec.md) · [Glossary](./GLOSSARY.md) · [ADR 0002: Ballots Linked to Voters](./adr/0002-ballots-linked-to-voters.md) (supersedes [ADR 0001](./adr/0001-unlinkable-ballots.md)) · [ADR 0003: Hardcoded Election Definition](./adr/0003-hardcoded-election-definition.md) · [ADR 0004: Own Person Table](./adr/0004-own-person-table-without-auth-adapter.md) · [ADR 0005: Turnout Public, Results Released](./adr/0005-turnout-public-results-released.md) · [ADR 0006: Advisory OCR (proposed)](./adr/0006-advisory-ocr-on-study-loads.md) · [ADR 0007: tRPC API Layer](./adr/0007-trpc-api-layer.md) · [ADR 0008: Held Ballots for Late Registrations (proposed)](./adr/0008-held-ballots-for-late-registrations.md) |
 
-This document describes *how* we build what the [Product Spec](./product-spec.md) describes. Domain terms (Election, Question, Candidate, Party, Independent, Selection Limit, Registration, Registration Period, Applicant, Study Load, Year Level, Voter, Ballot, Abstention, Turnout, Results, Admin) are used exactly as defined in the [Glossary](./GLOSSARY.md).
+This document describes *how* we build what the [Product Spec](./product-spec.md) describes. Domain terms (Election, Question, Candidate, Party, Independent, Selection Limit, Registration, Registration Period, Applicant, Study Load, Year Level, Voter, Ballot, Held Ballot, Abstention, Turnout, Results, Admin) are used exactly as defined in the [Glossary](./GLOSSARY.md).
 
 ## 1. Architecture overview
 
@@ -147,13 +147,14 @@ enum RegistrationStatus {
   REJECTED
 }
 
-/// A cast Ballot, linked to its Voter (ADR 0002).
+/// A cast Ballot, linked to its Voter (ADR 0002). It counts only while the Registration is APPROVED (ADR 0008).
 model Ballot {
   id                    String         @id @default(uuid())
   personId              String         @unique // one Ballot per Voter
   person                Person         @relation(fields: [personId], references: [id])
-  yearLevel             String         // snapshot of the approved Year Level at casting
+  yearLevel             String         // snapshot of the Registration's Year Level at casting; updated if an Admin corrects it when approving a Held Ballot's Registration
   disclosureAcceptedAt  DateTime
+  heldAcknowledgedAt    DateTime?      // set when cast without an approved Registration (FR-5.10)
   castAt                DateTime       @default(now())
   answers               BallotAnswer[]
 }
@@ -194,6 +195,8 @@ model AuditLog {
 - `Ballot.personId @unique` replaces the old `Participation` table as the one-Ballot-per-Voter guard.
 - **Year Level is information only.** It doesn't affect which Questions a Voter sees. `Registration.yearLevel` is declared by the Applicant and can be corrected by an Admin; `Ballot.yearLevel` is a snapshot at casting, so the audit and export show the Year Level as it was, even if the Registration is edited later.
 - A Person with no Registration is just someone who signed in. Being an Applicant or Voter is derived from `Registration.status`.
+- **Whether a Ballot counts is derived, not stored** (ADR 0008). A Ballot counts when its person's `Registration.status` is `APPROVED`; otherwise it's a Held Ballot. There's no status column on `Ballot` to keep in sync.
+- `Ballot.heldAcknowledgedAt` isn't in the initial migration. Adding it needs a second migration, which a developer runs manually.
 - `AuditLog` is append-only: the app never updates or deletes its rows.
 - **Row Level Security is enabled on every table with no policies.** Prisma connects as the table owner and bypasses it, but Supabase's public REST API (anon key) can read nothing.
 - Migrations are written by the implementer and run manually by a developer. Never auto-run on deploy.
@@ -247,8 +250,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 | Action | Requirement |
 |---|---|
 | View Election, Candidates, Turnout, released Results | None (public) |
-| Submit/resubmit Registration, view own status | Valid session; Registration Period open |
-| Cast Ballot | Valid session; own Registration is `APPROVED`; Election open |
+| Submit/resubmit Registration, view own status | Valid session; Registration Period **or** Election open |
+| Cast Ballot | Valid session; own Registration exists (any status; not `APPROVED` → Held Ballot, ADR 0008); Election open |
 | Any Admin action (§7) | Valid session **and** a row in `Admin` for `session.user.email`, looked up on every call |
 
 Authorization is built into tRPC procedure types, defined in `src/server/trpc/init.ts` (ADR 0007):
@@ -270,7 +273,7 @@ In the sections below, "`protectedProcedure`" and "`adminProcedure`" name the pr
 
 ### 5.1 Uploading a Study Load
 
-1. `registration.createStudyLoadUpload` (`protectedProcedure`): check Registration Period is open, then create a signed upload URL for `study-loads/{personId}/{uuid}` (valid 5 minutes).
+1. `registration.createStudyLoadUpload` (`protectedProcedure`): check the Registration Period or the Election is open, then create a signed upload URL for `study-loads/{personId}/{uuid}` (valid 5 minutes).
 2. The browser uploads the image directly to that URL.
 3. The bucket is **private** and restricted to `image/jpeg`, `image/png` and `image/webp`, max **5 MB** (enforced in bucket settings, and checked in the browser for a friendly error).
 
@@ -280,7 +283,8 @@ In the sections below, "`protectedProcedure`" and "`adminProcedure`" name the pr
 1. person = ctx.person  (protectedProcedure)
 2. validate: yearLevel ∈ YEAR_LEVELS (zod enum in v1/registration/schema.ts, information only); studyLoadPath starts with "{personId}/"; object exists in bucket
 3. transaction:
-     a. registrationStatus must be OPEN (FOR SHARE on ElectionState)
+     a. registrationStatus or electionStatus must be OPEN (FOR SHARE on ElectionState)
+        → so nothing can be submitted or resubmitted after the Election closes (ADR 0008)
      b. existing = Registration for person
         - none           → INSERT (status PENDING)
         - PENDING/REJECTED → UPDATE yearLevel, studyLoadPath, status=PENDING, clear rejection fields
@@ -291,10 +295,10 @@ Old Study Load objects from resubmissions are kept until after the Election (see
 
 ### 5.3 Review
 
-- `listRegistrations({ status?, yearLevel? })`: `adminProcedure`. Returns name, email, Year Level, status and a signed **view** URL for each Study Load (valid 10 minutes).
-- `approveRegistration(id, yearLevel)`: `adminProcedure`. Sets `APPROVED`, the (possibly corrected) Year Level, `reviewedBy`, `reviewedAt`. Writes `AuditLog`.
+- `listRegistrations({ status?, yearLevel? })`: `adminProcedure`. Returns name, email, Year Level, status, whether the person has a Held Ballot, and a signed **view** URL for each Study Load (valid 10 minutes). Registrations with a Held Ballot are sorted first.
+- `approveRegistration(id, yearLevel)`: `adminProcedure`. Sets `APPROVED`, the (possibly corrected) Year Level, `reviewedBy`, `reviewedAt`. If the person has a Held Ballot, sets `Ballot.yearLevel` to the approved Year Level in the same transaction, and the Ballot now counts. Writes `AuditLog`.
 - `rejectRegistration(id, reason)`: `adminProcedure`. Reason is required and non-empty. Sets `REJECTED`. Writes `AuditLog`.
-- Review is allowed whether or not the Registration Period is open, so Admins can clear pending Registrations after it closes.
+- Review is allowed whether or not the Registration Period or the Election is open, so Admins can clear pending Registrations after either closes. Review acts only on `PENDING` Registrations, so after the Election closes a `REJECTED` Registration stays rejected.
 - An approved Registration can't be changed once its Voter has cast a Ballot.
 
 ## 6. Casting a Ballot
@@ -308,12 +312,13 @@ Given a submitted Ballot `{ [questionId]: { abstain: true } | { candidateIds: st
    - `abstain: true`, or
    - `1 ≤ candidateIds.length ≤ selectionLimit`, all ids belong to that Question, no duplicates.
 3. `disclosureAccepted === true`.
+4. `heldAcknowledged === true` when the caller's Registration isn't `APPROVED`. This is checked in the procedure (§6.2), since it depends on the Registration.
 
 Validation uses a Zod schema built from `ELECTION.questions`.
 
 ### 6.2 `ballot.cast` procedure (`protectedProcedure`)
 
-Uses `protectedProcedure`, not `voterProcedure`, because the approval check must happen inside the transaction (step b).
+Uses `protectedProcedure`, not `voterProcedure`, because Applicants can cast a Held Ballot and the Registration check must happen inside the transaction (step b).
 
 ```
 1. person = ctx.person
@@ -321,13 +326,15 @@ Uses `protectedProcedure`, not `voterProcedure`, because the approval check must
      a. state = SELECT electionStatus FROM "ElectionState" WHERE id='main' FOR SHARE
         → if not OPEN: throw ElectionClosed
      b. reg = Registration for person
-        → if not APPROVED: throw NotApproved
+        → if none: throw NotRegistered
+        → held = reg.status != APPROVED; if held and !input.heldAcknowledged: throw HeldNotAcknowledged
      c. validated = validateBallot(input) → reject on failure
-     d. INSERT INTO "Ballot" (personId, yearLevel = reg.yearLevel snapshot, disclosureAcceptedAt)
+     d. INSERT INTO "Ballot" (personId, yearLevel = reg.yearLevel snapshot, disclosureAcceptedAt,
+                              heldAcknowledgedAt = held ? now() : null)
         → unique violation on personId: throw AlreadyVoted
      e. INSERT INTO "BallotAnswer" rows (candidateId null for Abstentions)
    })
-3. return { ok: true }  (never echo choices back)
+3. return { ok: true, held }  (never echo choices back)
 ```
 
 - **One Ballot per Voter** is guaranteed by `Ballot.personId @unique`. Concurrent double submits: one commits, the other gets `AlreadyVoted`.
@@ -350,19 +357,19 @@ Uses `protectedProcedure`, not `voterProcedure`, because the approval check must
 { electionStatus, ballotsCast: COUNT(Ballot), approvedVoters: COUNT(Registration WHERE status = APPROVED) }
 ```
 
-No per-Candidate data, ever. Caching keeps load flat on election day; the client polls every 15 seconds.
+No per-Candidate data, ever. `ballotsCast` includes Held Ballots. Caching keeps load flat on election day; the client polls every 15 seconds.
 
 ### 7.2 Results
 
-- `results.get`: `publicProcedure` that returns Results only if `resultsReleasedAt` is set or the caller has a row in `Admin` (checked in the database); everyone else gets `FORBIDDEN`. Returns per Question, in config order: count per Candidate (zero counts included), Abstentions, and Ballots that saw the Question.
+- `results.get`: `publicProcedure` that returns Results only if `resultsReleasedAt` is set or the caller has a row in `Admin` (checked in the database); everyone else gets `FORBIDDEN`. Returns per Question, in config order: count per Candidate (zero counts included), Abstentions, and Ballots that saw the Question. **Only Ballots whose Registration is `APPROVED` are counted** (join `Ballot` → `Registration`). It also returns the number of Held Ballots left out, split into pending and rejected.
 - Admins see Results at any time on the Admin panel. Viewing them writes `AuditLog` (`VIEW_RESULTS`).
-- `releaseResults()`: `adminProcedure`; the Election must be `CLOSED` and not already released. Sets `resultsReleasedAt`. Writes `AuditLog`. There is no un-release.
+- `releaseResults()`: `adminProcedure`; the Election must be `CLOSED` and not already released, and no Ballot's Registration may be `PENDING`. All three are checked in one transaction with `FOR UPDATE` on `ElectionState`. Sets `resultsReleasedAt`. Writes `AuditLog`. There is no un-release. Since resubmitting needs the Election open, and the Election can't reopen after release, released Results can't change.
 - The public `/results` page renders only when `resultsReleasedAt` is set.
 
 ### 7.3 Ballot audit
 
-- `listBallots({ yearLevel?, search? })`: `adminProcedure`. Returns each Ballot with name, email, Year Level, `castAt` and choices. Paginated. Writes `AuditLog` (`VIEW_BALLOTS`) with the filters used.
-- `exportBallots()`: `adminProcedure`. Returns a CSV with one row per Ballot and one column per Question. Writes `AuditLog` (`EXPORT_BALLOTS`).
+- `listBallots({ yearLevel?, search?, status? })`: `adminProcedure`. Returns each Ballot with name, email, Year Level, `castAt`, choices and status (`COUNTED`, `HELD_PENDING` or `HELD_REJECTED`, derived from the Registration). Paginated. Writes `AuditLog` (`VIEW_BALLOTS`) with the filters used.
+- `exportBallots()`: `adminProcedure`. Returns a CSV with one row per Ballot, a status column and one column per Question. Writes `AuditLog` (`EXPORT_BALLOTS`).
 - `listAuditLog()`: `adminProcedure`. So Admins can see who viewed what.
 
 ## 8. Administration
@@ -371,6 +378,7 @@ No per-Candidate data, ever. Caching keeps load flat on election day; the client
 
 - `setRegistrationStatus("OPEN" | "CLOSED")` and `setElectionStatus("OPEN" | "CLOSED")`: `adminProcedure`, update `ElectionState`, write `AuditLog`.
 - Reopening the Election is allowed (to extend past 5 PM) and doesn't touch Ballots. It's rejected once `resultsReleasedAt` is set.
+- Closing the Election also ends late Registration and resubmission (§5.2). Reopening it allows them again.
 - The `ElectionState` row is created by the initial migration/seed with everything `CLOSED`.
 
 ### 8.2 Admin management
@@ -394,7 +402,8 @@ It upserts the `Admin` row with `grantedBy = "seed"`, and with `--dry-run` print
 | Threat | Mitigation |
 |---|---|
 | Non-member signs in | `signIn` enforces `hd` and `email_verified` (§4.1) |
-| Unregistered or rejected person votes | `castBallot` checks `APPROVED` inside the transaction (§6.2) |
+| Unregistered person votes | `castBallot` requires a Registration inside the transaction (§6.2) |
+| Unapproved person's Ballot counted | Results count only Ballots whose Registration is `APPROVED`; release is blocked while any Ballot's Registration is `PENDING`; no resubmission after close (§5.2, §7.2, ADR 0008) |
 | Double voting | `Ballot.personId @unique` in the same transaction (§6.2) |
 | Ballot with unknown Questions or Candidates | Server validates against `ELECTION.questions`; client input can't add others (§6.1) |
 | Ballots or Study Loads read by non-Admins | `adminProcedure` on every read; private bucket with short-lived signed URLs; RLS on all tables blocks Supabase's public API (§3) |
@@ -473,7 +482,7 @@ public/candidates/*
 | Level | Coverage |
 |---|---|
 | Unit | `validateBallot` (missing Question, unknown Question, over limit, duplicates, cross-Question Candidate, picks plus Abstention, disclosure not accepted); election config invariants; email normalisation |
-| Integration (test Postgres) | Registration: submit only while open; resubmit after reject; approved can't resubmit; path ownership check. Review: non-Admin rejected; approve with corrected Year Level; reject requires reason; AuditLog written. `castBallot`: success; pending/rejected/no Registration → rejected; second cast → AlreadyVoted; **N concurrent casts by one Voter → exactly one Ballot**; cast while closed → rejected. Results: hidden publicly until released; release only when closed; no reopen after release. Audit: every `listBallots`/`exportBallots` writes AuditLog. Admin: revoked Admin rejected on next action; last-Admin revoke rejected |
+| Integration (test Postgres) | Registration: submit only while the Registration Period or Election is open; resubmit after reject; no submit or resubmit after the Election closes; approved can't resubmit; path ownership check. Review: non-Admin rejected; approve with corrected Year Level (also updates a Held Ballot's Year Level); reject requires reason; AuditLog written. `castBallot`: approved → counted; pending/rejected → Held Ballot, and rejected without `heldAcknowledged`; no Registration → rejected; second cast → AlreadyVoted; **N concurrent casts by one Voter → exactly one Ballot**; cast while closed → rejected. Results: hidden publicly until released; Held Ballots excluded, then counted after approval (including after close); release only when closed and no Ballot's Registration is pending; no reopen after release. Audit: every `listBallots`/`exportBallots` writes AuditLog. Admin: revoked Admin rejected on next action; last-Admin revoke rejected |
 | Auth | `signIn` rejects missing/foreign `hd` and `email_verified=false`; session contains only `personId`, `email` and standard claims |
 | Procedure permissions | Through `createCaller` with fake contexts: every `adminProcedure` rejects signed-out, non-Admin and revoked-Admin callers; `voterProcedure` rejects pending, rejected and unregistered callers; mutations from a foreign `Origin` are rejected |
 | Manual / E2E | Full flow with Workspace test accounts as Voters, an Admin, and one consumer account; dry-run election before Nov 20 |

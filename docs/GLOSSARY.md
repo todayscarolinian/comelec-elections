@@ -1,6 +1,6 @@
 # Live Voting
 
-One-ballot-per-person voting in a single Election for registered, approved members of one organization domain, with Ballots auditable by Admins and a public Turnout count while voting is open.
+One-ballot-per-person voting in a single Election for registered members of one organization domain, counting only Ballots whose Registration is approved, with Ballots auditable by Admins and a public Turnout count while voting is open.
 
 ## Election
 
@@ -31,7 +31,7 @@ _Avoid_: Max votes, seats
 ## Registration
 
 **Registration**:
-A person's request, made before the Election opens, to become a Voter; it carries their Study Load and Year Level and is pending, approved or rejected.
+A person's request to become a Voter, made during the Registration Period or while the Election is open; it carries their Study Load and Year Level and is pending, approved or rejected.
 _Avoid_: Application, sign-up, enrollment
 
 **Applicant**:
@@ -47,7 +47,7 @@ The year a person declares they are in, recorded on their Registration and Ballo
 _Avoid_: Batch, year, grade
 
 **Registration Period**:
-The window before the Election in which Registrations can be submitted and reviewed.
+The window before the Election in which Registrations can be submitted and reviewed. Registrations are also accepted while the Election is open, but never after it closes.
 _Avoid_: Pre-registration, validation period
 
 ## Voting
@@ -57,19 +57,23 @@ A person whose Registration has been approved and who may therefore cast a Ballo
 _Avoid_: User, member, participant
 
 **Ballot**:
-A Voter's complete, final set of answers to every Question shown to them, submitted once and recorded under their name.
+A person's complete, final set of answers to every Question shown to them, submitted once and recorded under their name; it counts toward the Results only while their Registration is approved.
 _Avoid_: Vote, response, submission
+
+**Held Ballot**:
+A Ballot whose Registration is pending or rejected; it is recorded but left out of the Results, and it counts as soon as the Registration is approved, even after the Election closes.
+_Avoid_: Provisional ballot, pending vote, uncounted vote
 
 **Abstention**:
 A Voter's explicit decision to pick no Candidate on a Question while still casting their Ballot.
 _Avoid_: Blank, skip, null vote
 
 **Turnout**:
-The public running count of Ballots cast, viewable by anyone while the Election is open and after it closes.
+The public running count of Ballots cast, including Held Ballots, viewable by anyone while the Election is open and after it closes.
 _Avoid_: Live tally, participation, voter count
 
 **Results**:
-The count of picks for each Candidate, seen only by Admins until they choose to release it.
+The count of picks for each Candidate from Ballots whose Registration is approved, seen only by Admins until they choose to release it.
 _Avoid_: Tally, live results, scoreboard
 
 ## Administration
