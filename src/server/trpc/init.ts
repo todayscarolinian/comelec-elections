@@ -4,7 +4,7 @@ import type { PrismaClient } from '@/generated/prisma/client'
 import prisma from '@/lib/prisma'
 
 export type Session = { user: { personId: string; email: string } } | null
-export type Db = Pick<PrismaClient, 'person' | 'registration' | 'admin'>
+export type Db = PrismaClient
 
 export type TRPCContext = {
   headers: Headers
