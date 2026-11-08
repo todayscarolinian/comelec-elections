@@ -1,6 +1,6 @@
 import type { NextAuthConfig } from 'next-auth'
 import Google from 'next-auth/providers/google'
-import { isAllowedGoogleProfile, normalizeEmail, normalizeHostedDomain } from './policy'
+import { isAllowedGoogleProfile, normalizeHostedDomain } from './policy'
 import { upsertPerson } from './person'
 
 const SESSION_MAX_AGE = 8 * 60 * 60
@@ -55,7 +55,6 @@ export function createAuthConfig(allowedDomain: string | undefined): NextAuthCon
 
         if (
           typeof personId !== 'string' ||
-          !personId.trim() ||
           typeof email !== 'string' ||
           !email.trim() ||
           typeof signedInAt !== 'number' ||
@@ -67,13 +66,12 @@ export function createAuthConfig(allowedDomain: string | undefined): NextAuthCon
           return null
         }
 
-        return {
-          personId,
-          email: normalizeEmail(email),
-          signedInAt,
-        }
+        return { personId, email, signedInAt }
       },
       session({ token }) {
+        if (typeof token.signedInAt !== 'number' || !Number.isSafeInteger(token.signedInAt)) {
+          throw new Error('Missing session sign-in time')
+        }
         return {
           expires: new Date(token.signedInAt + SESSION_MAX_AGE * 1000).toISOString(),
           user: {

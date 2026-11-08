@@ -1,10 +1,13 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { JWT } from 'next-auth/jwt'
+import type { NextAuthConfig } from 'next-auth'
 import { createAuthConfig } from '../config'
 import { upsertPerson } from '../person'
 
 vi.mock('../person', () => ({ upsertPerson: vi.fn() }))
+
+type SessionParams = Parameters<NonNullable<NonNullable<NextAuthConfig['callbacks']>['session']>>[0]
 
 const SIGNED_IN_AT = Date.parse('2026-11-07T00:00:00.000Z')
 const identity = { personId: 'test-person-id', email: 'member@example.com' }
@@ -258,5 +261,27 @@ describe('Auth.js configuration', () => {
         trigger: 'signIn',
       }),
     ).toBeNull()
+  })
+
+  it('exposes only the Person and the absolute expiry in the session', async () => {
+    const session = await config.callbacks!.session!({
+      token: validToken,
+    } as SessionParams)
+    expect(session).toEqual({
+      expires: new Date(SIGNED_IN_AT + 28_800_000).toISOString(),
+      user: identity,
+    })
+  })
+
+  it.each([
+    ['missing', undefined],
+    ['non-numeric', String(SIGNED_IN_AT)],
+    ['NaN', NaN],
+  ])('refuses to build a session with a %s sign-in time', (_label, signedInAt) => {
+    expect(() =>
+      config.callbacks!.session!({
+        token: { ...validToken, signedInAt },
+      } as unknown as SessionParams),
+    ).toThrow('Missing session sign-in time')
   })
 })

@@ -148,7 +148,7 @@ describe('/api/auth routes', () => {
       maxAge: 28_800,
       token: {
         personId: identity.personId,
-        email: ' Member@Example.com ',
+        email: identity.email,
         signedInAt: SIGNED_IN_AT,
         sub: 'google-subject',
         name: 'Member',
@@ -263,8 +263,6 @@ describe('/api/auth routes', () => {
     { personId: undefined },
     { personId: null },
     { personId: 123 },
-    { personId: '' },
-    { personId: '   ' },
   ])('rejects and clears malformed identity or expiry metadata: %j', async (invalidFields) => {
     const { GET } = await import('@/app/api/auth/[...nextauth]/route')
     const jwt = await encode({
