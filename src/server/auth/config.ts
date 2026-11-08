@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from 'next-auth'
 import Google from 'next-auth/providers/google'
 import { isAllowedGoogleProfile, normalizeEmail, normalizeHostedDomain } from './policy'
+import { upsertPerson } from './person'
 
 const SESSION_MAX_AGE = 8 * 60 * 60
 
@@ -23,31 +24,52 @@ export function createAuthConfig(allowedDomain: string | undefined): NextAuthCon
       async signIn({ profile }) {
         return isAllowedGoogleProfile(profile, domain)
       },
-      jwt({ token, profile, trigger }) {
+      async jwt({ token, profile, trigger }) {
         const initialSignIn = trigger === 'signIn' || trigger === 'signUp'
-        const email = initialSignIn ? profile?.email : token.email
-        if (typeof email !== 'string' || !email.trim()) return null
-
         const now = Date.now()
-        const signedInAt = initialSignIn ? now : token.signedInAt
+
+        if (initialSignIn) {
+          const email = profile?.email
+          if (typeof email !== 'string' || !email.trim()) return null
+
+          const person = await upsertPerson(email, profile?.name ?? normalizeEmail(email))
+
+          return {
+            personId: person.id,
+            email: person.email,
+            signedInAt: now,
+          }
+        }
+
+        const { personId, email, signedInAt } = token
+
         if (
+          typeof personId !== 'string' ||
+          !personId.trim() ||
+          typeof email !== 'string' ||
+          !email.trim() ||
           typeof signedInAt !== 'number' ||
           !Number.isSafeInteger(signedInAt) ||
           signedInAt < 0 ||
           signedInAt > now ||
           now - signedInAt >= SESSION_MAX_AGE * 1000
-        )
+        ) {
           return null
+        }
 
-        // Auth.js renews iat/exp on refresh; signedInAt keeps the absolute deadline.
-        // Keep only identity and server-issued expiry metadata. S1-03 adds Person id.
-        return { email: normalizeEmail(email), signedInAt }
+        return {
+          personId,
+          email: normalizeEmail(email),
+          signedInAt,
+        }
       },
       session({ token }) {
-        if (typeof token.signedInAt !== 'number') throw new Error('Missing session sign-in time')
         return {
           expires: new Date(token.signedInAt + SESSION_MAX_AGE * 1000).toISOString(),
-          user: { email: token.email },
+          user: {
+            personId: token.personId,
+            email: token.email,
+          },
         }
       },
     },

@@ -1,14 +1,20 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
-import { encode } from 'next-auth/jwt'
+import { decode, encode } from 'next-auth/jwt'
 
 // Only the React Server Components import marker is replaced; Auth.js runs normally.
 vi.mock('server-only', () => ({}))
+vi.mock('../person', () => ({
+  upsertPerson: vi.fn(() => {
+    throw new Error('Session reads must not persist Person')
+  }),
+}))
 
 const BASE = 'http://localhost:3000'
 const SECRET = 'test-only-auth-secret-at-least-thirty-two-characters'
 const SIGNED_IN_AT = Date.parse('2026-11-07T00:00:00.000Z')
+const identity = { personId: 'test-person-id', email: 'member@example.com' }
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -134,13 +140,14 @@ describe('/api/auth routes', () => {
     },
   )
 
-  it('exposes only the normalized email and expiry from an encrypted JWT', async () => {
+  it('exposes only Person identity and expiry and strips provider data from refreshed cookies', async () => {
     const { GET } = await import('@/app/api/auth/[...nextauth]/route')
     const jwt = await encode({
       secret: SECRET,
       salt: 'authjs.session-token',
       maxAge: 28_800,
       token: {
+        personId: identity.personId,
         email: ' Member@Example.com ',
         signedInAt: SIGNED_IN_AT,
         sub: 'google-subject',
@@ -159,8 +166,24 @@ describe('/api/auth routes', () => {
     expect(res.status).toBe(200)
     const session = await res.json()
     expect(session).toEqual({
-      user: { email: 'member@example.com' },
+      user: identity,
       expires: '2026-11-07T08:00:00.000Z',
+    })
+    const refreshedCookie = res.headers
+      .getSetCookie()
+      .find((cookie) => cookie.startsWith('authjs.session-token='))
+    expect(refreshedCookie).toBeDefined()
+    const refreshed = await decode({
+      secret: SECRET,
+      salt: 'authjs.session-token',
+      token: refreshedCookie!.split(';')[0].slice('authjs.session-token='.length),
+    })
+    expect(refreshed).toEqual({
+      ...identity,
+      signedInAt: SIGNED_IN_AT,
+      iat: expect.any(Number),
+      exp: expect.any(Number),
+      jti: expect.any(String),
     })
   })
 
@@ -170,7 +193,7 @@ describe('/api/auth routes', () => {
       secret: SECRET,
       salt: 'authjs.session-token',
       maxAge: 28_800,
-      token: { email: 'member@example.com', signedInAt: SIGNED_IN_AT },
+      token: { ...identity, signedInAt: SIGNED_IN_AT },
     })
     vi.setSystemTime(SIGNED_IN_AT + 25_200_000)
     const res = await GET(
@@ -180,7 +203,7 @@ describe('/api/auth routes', () => {
     )
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
-      user: { email: 'member@example.com' },
+      user: identity,
       expires: '2026-11-07T08:00:00.000Z',
     })
   })
@@ -191,14 +214,14 @@ describe('/api/auth routes', () => {
       secret: SECRET,
       salt: 'authjs.session-token',
       maxAge: 28_800,
-      token: { email: 'member@example.com', signedInAt: SIGNED_IN_AT },
+      token: { ...identity, signedInAt: SIGNED_IN_AT },
     })
     let cookie = `authjs.session-token=${jwt}`
     for (const elapsed of [3_600_000, 14_400_000, 25_200_000]) {
       vi.setSystemTime(SIGNED_IN_AT + elapsed)
       const res = await GET(new NextRequest(`${BASE}/api/auth/session`, { headers: { cookie } }))
       expect(res.status).toBe(200)
-      expect((await res.json()).user.email).toBe('member@example.com')
+      expect((await res.json()).user).toEqual(identity)
       cookie = res.headers
         .getSetCookie()
         .map((value) => value.split(';')[0])
@@ -219,7 +242,36 @@ describe('/api/auth routes', () => {
       secret: SECRET,
       salt: 'authjs.session-token',
       maxAge: 28_800,
-      token: { email: 'member@example.com' },
+      token: identity,
+    })
+    const res = await GET(
+      new NextRequest(`${BASE}/api/auth/session`, {
+        headers: { cookie: `authjs.session-token=${jwt}` },
+      }),
+    )
+    expect(res.status).toBe(200)
+    expect(await res.json()).toBeNull()
+    expect(res.headers.get('set-cookie')).toContain('Max-Age=0')
+  })
+
+  it.each([
+    { signedInAt: undefined },
+    { signedInAt: null },
+    { signedInAt: String(SIGNED_IN_AT) },
+    { email: undefined },
+    { email: null },
+    { personId: undefined },
+    { personId: null },
+    { personId: 123 },
+    { personId: '' },
+    { personId: '   ' },
+  ])('rejects and clears malformed identity or expiry metadata: %j', async (invalidFields) => {
+    const { GET } = await import('@/app/api/auth/[...nextauth]/route')
+    const jwt = await encode({
+      secret: SECRET,
+      salt: 'authjs.session-token',
+      maxAge: 28_800,
+      token: { ...identity, signedInAt: SIGNED_IN_AT, ...invalidFields },
     })
     const res = await GET(
       new NextRequest(`${BASE}/api/auth/session`, {
