@@ -29,7 +29,7 @@ export function createAuthConfig(allowedDomain: string | undefined): NextAuthCon
         if (typeof email !== 'string' || !email.trim()) return false
 
         try {
-          const person = await upsertPerson(email, profile?.name ?? normalizeEmail(email))
+          const person = await upsertPerson(email, profile?.name)
           user.personId = person.id
           user.email = person.email
         } catch (error) {

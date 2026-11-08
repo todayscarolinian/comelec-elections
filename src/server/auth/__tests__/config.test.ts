@@ -53,7 +53,7 @@ describe('Auth.js configuration', () => {
     await expect(config.callbacks!.signIn!({ user: signingIn, account, profile })).resolves.toBe(
       true,
     )
-    expect(upsertPerson).toHaveBeenCalledExactlyOnceWith(profile.email, 'member@example.com')
+    expect(upsertPerson).toHaveBeenCalledExactlyOnceWith(profile.email, undefined)
     expect(signingIn).toMatchObject({ personId: storedPerson.id, email: storedPerson.email })
   })
 
