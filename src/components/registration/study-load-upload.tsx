@@ -2,7 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
-import { getStudyLoadValidationError, STUDY_LOAD_MIME_TYPES } from '@/lib/study-load'
+import { getStudentProfileValidationError, STUDENT_PROFILE_MIME_TYPES } from '@/lib/student-profile'
 import { useTRPC } from '@/lib/trpc/client'
 
 type StudyLoadUploadProps = {
@@ -11,13 +11,13 @@ type StudyLoadUploadProps = {
 
 export function StudyLoadUpload({ onUploaded }: Readonly<StudyLoadUploadProps>) {
   const trpc = useTRPC()
-  const createUpload = useMutation(trpc.registration.createStudyLoadUpload.mutationOptions())
+  const createUpload = useMutation(trpc.registration.createStudentProfileUpload.mutationOptions())
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string>()
   const [uploaded, setUploaded] = useState(false)
 
   async function upload(file: File) {
-    const validationError = getStudyLoadValidationError(file)
+    const validationError = getStudentProfileValidationError(file)
 
     if (validationError) {
       setError(validationError)
@@ -59,7 +59,7 @@ export function StudyLoadUpload({ onUploaded }: Readonly<StudyLoadUploadProps>) 
         Study Load
         <input
           type="file"
-          accept={STUDY_LOAD_MIME_TYPES.join(',')}
+          accept={STUDENT_PROFILE_MIME_TYPES.join(',')}
           disabled={isUploading}
           onChange={(event) => {
             const file = event.currentTarget.files?.[0]

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { STUDY_LOAD_MAX_BYTES } from '@/lib/study-load'
+import { STUDENT_PROFILE_MAX_BYTES } from '@/lib/student-profile'
 import { StudyLoadUpload } from '../study-load-upload'
 
 const { mutateAsync } = vi.hoisted(() => ({ mutateAsync: vi.fn() }))
@@ -12,7 +12,7 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('@/lib/trpc/client', () => ({
   useTRPC: () => ({
     registration: {
-      createStudyLoadUpload: {
+      createStudentProfileUpload: {
         mutationOptions: () => ({}),
       },
     },
@@ -78,7 +78,7 @@ describe('StudyLoadUpload', () => {
     render(<StudyLoadUpload onUploaded={onUploaded} />)
 
     selectFile(
-      new File([new Uint8Array(STUDY_LOAD_MAX_BYTES)], 'study-load.jpg', {
+      new File([new Uint8Array(STUDENT_PROFILE_MAX_BYTES)], 'study-load.jpg', {
         type: 'image/jpeg',
       }),
     )
@@ -91,12 +91,12 @@ describe('StudyLoadUpload', () => {
     render(<StudyLoadUpload onUploaded={vi.fn()} />)
 
     selectFile(
-      new File([new Uint8Array(STUDY_LOAD_MAX_BYTES + 1)], 'study-load.jpg', {
+      new File([new Uint8Array(STUDENT_PROFILE_MAX_BYTES + 1)], 'study-load.jpg', {
         type: 'image/jpeg',
       }),
     )
 
-    expect(screen.getByRole('alert').textContent).toBe('Study Load must be 5 MB or smaller.')
+    expect(screen.getByRole('alert').textContent).toBe('Student Profile must be 5 MB or smaller.')
     expect(mutateAsync).not.toHaveBeenCalled()
     expect(fetchMock).not.toHaveBeenCalled()
   })

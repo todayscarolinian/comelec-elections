@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { getSupabaseAdmin } from '@/server/storage'
 
-const STUDY_LOAD_BUCKET = 'study-loads'
+const STUDENT_PROFILE_BUCKET = 'student-profiles'
 
 type SignedUploadBucket = {
   createSignedUploadUrl(
@@ -13,9 +13,9 @@ type SignedUploadBucket = {
   }>
 }
 
-export async function createSignedStudyLoadUpload(
+export async function createSignedStudentProfileUpload(
   personId: string,
-  bucket: SignedUploadBucket = getSupabaseAdmin().storage.from(STUDY_LOAD_BUCKET),
+  bucket: SignedUploadBucket = getSupabaseAdmin().storage.from(STUDENT_PROFILE_BUCKET),
 ) {
   const path = `${personId}/${randomUUID()}`
   const { data, error } = await bucket.createSignedUploadUrl(path, {
@@ -23,7 +23,7 @@ export async function createSignedStudyLoadUpload(
   })
 
   if (error || !data) {
-    throw new Error('Unable to create signed Study Load upload')
+    throw new Error('Unable to create signed Student Profile upload')
   }
 
   return {

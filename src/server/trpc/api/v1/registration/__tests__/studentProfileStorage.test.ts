@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/server/storage', () => ({ getSupabaseAdmin: vi.fn() }))
 
-import { createSignedStudyLoadUpload } from '../services/studyLoadStorage'
+import { createSignedStudentProfileUpload } from '../services/studentProfileStorage'
 
-describe('createSignedStudyLoadUpload', () => {
+describe('createSignedStudentProfileUpload', () => {
   const createSignedUploadUrl = vi.fn()
   const bucket = { createSignedUploadUrl }
 
@@ -18,7 +18,7 @@ describe('createSignedStudyLoadUpload', () => {
   })
 
   it('creates a non-overwriting upload under the Person namespace', async () => {
-    const result = await createSignedStudyLoadUpload('person-1', bucket)
+    const result = await createSignedStudentProfileUpload('person-1', bucket)
 
     expect(result.path).toMatch(
       /^person-1\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
@@ -28,8 +28,8 @@ describe('createSignedStudyLoadUpload', () => {
   })
 
   it('creates a fresh object path for every upload', async () => {
-    const first = await createSignedStudyLoadUpload('person-1', bucket)
-    const second = await createSignedStudyLoadUpload('person-1', bucket)
+    const first = await createSignedStudentProfileUpload('person-1', bucket)
+    const second = await createSignedStudentProfileUpload('person-1', bucket)
 
     expect(first.path).not.toBe(second.path)
   })
@@ -40,16 +40,16 @@ describe('createSignedStudyLoadUpload', () => {
       error: { message: 'private Supabase error details' },
     })
 
-    await expect(createSignedStudyLoadUpload('person-1', bucket)).rejects.toThrow(
-      'Unable to create signed Study Load upload',
+    await expect(createSignedStudentProfileUpload('person-1', bucket)).rejects.toThrow(
+      'Unable to create signed Student Profile upload',
     )
   })
 
   it('rejects an empty successful response', async () => {
     createSignedUploadUrl.mockResolvedValueOnce({ data: null, error: null })
 
-    await expect(createSignedStudyLoadUpload('person-1', bucket)).rejects.toThrow(
-      'Unable to create signed Study Load upload',
+    await expect(createSignedStudentProfileUpload('person-1', bucket)).rejects.toThrow(
+      'Unable to create signed Student Profile upload',
     )
   })
 })
