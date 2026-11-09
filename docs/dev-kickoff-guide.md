@@ -21,7 +21,7 @@ A script for the kickoff meeting with the development team. Read-ahead for devel
 
 Say this:
 
-> We're replacing the Google Form the election commission uses. Today, after voting closes, the Audit Commissioner checks every response by hand in Google Sheets, which takes 3–4 days. In our app, people register **before** election day by uploading their Study Load and declaring their Year Level. Admins approve them, and only approved Voters can vote on **Nov 20**. The public sees Turnout only; Admins audit every Ballot and release the Results in the app.
+> We're replacing the Google Form the election commission uses. Today, after voting closes, the Audit Commissioner checks every response by hand in Google Sheets, which takes 3–4 days. In our app, people register **before** election day by uploading a screenshot of their Student Profile and declaring their Year Level. Admins approve them, and only approved Voters can vote on **Nov 20**. The public sees Turnout only; Admins audit every Ballot and release the Results in the app.
 
 Two dates to repeat: **Registration opens Nov 15. Election is Nov 20, 8 AM–5 PM.**
 
@@ -32,7 +32,7 @@ If anyone read the earlier design, walk through these. Each is recorded in an AD
 | Before | Now | Why |
 |---|---|---|
 | Anonymous, unlinkable Ballots (ADR 0001) | Ballots stored under the Voter's name; Admins can view them (ADR 0002) | The commission must audit individual Ballots with names |
-| Any domain account could vote | Only people with an approved Registration | Eligibility (Study Load) is checked before voting |
+| Any domain account could vote | Only people with an approved Registration | Eligibility (Student Profile) is checked before voting |
 | Public live per-Candidate tally | Public Turnout only; Results released by Admins (ADR 0005) | Standings must not be revealed during voting |
 
 Use the [Glossary](./GLOSSARY.md) terms in code and conversation: **Registration, Applicant, Voter, Ballot, Turnout, Results, Party, Independent**. Not "user", "vote", "tally".
@@ -48,7 +48,7 @@ Go through each one and check everyone agrees.
 5. **Every Admin view or export of Ballots writes to `AuditLog`**, and the app never edits or deletes audit rows.
 6. **Never rename or remove a Question or Candidate id** after the Election opens (ADR 0003).
 7. **Migrations are written in code but run manually by a developer.** Never auto-run on deploy.
-8. **Study Loads are personal documents.** Private bucket, short-lived signed URLs, never shared outside the Admin screens.
+8. **Student Profiles are personal documents.** Private bucket, short-lived signed URLs, never shared outside the Admin screens.
 9. **Production database access requires the client's waiver.**
 
 ## 4. Sprint plan walkthrough

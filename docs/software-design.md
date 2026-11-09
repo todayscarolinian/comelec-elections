@@ -4,9 +4,9 @@
 |---|---|
 | **Status** | Draft for team review |
 | **Last updated** | 2026-11-09 |
-| **Related** | [Product Spec](./product-spec.md) · [Glossary](./GLOSSARY.md) · [ADR 0002: Ballots Linked to Voters](./adr/0002-ballots-linked-to-voters.md) (supersedes [ADR 0001](./adr/0001-unlinkable-ballots.md)) · [ADR 0003: Hardcoded Election Definition](./adr/0003-hardcoded-election-definition.md) · [ADR 0004: Own Person Table](./adr/0004-own-person-table-without-auth-adapter.md) · [ADR 0005: Turnout Public, Results Released](./adr/0005-turnout-public-results-released.md) · [ADR 0006: Advisory OCR (proposed)](./adr/0006-advisory-ocr-on-study-loads.md) · [ADR 0007: tRPC API Layer](./adr/0007-trpc-api-layer.md) · [ADR 0008: Held Ballots for Late Registrations (proposed)](./adr/0008-held-ballots-for-late-registrations.md) |
+| **Related** | [Product Spec](./product-spec.md) · [Glossary](./GLOSSARY.md) · [ADR 0002: Ballots Linked to Voters](./adr/0002-ballots-linked-to-voters.md) (supersedes [ADR 0001](./adr/0001-unlinkable-ballots.md)) · [ADR 0003: Hardcoded Election Definition](./adr/0003-hardcoded-election-definition.md) · [ADR 0004: Own Person Table](./adr/0004-own-person-table-without-auth-adapter.md) · [ADR 0005: Turnout Public, Results Released](./adr/0005-turnout-public-results-released.md) · [ADR 0006: Advisory OCR on Student Profiles](./adr/0006-advisory-ocr-on-student-profiles.md) · [ADR 0007: tRPC API Layer](./adr/0007-trpc-api-layer.md) · [ADR 0008: Held Ballots for Late Registrations (proposed)](./adr/0008-held-ballots-for-late-registrations.md) |
 
-This document describes *how* we build what the [Product Spec](./product-spec.md) describes. Domain terms (Election, Question, Candidate, Party, Independent, Selection Limit, Registration, Registration Period, Applicant, Study Load, Year Level, Voter, Ballot, Held Ballot, Abstention, Turnout, Results, Admin) are used exactly as defined in the [Glossary](./GLOSSARY.md).
+This document describes *how* we build what the [Product Spec](./product-spec.md) describes. Domain terms (Election, Question, Candidate, Party, Independent, Selection Limit, Registration, Registration Period, Applicant, Student Profile, Year Level, Voter, Ballot, Held Ballot, Abstention, Turnout, Results, Admin) are used exactly as defined in the [Glossary](./GLOSSARY.md).
 
 ## 1. Architecture overview
 
@@ -24,7 +24,7 @@ flowchart TB
     end
 
     DB[("Postgres (Supabase)")]
-    Storage[("Supabase Storage<br/>private study-loads bucket")]
+    Storage[("Supabase Storage<br/>private student-profiles bucket")]
 
     Browser <-->|Google OAuth| Google
     Browser -->|"HTTPS (encrypted session cookie)"| App
@@ -43,14 +43,14 @@ flowchart TB
 | Framework | Next.js (App Router), TypeScript |
 | Auth | Auth.js (NextAuth v5), Google provider, JWT session strategy, no database adapter |
 | Database | Postgres on Supabase, accessed only through Prisma |
-| File storage | Supabase Storage, one private bucket for Study Loads |
+| File storage | Supabase Storage, one private bucket for Student Profiles |
 | API layer | tRPC v11 (reads and mutations), zod input schemas, `@trpc/tanstack-react-query` on the client (ADR 0007) |
 | Turnout reads | One cached GET route handler outside tRPC, polled with React Query |
 | Hosting | Vercel |
 
 **Why Auth.js without a database adapter:** sessions live in an encrypted cookie, so we don't need Auth.js's users, accounts and sessions tables. We do store each person's email and name, but in our own `Person` table, upserted on sign-in (§4.2), so the schema stays ours.
 
-**Why signed upload URLs for Study Loads:** Vercel functions reject request bodies over 4.5 MB. The browser uploads the image straight to Supabase Storage using a short-lived signed URL, and the tRPC procedure only receives the storage path.
+**Why signed upload URLs for Student Profiles:** Vercel functions reject request bodies over 4.5 MB. The browser uploads the image straight to Supabase Storage using a short-lived signed URL, and the tRPC procedure only receives the storage path.
 
 **Why tRPC (ADR 0007):** authorization is part of each procedure's type (`adminProcedure`, `voterProcedure`), so a missing guard shows up in review. Every procedure also requires a zod input schema, and each entity follows the same structure. Turnout stays a plain route handler so its cache is shared across every client.
 
@@ -91,6 +91,8 @@ export const ELECTION = {
   title: "…",
   questions: [/* … */],
 } as const satisfies ElectionDef;
+
+export const CURRENT_TERM = "1ST Semester 2026"; // compared with the term OCR reads from Student Profiles (ADR 0006)
 ```
 
 **Rules:**
@@ -130,7 +132,9 @@ model Registration {
   personId        String             @unique
   person          Person             @relation(fields: [personId], references: [id])
   yearLevel       String             // one of YEAR_LEVELS; may be corrected by an Admin on approval
-  studyLoadPath   String             // object path in the study-loads bucket
+  studentProfilePath String          // object path in the student-profiles bucket
+  ocrStatus       OcrStatus          @default(PENDING)
+  ocrResult       Json?              // the four extracted fields and their match results only, never the full OCR text (ADR 0006)
   status          RegistrationStatus @default(PENDING)
   rejectionReason String?
   reviewedBy      String?            // Admin email
@@ -145,6 +149,12 @@ enum RegistrationStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum OcrStatus {
+  PENDING
+  DONE
+  FAILED
 }
 
 /// A cast Ballot, linked to its Voter (ADR 0002). It counts only while the Registration is APPROVED (ADR 0008).
@@ -271,35 +281,56 @@ In the sections below, "`protectedProcedure`" and "`adminProcedure`" name the pr
 
 ## 5. Registration
 
-### 5.1 Uploading a Study Load
+### 5.1 Uploading a Student Profile
 
-1. `registration.createStudyLoadUpload` (`protectedProcedure`): check the Registration Period or the Election is open, then create a signed upload URL for `study-loads/{personId}/{uuid}` (valid 5 minutes).
+1. `registration.createStudentProfileUpload` (`protectedProcedure`): check the Registration Period or the Election is open, then create a signed upload URL for `student-profiles/{personId}/{uuid}` (valid 5 minutes).
 2. The browser uploads the image directly to that URL.
 3. The bucket is **private** and restricted to `image/jpeg`, `image/png` and `image/webp`, max **5 MB** (enforced in bucket settings, and checked in the browser for a friendly error).
 
-### 5.2 `submitRegistration({ yearLevel, studyLoadPath })`
+### 5.2 `submitRegistration({ yearLevel, studentProfilePath })`
 
 ```
 1. person = ctx.person  (protectedProcedure)
-2. validate: yearLevel ∈ YEAR_LEVELS (zod enum in v1/registration/schema.ts, information only); studyLoadPath starts with "{personId}/"; object exists in bucket
+2. validate: yearLevel ∈ YEAR_LEVELS (zod enum in v1/registration/schema.ts, information only); studentProfilePath starts with "{personId}/"; object exists in bucket
 3. transaction:
      a. registrationStatus or electionStatus must be OPEN (FOR SHARE on ElectionState)
         → so nothing can be submitted or resubmitted after the Election closes (ADR 0008)
      b. existing = Registration for person
         - none           → INSERT (status PENDING)
-        - PENDING/REJECTED → UPDATE yearLevel, studyLoadPath, status=PENDING, clear rejection fields
+        - PENDING/REJECTED → UPDATE yearLevel, studentProfilePath, status=PENDING, clear rejection fields
         - APPROVED       → reject: "Your Registration is already approved"
+     c. set ocrStatus=PENDING, ocrResult=null
+4. after commit: schedule Student Profile OCR with Next.js after() (§5.4)
 ```
 
-Old Study Load objects from resubmissions are kept until after the Election (see §13).
+Old Student Profile objects from resubmissions are kept until after the Election (see §14).
 
 ### 5.3 Review
 
-- `listRegistrations({ status?, yearLevel? })`: `adminProcedure`. Returns name, email, Year Level, status, whether the person has a Held Ballot, and a signed **view** URL for each Study Load (valid 10 minutes). Registrations with a Held Ballot are sorted first.
+- `listRegistrations({ status?, yearLevel? })`: `adminProcedure`. Returns name, email, Year Level, status, whether the person has a Held Ballot, a signed **view** URL for each Student Profile (valid 10 minutes), and its `ocrStatus` and `ocrResult`. Registrations with a Held Ballot are sorted first.
 - `approveRegistration(id, yearLevel)`: `adminProcedure`. Sets `APPROVED`, the (possibly corrected) Year Level, `reviewedBy`, `reviewedAt`. If the person has a Held Ballot, sets `Ballot.yearLevel` to the approved Year Level in the same transaction, and the Ballot now counts. Writes `AuditLog`.
 - `rejectRegistration(id, reason)`: `adminProcedure`. Reason is required and non-empty. Sets `REJECTED`. Writes `AuditLog`.
+- OCR results are shown as hints next to the image. Neither procedure reads them.
 - Review is allowed whether or not the Registration Period or the Election is open, so Admins can clear pending Registrations after either closes. Review acts only on `PENDING` Registrations, so after the Election closes a `REJECTED` Registration stays rejected.
 - An approved Registration can't be changed once its Voter has cast a Ballot.
+
+### 5.4 Student Profile OCR (ADR 0006)
+
+OCR is advisory: it never changes a Registration's `status`, and a failure never blocks a Registration.
+
+1. `submitRegistration` schedules OCR with Next.js `after()`, so the Applicant's response doesn't wait for it.
+2. The job downloads the image from the `student-profiles` bucket with the service role key and runs PaddleOCR's PP-OCRv6 models through `onnxruntime-node`. The model files are bundled with the function.
+3. It reads Full Name, Student ID and Year Level from the text to the right of each label (text box positions), down to halfway to the next label, because long names wrap onto two lines on mobile. It reads the term by pattern (`1ST Semester 2026`).
+4. It compares each field with what the app already knows:
+   - Student ID = the local part of `Person.email`, compared as text, because IDs can start with zero
+   - every word of `Person.name` appears in Full Name, in any order
+   - Year Level = the declared Year Level
+   - term = `CURRENT_TERM` (§2)
+5. It writes `ocrStatus=DONE` and `ocrResult` (the four fields and their matches), or `ocrStatus=FAILED` on error or timeout. It only writes if `studentProfilePath` is still the one it read, so a resubmission isn't overwritten by an older result.
+
+**Rules:**
+- Never store or log the full OCR text. The Student Profile also shows date of birth, which we don't need.
+- `after()` runs within the route's `maxDuration`, so `/api/trpc` needs one long enough for OCR. Measure cold start, time per image and memory on a Vercel preview before launch.
 
 ## 6. Casting a Ballot
 
@@ -344,7 +375,7 @@ Uses `protectedProcedure`, not `voterProcedure`, because Applicants can cast a H
 ### 6.3 What must never happen
 
 - Logging Ballot contents or `ballot.cast` inputs, including in tRPC error formatting and `onError` logging. Only Admins, through the audited screens, should see choices.
-- Returning another person's Ballot, Registration or Study Load URL to a non-Admin.
+- Returning another person's Ballot, Registration or Student Profile URL to a non-Admin.
 - Exposing per-Candidate counts on any public route before `resultsReleasedAt` is set.
 
 ## 7. Turnout, Results and audit
@@ -406,7 +437,7 @@ It upserts the `Admin` row with `grantedBy = "seed"`, and with `--dry-run` print
 | Unapproved person's Ballot counted | Results count only Ballots whose Registration is `APPROVED`; release is blocked while any Ballot's Registration is `PENDING`; no resubmission after close (§5.2, §7.2, ADR 0008) |
 | Double voting | `Ballot.personId @unique` in the same transaction (§6.2) |
 | Ballot with unknown Questions or Candidates | Server validates against `ELECTION.questions`; client input can't add others (§6.1) |
-| Ballots or Study Loads read by non-Admins | `adminProcedure` on every read; private bucket with short-lived signed URLs; RLS on all tables blocks Supabase's public API (§3) |
+| Ballots or Student Profiles read by non-Admins | `adminProcedure` on every read; private bucket with short-lived signed URLs; RLS on all tables blocks Supabase's public API (§3) |
 | Admin misuse of Ballot access | Every view and export is written to `AuditLog`, which Admins can read (§7.3) |
 | Results leaked before release | No public route returns per-Candidate counts until `resultsReleasedAt` is set (§7.2) |
 | Stolen session cookie | Encrypted, `HttpOnly`, `Secure`, `SameSite=Lax`; 8-hour expiry |
@@ -494,14 +525,14 @@ Registration opens **Nov 15** and the Election is **Nov 20**. After the foundati
 | # | Milestone | Must be live by |
 |---|---|---|
 | 1 | **Auth and data model**: Auth.js + Google with domain enforcement, `Person` upsert, Prisma schema and migrations (run manually), RLS, seed-admin script | Nov 7 |
-| 2 | **Registration**: Study Load upload, register/resubmit/status page, Admin review queue, Registration window toggle, Admin grant/revoke, AuditLog | **Nov 15** |
+| 2 | **Registration**: Student Profile upload and OCR, register/resubmit/status page, Admin review queue, Registration window toggle, Admin grant/revoke, AuditLog | **Nov 15** |
 | 3 | **Voting** (parallel with 2): Election config with real Candidates, disclosure, Ballot UI with Party labels, `castBallot`, Election window toggle, Turnout | Nov 16 |
 | 4 | **Results and audit**: Admin Results view, release, public Results page, Ballot audit list and CSV export | Nov 17 |
 | 5 | **Hardening and dry run**: concurrency tests, load sanity check, logging review, end-to-end dry run with the commission | Nov 19 |
 
 ## 14. Open technical questions
 
-- What happens to Study Load images and Ballot data after the Election (retention period, deletion)? This needs a client decision, since the images are personal documents.
+- What happens to Student Profile images and Ballot data after the Election (retention period, deletion)? This needs a client decision, since the images are personal documents and show date of birth.
 - Vercel route-handler caching for `revalidate = 15` on the chosen Next.js version. Confirm responses are shared across clients, or wrap the query in `unstable_cache`/`"use cache"`.
 - Auth.js v5 maintenance status at build time. Pin the version and track security advisories.
 - Expected number of Voters, to size the load check and the review queue.
