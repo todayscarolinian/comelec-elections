@@ -72,13 +72,14 @@ Blocking items we need from the client, and the latest date each can arrive with
 | 2.1 | Set up the first Admin on staging (the seed script is skipped; method to be decided by Nov 8). Blocks 2.4–2.6 | FR-9.3 |
 | 2.2 | `submitRegistration` (create, resubmit after rejection, block when approved or window closed) | FR-2.1–2.6, §5.2 |
 | 2.3 | Register page: design and build; Student Profile upload (from S1-08, renamed in 2.11), status (pending/approved/rejected with reason). Year Level picker (information only) | US-2 |
-| 2.4 | Admin review queue: design and build; filters, Student Profile preview via signed URL, OCR results if available (2.10), approve (with optional Year Level correction), reject with reason | FR-3.1–3.4, §5.3 |
+| 2.4 | Admin review queue: design and build; filters, Student Profile preview via signed URL, OCR results if available (2.10b), approve (with optional Year Level correction), reject with reason | FR-3.1–3.4, §5.3 |
 | 2.5 | Registration window open/close toggle | §8.1 |
 | 2.6 | Admin grant/revoke with last-Admin guard; Admin list | US-9, §8.2 |
 | 2.7 | Call `writeAudit` (S1-07) in every Admin action | §3, ADR 0002 |
 | 2.8 | Integration tests for Registration and review | §12 |
 | 2.9 | Production deploy; production migration run manually; set up first Admin; Admin walkthrough with the commission | — |
-| 2.10 | OCR on Student Profiles with PaddleOCR (PP-OCRv6 via `onnxruntime-node`), **advisory only** (Admin still decides). Measure cold start, time and memory on a Vercel preview first. Includes `ocrStatus` and `ocrResult` on Registration and their migration (run manually). Cut first if Sprint 2 is at risk | ADR 0006, §5.4 |
+| 2.10a | OCR feasibility on Vercel (infra), the go/no-go gate for 2.10b: bundle `onnxruntime-node` and the PP-OCRv6 models, keep the function under 250 MB, and measure cold start, time per image and memory on a preview. Output: go or no-go, plus `maxDuration`, memory and Next.js config. Can start now; no dependencies | ADR 0006, §5.4 |
+| 2.10b | OCR on Student Profiles (code), only if 2.10a is a go: `ocrStatus` and `ocrResult` on Registration and their migration (run manually), `CURRENT_TERM`, OCR scheduled with `after()` from `submitRegistration`, the four field checks, results in `listRegistrations`. **Advisory only** (Admin still decides). Cut first if Sprint 2 is at risk | ADR 0006, §5.4 |
 | 2.11 | Rename Study Load to Student Profile in code: `student-profiles` bucket, `Registration.studentProfilePath` (migration run manually), `createStudentProfileUpload`, upload component and its copy. Do before 2.2–2.4 | ADR 0006, §5.1 |
 
 **Done when:** on production, a test Applicant registers, gets rejected, resubmits and gets approved; production is deployed by Nov 14, and an Admin opens the Registration window on Nov 15.
@@ -145,5 +146,5 @@ Blocking items we need from the client, and the latest date each can arrive with
 | Election-day load spike at 8 AM | Slow or failed submissions | Cached Turnout, load check in Sprint 4 |
 | Bug found during the dry run | Launch risk | Dry run on Nov 18 leaves a day to fix |
 | tRPC v11 doesn't work cleanly with Next 16.4.5 | S1-01 slips; the API layer has to be reworked later | Check compatibility first in S1-01; if it fails, fall back to Server Actions with a typed wrapper, keeping the same folder structure (ADR 0007) |
-| OCR is unreliable or slow on real Student Profiles, or too slow on Vercel | Sprint 2 slips | OCR is advisory and scoped separately (2.10); launch with manual review only and add OCR later |
+| OCR is unreliable or slow on real Student Profiles, or too slow on Vercel | Sprint 2 slips | OCR is advisory and scoped separately; the Vercel go/no-go (2.10a) comes before any feature work (2.10b). Launch with manual review only and add OCR later |
 | No first Admin when Sprint 2 starts (seed script skipped) | Review queue, window toggle and grant/revoke can't be tested | Decide the setup method and get the first Admin's email by Nov 8 |

@@ -5,14 +5,14 @@
 | **Status** | Complete. Decision recorded in [ADR 0006](../adr/0006-advisory-ocr-on-student-profiles.md) (accepted) |
 | **Spike** | S1-09, issue #9, timeboxed to 1 day |
 | **Date** | 2026-11-09 |
-| **Related** | [Software Design §5.4](../software-design.md) · [Sprint plan 2.10, 2.11](../sprint-plan.md) |
+| **Related** | [Software Design §5.4](../software-design.md) · [Sprint plan 2.10a, 2.10b, 2.11](../sprint-plan.md) |
 
 ## Summary
 
 - **Applicants upload a screenshot of their ISMIS Student Profile, not their Study Load.** The Study Load doesn't show the student's name, and on mobile it needs 2–3 screenshots. The Student Profile shows name, student ID, Year Level and term in one screenshot on any device.
 - **OCR runs on our server with PaddleOCR (PP-OCRv6 models on ONNX Runtime).** Images never leave our infrastructure, so no third-party agreement is needed.
 - **Accuracy is good enough:** 36 of 36 field checks passed across 9 screenshots of 5 students on desktop, tablet and mobile. Wrong students were rejected.
-- **Speed is the remaining risk.** Most images took 1.5–4 s on a dev machine, but some runs took 10–35 s. This must be measured on a Vercel preview before launch (task 2.10).
+- **Speed is the remaining risk.** Most images took 1.5–4 s on a dev machine, but some runs took 10–35 s. This must be measured on a Vercel preview before launch (task 2.10a).
 - **OCR stays advisory.** It shows Admins what matched; it never approves or rejects a Registration.
 
 ## Question
@@ -101,11 +101,11 @@ The slow runs didn't follow any particular image, size or device, and the same f
 
 | Item | Owner / task | Due |
 |---|---|---|
-| Measure cold start, time per image and memory on a Vercel preview; set `maxDuration` for `/api/trpc` | 2.10 | Before the Nov 15 launch |
-| Rename Study Load to Student Profile in code (bucket, `studentProfilePath` migration run manually, upload procedure) | 2.11 | Before 2.2–2.4 |
+| Measure cold start, time per image and memory on a Vercel preview; set `maxDuration` for `/api/trpc` | 2.10a (#28) | Before the Nov 15 launch |
+| Rename Study Load to Student Profile in code (bucket, `studentProfilePath` migration run manually, upload procedure) | 2.11 (#29) | Before 2.2–2.4 |
 | Does the Student Profile prove current enrollment, or is a Study Load also needed? | Commission | Nov 12 |
 | Retention of Student Profile images, which show date of birth | Client | Nov 19 |
-| If OCR is too slow or unreliable on Vercel, launch with manual review only | 2.10 | Cut first if Sprint 2 is at risk |
+| If OCR is too slow or unreliable on Vercel, launch with manual review only | 2.10a (#28) | Cut first if Sprint 2 is at risk |
 
 ## Limitations of this spike
 

@@ -43,7 +43,7 @@ Full write-up: [R&D: OCR for Registration review](../research/ocr-spike-student-
 - **Wrong students are rejected.** Scoring each screenshot against another student's details failed name, student ID and Year Level on all 9. Term still matched, as expected, because every sample was from the same term.
 - **The Google account name and the profile can be spelled differently.** In one sample, the account name had an extra letter in a given name compared with the profile. The name check allows small differences, so it still matched, but the review screen should show OCR's reading next to the account name.
 - **Student IDs can start with zero** (for example `01234567`), so they must be compared as text, never as numbers.
-- **Speed is the main risk, not accuracy.** Most images took 1.5–4 s with about 160 MB of memory on a dev machine. But the same image sometimes took 10–23 s on one run and 4 s on another, for no clear reason. Whether this is fast enough has to be measured on a Vercel preview (task 2.10).
+- **Speed is the main risk, not accuracy.** Most images took 1.5–4 s with about 160 MB of memory on a dev machine. But the same image sometimes took 10–23 s on one run and 4 s on another, for no clear reason. Whether this is fast enough has to be measured on a Vercel preview (task 2.10a).
 
 ## Considered Options
 
@@ -65,9 +65,9 @@ Full write-up: [R&D: OCR for Registration review](../research/ocr-spike-student-
 - **Only the four extracted fields and their match results are stored, never the full OCR text.** The Student Profile also shows date of birth, which we don't need. The image itself still contains it, so the client's data retention decision applies to Student Profile images.
 - The Study Load upload built in S1-08 is renamed: the `study-loads` bucket becomes `student-profiles`, `Registration.studyLoadPath` becomes `studentProfilePath` (a migration a developer runs manually), and `createStudyLoadUpload` becomes `createStudentProfileUpload`.
 - The Glossary, Product Spec and Software Design now use Student Profile in place of Study Load.
-- OCR is scoped separately in Sprint 2 (task 2.10) and is the first thing cut if the Nov 15 Registration launch is at risk.
+- OCR is scoped separately in Sprint 2: a Vercel go/no-go (task 2.10a), then the feature (task 2.10b). It is the first thing cut if the Nov 15 Registration launch is at risk.
 
 ## Open questions
 
 - **Does the Student Profile prove current enrollment?** The Study Load did, by listing enrolled courses. If the profile also shows the current semester for students who aren't enrolled, the commission must decide whether that is acceptable, or whether a Study Load is also needed.
-- **Speed on Vercel:** cold start, time per image and memory, including the unexplained slow runs seen on a dev machine (task 2.10).
+- **Speed on Vercel:** cold start, time per image and memory, including the unexplained slow runs seen on a dev machine (task 2.10a).
