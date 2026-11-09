@@ -1,11 +1,11 @@
 import { TRPCError } from '@trpc/server'
 import { protectedProcedure } from '@/server/trpc/init'
-import { createStudyLoadUploadOutputSchema } from '../../schema'
+import { createStudentProfileUploadOutputSchema } from '../../schema'
 import { isRegistrationOpen } from '../../services/registrationWindow'
-import { createSignedStudyLoadUpload } from '../../services/studyLoadStorage'
+import { createSignedStudentProfileUpload } from '../../services/studentProfileStorage'
 
-export const createStudyLoadUpload = protectedProcedure
-  .output(createStudyLoadUploadOutputSchema)
+export const createStudentProfileUpload = protectedProcedure
+  .output(createStudentProfileUploadOutputSchema)
   .mutation(async ({ ctx }) => {
     if (!(await isRegistrationOpen(ctx.db))) {
       throw new TRPCError({
@@ -15,11 +15,11 @@ export const createStudyLoadUpload = protectedProcedure
     }
 
     try {
-      return await createSignedStudyLoadUpload(ctx.person.id)
+      return await createSignedStudentProfileUpload(ctx.person.id)
     } catch {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        message: 'Unable to prepare the Study Load upload.',
+        message: 'Unable to prepare the Student Profile upload.',
       })
     }
   })

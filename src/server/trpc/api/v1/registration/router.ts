@@ -1,6 +1,6 @@
 import { createTRPCRouter } from '@/server/trpc/init'
-import { createStudyLoadUpload } from './core/mutations/createStudyLoadUpload'
+import { createStudentProfileUpload } from './core/mutations/createStudentProfileUpload'
 
 export const registrationRouter = createTRPCRouter({
-  createStudyLoadUpload,
+  createStudentProfileUpload,
 })

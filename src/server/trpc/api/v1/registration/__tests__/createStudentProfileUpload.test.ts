@@ -1,13 +1,13 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { createSignedStudyLoadUpload } = vi.hoisted(() => ({
-  createSignedStudyLoadUpload: vi.fn(),
+const { createSignedStudentProfileUpload } = vi.hoisted(() => ({
+  createSignedStudentProfileUpload: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({ default: {} }))
 vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
-vi.mock('../services/studyLoadStorage', () => ({ createSignedStudyLoadUpload }))
+vi.mock('../services/studentProfileStorage', () => ({ createSignedStudentProfileUpload }))
 
 import { createCallerFactory, type Db, type Session } from '@/server/trpc/init'
 import { makeCtx } from '@/server/trpc/helpers'
@@ -45,10 +45,10 @@ function setup({
   }
 }
 
-describe('registration.createStudyLoadUpload', () => {
+describe('registration.createStudentProfileUpload', () => {
   beforeEach(() => {
-    createSignedStudyLoadUpload.mockReset()
-    createSignedStudyLoadUpload.mockResolvedValue({
+    createSignedStudentProfileUpload.mockReset()
+    createSignedStudentProfileUpload.mockResolvedValue({
       path: 'person-1/11111111-1111-4111-8111-111111111111',
       signedUrl: 'https://storage.example.org/signed-upload',
     })
@@ -57,16 +57,20 @@ describe('registration.createStudyLoadUpload', () => {
   it('rejects signed-out callers before reading the database', async () => {
     const { caller, personFindUnique } = setup({ currentSession: null })
 
-    await expect(caller.createStudyLoadUpload()).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+    await expect(caller.createStudentProfileUpload()).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+    })
     expect(personFindUnique).not.toHaveBeenCalled()
-    expect(createSignedStudyLoadUpload).not.toHaveBeenCalled()
+    expect(createSignedStudentProfileUpload).not.toHaveBeenCalled()
   })
 
   it('rejects a session whose Person no longer exists', async () => {
     const { caller } = setup({ personExists: false })
 
-    await expect(caller.createStudyLoadUpload()).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
-    expect(createSignedStudyLoadUpload).not.toHaveBeenCalled()
+    await expect(caller.createStudentProfileUpload()).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+    })
+    expect(createSignedStudentProfileUpload).not.toHaveBeenCalled()
   })
 
   it.each([null, 'CLOSED'] as const)(
@@ -74,18 +78,18 @@ describe('registration.createStudyLoadUpload', () => {
     async (registrationStatus) => {
       const { caller } = setup({ registrationStatus })
 
-      await expect(caller.createStudyLoadUpload()).rejects.toMatchObject({
+      await expect(caller.createStudentProfileUpload()).rejects.toMatchObject({
         code: 'FORBIDDEN',
         message: 'The Registration Period is closed.',
       })
-      expect(createSignedStudyLoadUpload).not.toHaveBeenCalled()
+      expect(createSignedStudentProfileUpload).not.toHaveBeenCalled()
     },
   )
 
   it('creates an upload owned by the authenticated Person while Registration is open', async () => {
     const { caller, electionStateFindUnique } = setup()
 
-    await expect(caller.createStudyLoadUpload()).resolves.toEqual({
+    await expect(caller.createStudentProfileUpload()).resolves.toEqual({
       path: 'person-1/11111111-1111-4111-8111-111111111111',
       signedUrl: 'https://storage.example.org/signed-upload',
     })
@@ -93,18 +97,18 @@ describe('registration.createStudyLoadUpload', () => {
       where: { id: 'main' },
       select: { registrationStatus: true },
     })
-    expect(createSignedStudyLoadUpload).toHaveBeenCalledWith('person-1')
+    expect(createSignedStudentProfileUpload).toHaveBeenCalledWith('person-1')
   })
 
   it('returns a safe error when Storage cannot create an upload', async () => {
-    createSignedStudyLoadUpload.mockRejectedValueOnce(
+    createSignedStudentProfileUpload.mockRejectedValueOnce(
       new Error('private backend details and credentials'),
     )
     const { caller } = setup()
 
-    await expect(caller.createStudyLoadUpload()).rejects.toMatchObject({
+    await expect(caller.createStudentProfileUpload()).rejects.toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
-      message: 'Unable to prepare the Study Load upload.',
+      message: 'Unable to prepare the Student Profile upload.',
     })
   })
 })

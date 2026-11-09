@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { STUDY_LOAD_MAX_BYTES } from '@/lib/study-load'
-import { StudyLoadUpload } from '../study-load-upload'
+import { STUDENT_PROFILE_MAX_BYTES } from '@/lib/student-profile'
+import { StudentProfileUpload } from '../student-profile-upload'
 
 const { mutateAsync } = vi.hoisted(() => ({ mutateAsync: vi.fn() }))
 
@@ -12,7 +12,7 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('@/lib/trpc/client', () => ({
   useTRPC: () => ({
     registration: {
-      createStudyLoadUpload: {
+      createStudentProfileUpload: {
         mutationOptions: () => ({}),
       },
     },
@@ -21,18 +21,18 @@ vi.mock('@/lib/trpc/client', () => ({
 
 const fetchMock = vi.fn<typeof fetch>()
 const signedUrl = 'https://storage.example.org/signed-upload'
-const studyLoadPath = 'person-1/11111111-1111-4111-8111-111111111111'
+const studentProfilePath = 'person-1/11111111-1111-4111-8111-111111111111'
 
 function selectFile(file: File) {
-  fireEvent.change(screen.getByLabelText('Study Load'), {
+  fireEvent.change(screen.getByLabelText('Student Profile'), {
     target: { files: [file] },
   })
 }
 
-describe('StudyLoadUpload', () => {
+describe('StudentProfileUpload', () => {
   beforeEach(() => {
     mutateAsync.mockReset()
-    mutateAsync.mockResolvedValue({ path: studyLoadPath, signedUrl })
+    mutateAsync.mockResolvedValue({ path: studentProfilePath, signedUrl })
     fetchMock.mockReset()
     fetchMock.mockResolvedValue(new Response(null, { status: 200 }))
     vi.stubGlobal('fetch', fetchMock)
@@ -43,30 +43,39 @@ describe('StudyLoadUpload', () => {
   })
 
   it.each([
-    ['JPEG', 'image/jpeg', 'study-load.jpg'],
-    ['PNG', 'image/png', 'study-load.png'],
-    ['WebP', 'image/webp', 'study-load.webp'],
+    ['JPEG', 'image/jpeg', 'student-profile.jpg'],
+    ['PNG', 'image/png', 'student-profile.png'],
+    ['WebP', 'image/webp', 'student-profile.webp'],
   ])('uploads a supported %s image directly to Storage', async (_, type, name) => {
     const onUploaded = vi.fn()
-    render(<StudyLoadUpload onUploaded={onUploaded} />)
+    render(<StudentProfileUpload onUploaded={onUploaded} />)
     const file = new File(['image'], name, { type })
 
     selectFile(file)
 
-    await waitFor(() => expect(onUploaded).toHaveBeenCalledWith(studyLoadPath))
+    await waitFor(() => expect(onUploaded).toHaveBeenCalledWith(studentProfilePath))
     expect(mutateAsync).toHaveBeenCalledTimes(1)
     expect(fetchMock).toHaveBeenCalledWith(signedUrl, {
       method: 'PUT',
       headers: { 'Content-Type': type },
       body: file,
     })
-    expect(screen.getByRole('status').textContent).toBe('Study Load uploaded.')
+    expect(screen.getByRole('status').textContent).toBe('Student Profile uploaded.')
+  })
+
+  it('describes the input with where to find the Student Profile in ISMIS', () => {
+    render(<StudentProfileUpload onUploaded={vi.fn()} />)
+
+    const input = screen.getByLabelText('Student Profile')
+    const hint = document.getElementById(input.getAttribute('aria-describedby') ?? '')
+
+    expect(hint?.textContent).toContain('click your avatar in the top right, then My Profile')
   })
 
   it('rejects an unsupported file type before requesting an upload', () => {
-    render(<StudyLoadUpload onUploaded={vi.fn()} />)
+    render(<StudentProfileUpload onUploaded={vi.fn()} />)
 
-    selectFile(new File(['document'], 'study-load.pdf', { type: 'application/pdf' }))
+    selectFile(new File(['document'], 'student-profile.pdf', { type: 'application/pdf' }))
 
     expect(screen.getByRole('alert').textContent).toBe('Choose a JPEG, PNG, or WebP image.')
     expect(mutateAsync).not.toHaveBeenCalled()
@@ -75,28 +84,28 @@ describe('StudyLoadUpload', () => {
 
   it('accepts a file exactly 5 MB in size', async () => {
     const onUploaded = vi.fn()
-    render(<StudyLoadUpload onUploaded={onUploaded} />)
+    render(<StudentProfileUpload onUploaded={onUploaded} />)
 
     selectFile(
-      new File([new Uint8Array(STUDY_LOAD_MAX_BYTES)], 'study-load.jpg', {
+      new File([new Uint8Array(STUDENT_PROFILE_MAX_BYTES)], 'student-profile.jpg', {
         type: 'image/jpeg',
       }),
     )
 
-    await waitFor(() => expect(onUploaded).toHaveBeenCalledWith(studyLoadPath))
+    await waitFor(() => expect(onUploaded).toHaveBeenCalledWith(studentProfilePath))
     expect(mutateAsync).toHaveBeenCalledTimes(1)
   })
 
   it('rejects a file larger than 5 MB before requesting an upload', () => {
-    render(<StudyLoadUpload onUploaded={vi.fn()} />)
+    render(<StudentProfileUpload onUploaded={vi.fn()} />)
 
     selectFile(
-      new File([new Uint8Array(STUDY_LOAD_MAX_BYTES + 1)], 'study-load.jpg', {
+      new File([new Uint8Array(STUDENT_PROFILE_MAX_BYTES + 1)], 'student-profile.jpg', {
         type: 'image/jpeg',
       }),
     )
 
-    expect(screen.getByRole('alert').textContent).toBe('Study Load must be 5 MB or smaller.')
+    expect(screen.getByRole('alert').textContent).toBe('Student Profile must be 5 MB or smaller.')
     expect(mutateAsync).not.toHaveBeenCalled()
     expect(fetchMock).not.toHaveBeenCalled()
   })
@@ -104,24 +113,24 @@ describe('StudyLoadUpload', () => {
   it('shows a safe error when the direct Storage upload fails', async () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }))
     const onUploaded = vi.fn()
-    render(<StudyLoadUpload onUploaded={onUploaded} />)
+    render(<StudentProfileUpload onUploaded={onUploaded} />)
 
-    selectFile(new File(['image'], 'study-load.png', { type: 'image/png' }))
+    selectFile(new File(['image'], 'student-profile.png', { type: 'image/png' }))
 
     expect((await screen.findByRole('alert')).textContent).toBe(
-      'Unable to upload the Study Load. Please try again.',
+      'Unable to upload the Student Profile. Please try again.',
     )
     expect(onUploaded).not.toHaveBeenCalled()
   })
 
   it('does not render the signed URL or object path', async () => {
     const onUploaded = vi.fn()
-    const { container } = render(<StudyLoadUpload onUploaded={onUploaded} />)
+    const { container } = render(<StudentProfileUpload onUploaded={onUploaded} />)
 
-    selectFile(new File(['image'], 'study-load.webp', { type: 'image/webp' }))
+    selectFile(new File(['image'], 'student-profile.webp', { type: 'image/webp' }))
 
     await waitFor(() => expect(onUploaded).toHaveBeenCalled())
     expect(container.textContent).not.toContain(signedUrl)
-    expect(container.textContent).not.toContain(studyLoadPath)
+    expect(container.textContent).not.toContain(studentProfilePath)
   })
 })
