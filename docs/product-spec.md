@@ -9,7 +9,7 @@
 
 ## 1. Summary
 
-A web app for running one Election for members of the `example.com` organization, replacing Google Forms. Before election day, people register by uploading their Study Load and declaring their Year Level, and an Admin approves or rejects each Registration. On election day, each person signs in with their organization Google account and casts one Ballot. People who missed the Registration Period, or whose Registration isn't approved yet, can register or fix their Registration and vote on the day; their Held Ballot counts once an Admin approves the Registration. Anyone can follow the public Turnout count. Admins can audit every Ballot with the Voter's name and release the Results in the app.
+A web app for running one Election for members of the `example.com` organization, replacing Google Forms. Before election day, people register by uploading a screenshot of their Student Profile and declaring their Year Level, and an Admin approves or rejects each Registration. On election day, each person signs in with their organization Google account and casts one Ballot. People who missed the Registration Period, or whose Registration isn't approved yet, can register or fix their Registration and vote on the day; their Held Ballot counts once an Admin approves the Registration. Anyone can follow the public Turnout count. Admins can audit every Ballot with the Voter's name and release the Results in the app.
 
 ## 2. Problem and goals
 
@@ -29,7 +29,7 @@ The new system must be:
 - Changing or withdrawing a Ballot after it is cast.
 - Ranked-choice or weighted voting.
 - Paper or any other voting channel. This system is the only way to vote.
-- Automatically verifying a Study Load or Year Level. Admins check them by eye. (Partly superseded by ADR 0006, proposed: OCR assists Admins, who still decide.)
+- Automatically verifying eligibility or Year Level. Admins check them by eye. (Partly superseded by ADR 0006: OCR reads the Student Profile to assist Admins, who still decide.)
 - Questions shown only to some Voters. Every Voter sees the same Ballot.
 - Secrecy of Ballots from Admins (see ADR 0002).
 
@@ -53,8 +53,8 @@ The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 - **Candidate**: a person who can be picked on a Question. Each has a name, photo, short bio/platform and, optionally, a Party.
 - **Party**: a political party Candidates run under (currently STAND, Tingog and SPP). A Candidate with no Party is **Independent**.
 - **Selection Limit**: the maximum number of Candidates a Voter can pick on a Question.
-- **Registration**: a request to become a Voter, carrying a Study Load and Year Level. It is *pending*, *approved* or *rejected*.
-- **Study Load**: a screenshot of the person's current enrollment.
+- **Registration**: a request to become a Voter, carrying a Student Profile and Year Level. It is *pending*, *approved* or *rejected*.
+- **Student Profile**: a screenshot of the person's ISMIS Student Profile, showing their name, student ID, Year Level and current term.
 - **Year Level**: the year a person declares they are in. Recorded for information only; every Voter sees the same Questions.
 - **Abstention**: an explicit "I choose no one" on a Question.
 - **Ballot**: a person's complete, final set of answers, recorded under their name. It counts only while their Registration is approved.
@@ -76,14 +76,14 @@ The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 
 - **US-2**: As an Applicant, I register during the Registration Period so I can vote on election day.
   - FR-2.1: The Registration Period opens on **2026-11-15** and closes before the Election opens (see §10). Registrations are accepted again while the Election is open (ADR 0008).
-  - FR-2.2: A Registration requires a Year Level, picked from a fixed list, and a Study Load image upload. The Year Level is for information only and doesn't affect the Ballot.
+  - FR-2.2: A Registration requires a Year Level, picked from a fixed list, and a Student Profile image upload. The Year Level is for information only and doesn't affect the Ballot.
   - FR-2.3: The Applicant can see their Registration status: pending, approved or rejected.
   - FR-2.4: A rejected Registration shows the reason the Admin gave. The Applicant can fix it and resubmit while the Registration Period or the Election is open.
   - FR-2.5: An approved Registration can't be changed by the Voter.
   - FR-2.6: When neither the Registration Period nor the Election is open, no Registrations can be submitted or resubmitted. In particular, nothing can be submitted or resubmitted after the Election closes.
 
 - **US-3**: As an Admin, I review Registrations.
-  - FR-3.1: Admins see a list of Registrations, filterable by status and Year Level, showing name, email, Year Level and the Study Load image.
+  - FR-3.1: Admins see a list of Registrations, filterable by status and Year Level, showing name, email, Year Level and the Student Profile image, with OCR findings next to it when available (ADR 0006). OCR findings are advisory and never approve or reject a Registration.
   - FR-3.2: An Admin approves a Registration, or rejects it with a required reason.
   - FR-3.3: An Admin can correct an Applicant's Year Level before approving.
   - FR-3.4: Every decision records which Admin made it and when.
@@ -144,7 +144,7 @@ The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 **Registering (Nov 15 onwards)**
 
 1. Applicant opens the link → signs in with Google → "Register to vote."
-2. Picks their Year Level and uploads their Study Load → submits.
+2. Picks their Year Level and uploads a screenshot of their Student Profile → submits.
 3. Admin reviews it → approves, or rejects with a reason.
 4. If rejected, the Applicant fixes it and resubmits.
 
@@ -187,8 +187,10 @@ People whose Registration isn't approved yet also see (FR-5.10):
 | Risk | Status |
 |---|---|
 | Admins can see how any Voter voted, including each other | Accepted by the client (ADR 0002). Mitigated by the disclosure in §7 and logging of Ballot access |
-| A Voter declares the wrong Year Level | Low impact, since Year Level is information only. Admins can correct it against the Study Load before approval (FR-3.3) |
-| A Study Load screenshot can be edited or faked | Accepted; same as the current process. Admins review by eye |
+| A Voter declares the wrong Year Level | Low impact, since Year Level is information only. Admins can correct it against the Student Profile before approval (FR-3.3) |
+| A Student Profile screenshot can be edited or faked | Accepted; same as the current process. OCR findings are advisory, and Admins review by eye |
+| The Student Profile may not prove current enrollment, unlike the Study Load | Open with the commission (ADR 0006) |
+| Student Profile screenshots also show date of birth | Only the four fields OCR checks are stored, never the full OCR text; images follow the client's retention decision |
 | The developer has database access to Ballots | Accepted under a waiver drafted by the client |
 | A sign-in session stays valid for up to 8 hours and can't be ended remotely | Accepted; it can only ever cast that one person's single Ballot, and Admin revocation still applies immediately |
 | If a Workspace account's email address changes, the system treats it as a new person | Accepted; rare during a single Election |
@@ -198,7 +200,7 @@ People whose Registration isn't approved yet also see (FR-5.10):
 ## 9. Acceptance criteria
 
 - [ ] A non-`example.com` Google account, or a consumer account using an `@example.com` address, can't sign in.
-- [ ] Registrations can only be submitted during the Registration Period or while the Election is open, and require a Year Level and a Study Load image.
+- [ ] Registrations can only be submitted during the Registration Period or while the Election is open, and require a Year Level and a Student Profile image.
 - [ ] A rejected Applicant sees the reason and can resubmit during the Registration Period or while the Election is open, but not after it closes.
 - [ ] Only people with a Registration can cast a Ballot. A Ballot whose Registration isn't approved is held, needs the extra acknowledgement, and is left out of the Results.
 - [ ] A Held Ballot counts once its Registration is approved, including after close. It never counts if the Registration is rejected at close.
@@ -223,3 +225,4 @@ People whose Registration isn't approved yet also see (FR-5.10):
 - Approval of the disclosure wording in §7, including the Held Ballot acknowledgement.
 - Agreement to Held Ballots for late Registrations (ADR 0008), and whether public Turnout should show held and counted Ballots separately.
 - The developer database access waiver.
+- Whether the Student Profile is enough proof of current enrollment, or a Study Load is also needed (ADR 0006).

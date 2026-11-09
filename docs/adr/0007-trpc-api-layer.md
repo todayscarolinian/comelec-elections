@@ -31,5 +31,5 @@ The public Turnout read stays a plain cached route handler (`GET /api/turnout`),
 - The guards become procedure types: `publicProcedure`, `protectedProcedure` (a valid session), `voterProcedure` (Registration `APPROVED`) and `adminProcedure` (a row in `Admin`). Registration status and Admin rights are still read from the database on every call, never from the cookie.
 - **tRPC has no built-in CSRF origin check**, unlike Server Actions. The tRPC route handler must reject mutations whose `Origin` header doesn't match the app's URL. `SameSite=Lax` cookies and JSON request bodies add protection, but don't replace that check.
 - Server Components call procedures through a server-side caller, not over HTTP.
-- Study Loads still upload by signed URL. A procedure returns the URL, and the browser uploads the file straight to Storage.
+- Student Profiles still upload by signed URL. A procedure returns the URL, and the browser uploads the file straight to Storage.
 - tRPC error formatting and logging must never include `castBallot` inputs.

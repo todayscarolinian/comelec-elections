@@ -31,16 +31,16 @@ _Avoid_: Max votes, seats
 ## Registration
 
 **Registration**:
-A person's request to become a Voter, made during the Registration Period or while the Election is open; it carries their Study Load and Year Level and is pending, approved or rejected.
+A person's request to become a Voter, made during the Registration Period or while the Election is open; it carries their Student Profile and Year Level and is pending, approved or rejected.
 _Avoid_: Application, sign-up, enrollment
 
 **Applicant**:
 A person signed in with an organization-domain account whose Registration is not yet approved.
 _Avoid_: Registrant, pending voter
 
-**Study Load**:
-A screenshot of the person's current enrollment, submitted as proof that they are eligible to vote.
-_Avoid_: COR, enrollment proof, ID
+**Student Profile**:
+A screenshot of the person's Student Profile in ISMIS, showing their name, student ID, Year Level and current term, submitted as proof that they are eligible to vote.
+_Avoid_: Study Load, COR, enrollment proof, ID
 
 **Year Level**:
 The year a person declares they are in, recorded on their Registration and Ballot for information only; it does not change which Questions appear on their Ballot.
