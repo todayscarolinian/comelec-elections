@@ -1,16 +1,17 @@
 'use client'
 
 import { useMutation } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { getStudentProfileValidationError, STUDENT_PROFILE_MIME_TYPES } from '@/lib/student-profile'
 import { useTRPC } from '@/lib/trpc/client'
 
-type StudyLoadUploadProps = {
+type StudentProfileUploadProps = {
   onUploaded: (path: string) => void
 }
 
-export function StudyLoadUpload({ onUploaded }: Readonly<StudyLoadUploadProps>) {
+export function StudentProfileUpload({ onUploaded }: Readonly<StudentProfileUploadProps>) {
   const trpc = useTRPC()
+  const hintId = useId()
   const createUpload = useMutation(trpc.registration.createStudentProfileUpload.mutationOptions())
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string>()
@@ -47,7 +48,7 @@ export function StudyLoadUpload({ onUploaded }: Readonly<StudyLoadUploadProps>) 
       setUploaded(true)
       onUploaded(path)
     } catch {
-      setError('Unable to upload the Study Load. Please try again.')
+      setError('Unable to upload the Student Profile. Please try again.')
     } finally {
       setIsUploading(false)
     }
@@ -56,9 +57,10 @@ export function StudyLoadUpload({ onUploaded }: Readonly<StudyLoadUploadProps>) 
   return (
     <div>
       <label>
-        Study Load
+        Student Profile
         <input
           type="file"
+          aria-describedby={hintId}
           accept={STUDENT_PROFILE_MIME_TYPES.join(',')}
           disabled={isUploading}
           onChange={(event) => {
@@ -67,10 +69,14 @@ export function StudyLoadUpload({ onUploaded }: Readonly<StudyLoadUploadProps>) 
           }}
         />
       </label>
+      <p id={hintId}>
+        In ISMIS, click your avatar in the top right, then My Profile. Upload a screenshot that
+        shows your name, student ID, Year Level and current term.
+      </p>
 
-      {isUploading && <output>Uploading Study Load...</output>}
+      {isUploading && <output>Uploading Student Profile...</output>}
       {error && <p role="alert">{error}</p>}
-      {uploaded && <output>Study Load uploaded.</output>}
+      {uploaded && <output>Student Profile uploaded.</output>}
     </div>
   )
 }
