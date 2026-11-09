@@ -16,7 +16,7 @@ The OCR spike (S1-09) found that OCR read both documents accurately, including n
 - **The student ID only appears on desktop**, in the page header. On mobile it is hidden behind the menu.
 - **On mobile, the Study Load needs 2–3 screenshots** to show the whole course list, and only the first one shows the term.
 
-The Student Profile fits in one screenshot and shows the student's Full Name, Student ID, Year Level and current term. On the spike's sample, OCR read all four correctly, and each matched what the app already knows about the Applicant:
+The Student Profile fits in one screenshot on desktop, tablet and mobile, and shows the student's Full Name, Student ID, Year Level and current term. Each field is compared with what the app already knows about the Applicant:
 
 | Field | Compared with |
 |---|---|
@@ -25,7 +25,25 @@ The Student Profile fits in one screenshot and shows the student's Full Name, St
 | Year Level | The Year Level the Applicant declared |
 | Term | The current term, set in the Election definition |
 
-Each field is read from the value on the same row as its label, using text box positions, so text from the page behind the modal is ignored. The spike measured about 1–3.5 s per image and about 150 MB of memory on a dev machine, with unexplained spikes of 10–35 s.
+Each field is read from the text to the right of its label, using text box positions, so text from the page behind the modal is ignored. The value can span several lines down to halfway to the next label, because long names wrap onto two lines on mobile.
+
+### Spike results
+
+Full write-up: [R&D: OCR for Registration review](../research/ocr-spike-student-profiles.md).
+
+9 screenshots of 5 students: 4 desktop, 2 mobile and 3 tablet, including one low-resolution, slightly soft crop (667×702).
+
+| Field | Correct and matched |
+|---|---|
+| Full Name | 9/9 |
+| Student ID | 9/9 |
+| Year Level | 9/9 |
+| Term | 9/9 |
+
+- **Wrong students are rejected.** Scoring each screenshot against another student's details failed name, student ID and Year Level on all 9. Term still matched, as expected, because every sample was from the same term.
+- **The Google account name and the profile can be spelled differently.** In one sample, the account name had an extra letter in a given name compared with the profile. The name check allows small differences, so it still matched, but the review screen should show OCR's reading next to the account name.
+- **Student IDs can start with zero** (for example `01234567`), so they must be compared as text, never as numbers.
+- **Speed is the main risk, not accuracy.** Most images took 1.5–4 s with about 160 MB of memory on a dev machine. But the same image sometimes took 10–23 s on one run and 4 s on another, for no clear reason. Whether this is fast enough has to be measured on a Vercel preview (task 2.10).
 
 ## Considered Options
 
@@ -52,4 +70,4 @@ Each field is read from the value on the same row as its label, using text box p
 ## Open questions
 
 - **Does the Student Profile prove current enrollment?** The Study Load did, by listing enrolled courses. If the profile also shows the current semester for students who aren't enrolled, the commission must decide whether that is acceptable, or whether a Study Load is also needed.
-- **Mobile layout:** the spike only had a desktop Student Profile. A mobile sample must confirm the modal fits in one screenshot.
+- **Speed on Vercel:** cold start, time per image and memory, including the unexplained slow runs seen on a dev machine (task 2.10).

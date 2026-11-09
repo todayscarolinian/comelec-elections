@@ -320,9 +320,9 @@ OCR is advisory: it never changes a Registration's `status`, and a failure never
 
 1. `submitRegistration` schedules OCR with Next.js `after()`, so the Applicant's response doesn't wait for it.
 2. The job downloads the image from the `student-profiles` bucket with the service role key and runs PaddleOCR's PP-OCRv6 models through `onnxruntime-node`. The model files are bundled with the function.
-3. It reads Full Name, Student ID and Year Level by pairing each label with the value on the same row (text box positions), and the term by pattern (`1ST Semester 2026`).
+3. It reads Full Name, Student ID and Year Level from the text to the right of each label (text box positions), down to halfway to the next label, because long names wrap onto two lines on mobile. It reads the term by pattern (`1ST Semester 2026`).
 4. It compares each field with what the app already knows:
-   - Student ID = the local part of `Person.email`
+   - Student ID = the local part of `Person.email`, compared as text, because IDs can start with zero
    - every word of `Person.name` appears in Full Name, in any order
    - Year Level = the declared Year Level
    - term = `CURRENT_TERM` (§2)
