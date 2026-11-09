@@ -45,17 +45,17 @@ model Person {
 }
 
 model Registration {
-  id              String             @id @default(uuid())
-  personId        String             @unique
-  person          Person             @relation(fields: [personId], references: [id])
-  yearLevel       String // one of YEAR_LEVELS; may be corrected by an Admin on approval
-  studyLoadPath   String // object path in the study-loads bucket
-  status          RegistrationStatus @default(PENDING)
-  rejectionReason String?
-  reviewedBy      String? // Admin email
-  reviewedAt      DateTime?
-  submittedAt     DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id                 String             @id @default(uuid())
+  personId           String             @unique
+  person             Person             @relation(fields: [personId], references: [id])
+  yearLevel          String // one of YEAR_LEVELS; may be corrected by an Admin on approval
+  studentProfilePath String // object path in the student-profiles bucket
+  status             RegistrationStatus @default(PENDING)
+  rejectionReason    String?
+  reviewedBy         String? // Admin email
+  reviewedAt         DateTime?
+  submittedAt        DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   @@index([status, yearLevel])
 }
