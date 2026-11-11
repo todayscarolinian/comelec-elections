@@ -9,7 +9,9 @@ const { grantAdminService, revokeAdminService, listAdminsService } = vi.hoisted(
 
 vi.mock('@/lib/prisma', () => ({ default: {} }))
 vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
-vi.mock('../services/adminPermissions', () => ({
+vi.mock('../services/adminPermissions', async (importOriginal) => ({
+  // Keep the real error classes so the procedures can map them.
+  ...(await importOriginal<typeof import('../services/adminPermissions')>()),
   grantAdmin: grantAdminService,
   revokeAdmin: revokeAdminService,
   listAdmins: listAdminsService,
@@ -18,6 +20,11 @@ vi.mock('../services/adminPermissions', () => ({
 import { createCallerFactory, type Db, type Session } from '@/server/trpc/init'
 import { makeCtx } from '@/server/trpc/helpers'
 import { adminRouter } from '../router'
+import {
+  AdminNotFoundError,
+  AdminRevokeConflictError,
+  LastAdminError,
+} from '../services/adminPermissions'
 
 const createCaller = createCallerFactory(adminRouter)
 
@@ -55,7 +62,10 @@ describe('admin router', () => {
     grantAdminService.mockReset()
     revokeAdminService.mockReset()
     listAdminsService.mockReset()
-    grantAdminService.mockImplementation(async ({ email }: { email: string }) => ({ email }))
+    grantAdminService.mockImplementation(async (_db: Db, { email }: { email: string }) => ({
+      email,
+      created: true,
+    }))
     revokeAdminService.mockResolvedValue(undefined)
     listAdminsService.mockResolvedValue([])
   })
@@ -93,7 +103,7 @@ describe('admin router', () => {
 
     it('rejects a revoked Admin on their next call', async () => {
       const admins = new Set([ADMIN_A, ADMIN_B])
-      revokeAdminService.mockImplementation(async ({ email }: { email: string }) => {
+      revokeAdminService.mockImplementation(async (_db: Db, { email }: { email: string }) => {
         admins.delete(email)
       })
 
@@ -119,7 +129,7 @@ describe('admin router', () => {
       await expect(caller.grantAdmin({ email: '  New.Admin@Example.COM ' })).resolves.toEqual({
         email: 'new.admin@example.com',
       })
-      expect(grantAdminService).toHaveBeenCalledWith({
+      expect(grantAdminService).toHaveBeenCalledWith(expect.anything(), {
         email: 'new.admin@example.com',
         grantedBy: ADMIN_A,
       })
@@ -151,7 +161,10 @@ describe('admin router', () => {
       const caller = callerFor(ADMIN_A, new Set([ADMIN_A, ADMIN_B]))
 
       await expect(caller.revokeAdmin({ email: ' B@Example.com ' })).resolves.toEqual({ ok: true })
-      expect(revokeAdminService).toHaveBeenCalledWith({ email: ADMIN_B, revokedBy: ADMIN_A })
+      expect(revokeAdminService).toHaveBeenCalledWith(expect.anything(), {
+        email: ADMIN_B,
+        revokedBy: ADMIN_A,
+      })
     })
 
     it('rejects an email outside the organization domain', async () => {
@@ -163,15 +176,23 @@ describe('admin router', () => {
       expect(revokeAdminService).not.toHaveBeenCalled()
     })
 
-    it('surfaces the last-Admin rejection from the service', async () => {
-      const { TRPCError } = await import('@trpc/server')
-      revokeAdminService.mockRejectedValueOnce(
-        new TRPCError({ code: 'PRECONDITION_FAILED', message: 'Cannot revoke the last Admin' }),
-      )
+    it.each([
+      [new LastAdminError(), 'PRECONDITION_FAILED'],
+      [new AdminNotFoundError(), 'NOT_FOUND'],
+      [new AdminRevokeConflictError(), 'CONFLICT'],
+    ])('maps %o from the service to %s', async (error, code) => {
+      revokeAdminService.mockRejectedValueOnce(error)
+      const caller = callerFor(ADMIN_A, new Set([ADMIN_A]))
+
+      await expect(caller.revokeAdmin({ email: ADMIN_A })).rejects.toMatchObject({ code })
+    })
+
+    it('leaves unexpected service errors as INTERNAL_SERVER_ERROR', async () => {
+      revokeAdminService.mockRejectedValueOnce(new Error('connection lost'))
       const caller = callerFor(ADMIN_A, new Set([ADMIN_A]))
 
       await expect(caller.revokeAdmin({ email: ADMIN_A })).rejects.toMatchObject({
-        code: 'PRECONDITION_FAILED',
+        code: 'INTERNAL_SERVER_ERROR',
       })
     })
   })
