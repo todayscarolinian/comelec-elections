@@ -5,23 +5,15 @@ vi.mock('@/lib/prisma', () => ({ default: {} }))
 vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
 
 import type { Db } from '@/server/trpc/init'
-import {
-  AdminNotFoundError,
-  AdminRevokeConflictError,
-  grantAdmin,
-  LastAdminError,
-  listAdmins,
-  revokeAdmin,
-} from '../services/adminPermissions'
+import { grantAdmin, listAdmins, revokeAdmin } from '../services/adminPermissions'
 
 const tx = {
   admin: {
-    createMany: vi.fn(),
+    upsert: vi.fn(),
     findUnique: vi.fn(),
     count: vi.fn(),
     delete: vi.fn(),
   },
-  auditLog: { create: vi.fn() },
 }
 const transaction = vi.fn(async (callback: (client: typeof tx) => unknown) => callback(tx))
 const findMany = vi.fn()
@@ -38,41 +30,17 @@ beforeEach(() => {
 
 describe('grantAdmin', () => {
   beforeEach(() => {
-    tx.admin.createMany.mockResolvedValue({ count: 1 })
+    tx.admin.upsert.mockResolvedValue({ email: 'new@example.com' })
   })
 
-  it('creates the Admin with a normalised email, leaving an existing grant untouched', async () => {
-    await expect(
-      grantAdmin(db, { email: '  New@Example.COM ', grantedBy: 'a@example.com' }),
-    ).resolves.toEqual({ email: 'new@example.com', created: true })
+  it('upserts a normalised email without overwriting an existing grant', async () => {
+    await grantAdmin(db, { email: '  New@Example.COM ', grantedBy: 'a@example.com' })
 
-    expect(tx.admin.createMany).toHaveBeenCalledWith({
-      data: [{ email: 'new@example.com', grantedBy: 'a@example.com' }],
-      skipDuplicates: true,
+    expect(tx.admin.upsert).toHaveBeenCalledWith({
+      where: { email: 'new@example.com' },
+      update: {},
+      create: { email: 'new@example.com', grantedBy: 'a@example.com' },
     })
-  })
-
-  it('writes GRANT_ADMIN to the audit log in the same transaction', async () => {
-    await grantAdmin(db, { email: 'new@example.com', grantedBy: 'a@example.com' })
-
-    expect(transaction).toHaveBeenCalledTimes(1)
-    expect(tx.auditLog.create).toHaveBeenCalledWith({
-      data: {
-        adminEmail: 'a@example.com',
-        action: 'GRANT_ADMIN',
-        target: 'new@example.com',
-        detail: undefined,
-      },
-    })
-  })
-
-  it('writes no audit row when the person is already an Admin', async () => {
-    tx.admin.createMany.mockResolvedValue({ count: 0 })
-
-    await expect(
-      grantAdmin(db, { email: 'b@example.com', grantedBy: 'a@example.com' }),
-    ).resolves.toEqual({ email: 'b@example.com', created: false })
-    expect(tx.auditLog.create).not.toHaveBeenCalled()
   })
 })
 
@@ -82,7 +50,7 @@ describe('revokeAdmin', () => {
     tx.admin.count.mockResolvedValue(2)
   })
 
-  it('removes the Admin and writes REVOKE_ADMIN in the same Serializable transaction', async () => {
+  it('removes the Admin in a Serializable transaction', async () => {
     await revokeAdmin(db, { email: ' B@Example.com ', revokedBy: 'a@example.com' })
 
     expect(transaction).toHaveBeenCalledTimes(1)
@@ -90,14 +58,6 @@ describe('revokeAdmin', () => {
       isolationLevel: 'Serializable',
     })
     expect(tx.admin.delete).toHaveBeenCalledWith({ where: { email: 'b@example.com' } })
-    expect(tx.auditLog.create).toHaveBeenCalledWith({
-      data: {
-        adminEmail: 'a@example.com',
-        action: 'REVOKE_ADMIN',
-        target: 'b@example.com',
-        detail: undefined,
-      },
-    })
   })
 
   it('rejects revoking the last Admin', async () => {
@@ -105,9 +65,8 @@ describe('revokeAdmin', () => {
 
     await expect(
       revokeAdmin(db, { email: 'b@example.com', revokedBy: 'b@example.com' }),
-    ).rejects.toBeInstanceOf(LastAdminError)
+    ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' })
     expect(tx.admin.delete).not.toHaveBeenCalled()
-    expect(tx.auditLog.create).not.toHaveBeenCalled()
   })
 
   it('rejects revoking someone who is not an Admin', async () => {
@@ -115,19 +74,17 @@ describe('revokeAdmin', () => {
 
     await expect(
       revokeAdmin(db, { email: 'nobody@example.com', revokedBy: 'a@example.com' }),
-    ).rejects.toBeInstanceOf(AdminNotFoundError)
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
     expect(tx.admin.delete).not.toHaveBeenCalled()
-    expect(tx.auditLog.create).not.toHaveBeenCalled()
   })
 
   it('retries once after a write conflict and re-checks the last-Admin guard', async () => {
-    // A concurrent revoke won the race: the retry now sees a single Admin.
     transaction.mockRejectedValueOnce(writeConflict())
     tx.admin.count.mockResolvedValue(1)
 
     await expect(
       revokeAdmin(db, { email: 'b@example.com', revokedBy: 'a@example.com' }),
-    ).rejects.toBeInstanceOf(LastAdminError)
+    ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' })
     expect(transaction).toHaveBeenCalledTimes(2)
     expect(tx.admin.delete).not.toHaveBeenCalled()
   })
@@ -147,7 +104,7 @@ describe('revokeAdmin', () => {
 
     await expect(
       revokeAdmin(db, { email: 'b@example.com', revokedBy: 'a@example.com' }),
-    ).rejects.toBeInstanceOf(AdminRevokeConflictError)
+    ).rejects.toMatchObject({ code: 'CONFLICT' })
     expect(transaction).toHaveBeenCalledTimes(2)
   })
 

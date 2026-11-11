@@ -9,22 +9,16 @@ const { grantAdminService, revokeAdminService, listAdminsService } = vi.hoisted(
 
 vi.mock('@/lib/prisma', () => ({ default: {} }))
 vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
-vi.mock('../services/adminPermissions', async (importOriginal) => ({
-  // Keep the real error classes so the procedures can map them.
-  ...(await importOriginal<typeof import('../services/adminPermissions')>()),
+vi.mock('../services/adminPermissions', () => ({
   grantAdmin: grantAdminService,
   revokeAdmin: revokeAdminService,
   listAdmins: listAdminsService,
 }))
 
+import { TRPCError } from '@trpc/server'
 import { createCallerFactory, type Db, type Session } from '@/server/trpc/init'
 import { makeCtx } from '@/server/trpc/helpers'
 import { adminRouter } from '../router'
-import {
-  AdminNotFoundError,
-  AdminRevokeConflictError,
-  LastAdminError,
-} from '../services/adminPermissions'
 
 const createCaller = createCallerFactory(adminRouter)
 
@@ -35,7 +29,6 @@ function sessionFor(email: string): Session {
   return { user: { personId: `person-${email}`, email } }
 }
 
-/** `admins` is the live set of rows in the Admin table the guard reads. */
 function callerFor(email: string | null, admins: Set<string>) {
   const db = {
     person: {
@@ -64,7 +57,6 @@ describe('admin router', () => {
     listAdminsService.mockReset()
     grantAdminService.mockImplementation(async (_db: Db, { email }: { email: string }) => ({
       email,
-      created: true,
     }))
     revokeAdminService.mockResolvedValue(undefined)
     listAdminsService.mockResolvedValue([])
@@ -176,16 +168,15 @@ describe('admin router', () => {
       expect(revokeAdminService).not.toHaveBeenCalled()
     })
 
-    it.each([
-      [new LastAdminError(), 'PRECONDITION_FAILED'],
-      [new AdminNotFoundError(), 'NOT_FOUND'],
-      [new AdminRevokeConflictError(), 'CONFLICT'],
-    ])('maps %o from the service to %s', async (error, code) => {
-      revokeAdminService.mockRejectedValueOnce(error)
-      const caller = callerFor(ADMIN_A, new Set([ADMIN_A]))
+    it.each(['PRECONDITION_FAILED', 'NOT_FOUND', 'CONFLICT'] as const)(
+      'surfaces %s from the service',
+      async (code) => {
+        revokeAdminService.mockRejectedValueOnce(new TRPCError({ code }))
+        const caller = callerFor(ADMIN_A, new Set([ADMIN_A]))
 
-      await expect(caller.revokeAdmin({ email: ADMIN_A })).rejects.toMatchObject({ code })
-    })
+        await expect(caller.revokeAdmin({ email: ADMIN_A })).rejects.toMatchObject({ code })
+      },
+    )
 
     it('leaves unexpected service errors as INTERNAL_SERVER_ERROR', async () => {
       revokeAdminService.mockRejectedValueOnce(new Error('connection lost'))
