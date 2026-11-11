@@ -19,10 +19,6 @@ const transaction = vi.fn(async (callback: (client: typeof tx) => unknown) => ca
 const findMany = vi.fn()
 const db = { $transaction: transaction, admin: { findMany } } as unknown as Db
 
-function writeConflict() {
-  return Object.assign(new Error('write conflict'), { code: 'P2034' })
-}
-
 beforeEach(() => {
   vi.clearAllMocks()
   transaction.mockImplementation(async (callback) => callback(tx))
@@ -76,46 +72,6 @@ describe('revokeAdmin', () => {
       revokeAdmin(db, { email: 'nobody@example.com', revokedBy: 'a@example.com' }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
     expect(tx.admin.delete).not.toHaveBeenCalled()
-  })
-
-  it('retries once after a write conflict and re-checks the last-Admin guard', async () => {
-    transaction.mockRejectedValueOnce(writeConflict())
-    tx.admin.count.mockResolvedValue(1)
-
-    await expect(
-      revokeAdmin(db, { email: 'b@example.com', revokedBy: 'a@example.com' }),
-    ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' })
-    expect(transaction).toHaveBeenCalledTimes(2)
-    expect(tx.admin.delete).not.toHaveBeenCalled()
-  })
-
-  it('succeeds when the retry commits', async () => {
-    transaction.mockRejectedValueOnce(writeConflict())
-
-    await expect(
-      revokeAdmin(db, { email: 'b@example.com', revokedBy: 'a@example.com' }),
-    ).resolves.toBeUndefined()
-    expect(transaction).toHaveBeenCalledTimes(2)
-    expect(tx.admin.delete).toHaveBeenCalledTimes(1)
-  })
-
-  it('gives up with a conflict error when every attempt hits a write conflict', async () => {
-    transaction.mockRejectedValue(writeConflict())
-
-    await expect(
-      revokeAdmin(db, { email: 'b@example.com', revokedBy: 'a@example.com' }),
-    ).rejects.toMatchObject({ code: 'CONFLICT' })
-    expect(transaction).toHaveBeenCalledTimes(2)
-  })
-
-  it('does not retry other database errors', async () => {
-    const failure = new Error('connection lost')
-    transaction.mockRejectedValueOnce(failure)
-
-    await expect(
-      revokeAdmin(db, { email: 'b@example.com', revokedBy: 'a@example.com' }),
-    ).rejects.toBe(failure)
-    expect(transaction).toHaveBeenCalledTimes(1)
   })
 })
 

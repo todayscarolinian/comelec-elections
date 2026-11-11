@@ -12,13 +12,6 @@ export type RevokeAdminInput = {
   revokedBy: string
 }
 
-const REVOKE_ATTEMPTS = 2
-const WRITE_CONFLICT = 'P2034'
-
-function isWriteConflict(error: unknown) {
-  return error instanceof Error && 'code' in error && error.code === WRITE_CONFLICT
-}
-
 export async function grantAdmin(db: Db, { email, grantedBy }: GrantAdminInput) {
   const adminEmail = normalizeEmail(email)
 
@@ -32,7 +25,9 @@ export async function grantAdmin(db: Db, { email, grantedBy }: GrantAdminInput) 
   })
 }
 
-async function revokeAdminOnce(db: Db, adminEmail: string) {
+export async function revokeAdmin(db: Db, { email }: RevokeAdminInput) {
+  const adminEmail = normalizeEmail(email)
+
   await db.$transaction(
     async (tx) => {
       const existing = await tx.admin.findUnique({ where: { email: adminEmail } })
@@ -51,24 +46,6 @@ async function revokeAdminOnce(db: Db, adminEmail: string) {
     },
     { isolationLevel: 'Serializable' },
   )
-}
-
-export async function revokeAdmin(db: Db, { email }: RevokeAdminInput) {
-  const adminEmail = normalizeEmail(email)
-
-  for (let attempt = 1; attempt <= REVOKE_ATTEMPTS; attempt++) {
-    try {
-      await revokeAdminOnce(db, adminEmail)
-      return
-    } catch (error) {
-      if (!isWriteConflict(error)) throw error
-    }
-  }
-
-  throw new TRPCError({
-    code: 'CONFLICT',
-    message: 'The Admin list changed at the same time. Try again.',
-  })
 }
 
 export async function listAdmins(db: Db) {

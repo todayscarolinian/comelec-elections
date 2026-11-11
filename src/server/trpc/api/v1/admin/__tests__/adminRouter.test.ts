@@ -168,7 +168,7 @@ describe('admin router', () => {
       expect(revokeAdminService).not.toHaveBeenCalled()
     })
 
-    it.each(['PRECONDITION_FAILED', 'NOT_FOUND', 'CONFLICT'] as const)(
+    it.each(['PRECONDITION_FAILED', 'NOT_FOUND'] as const)(
       'surfaces %s from the service',
       async (code) => {
         revokeAdminService.mockRejectedValueOnce(new TRPCError({ code }))
