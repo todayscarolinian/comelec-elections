@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/server/storage', () => ({ getSupabaseAdmin: vi.fn() }))
 
-import { createSignedStudentProfileUpload } from '../services/studentProfileStorage'
+import {
+  createSignedStudentProfileUpload,
+  studentProfileExists,
+} from '../services/studentProfileStorage'
 
 describe('createSignedStudentProfileUpload', () => {
   const createSignedUploadUrl = vi.fn()
@@ -50,6 +53,31 @@ describe('createSignedStudentProfileUpload', () => {
 
     await expect(createSignedStudentProfileUpload('person-1', bucket)).rejects.toThrow(
       'Unable to create signed Student Profile upload',
+    )
+  })
+})
+
+describe('studentProfileExists', () => {
+  const exists = vi.fn()
+  const bucket = { exists }
+
+  beforeEach(() => exists.mockReset())
+
+  it('returns true when the object exists', async () => {
+    exists.mockResolvedValueOnce({ data: true, error: null })
+    await expect(studentProfileExists('person-1/x', bucket)).resolves.toBe(true)
+    expect(exists).toHaveBeenCalledWith('person-1/x')
+  })
+
+  it('returns false when the object is missing', async () => {
+    exists.mockResolvedValueOnce({ data: false, error: { message: 'Object not found' } })
+    await expect(studentProfileExists('person-1/x', bucket)).resolves.toBe(false)
+  })
+
+  it('throws a generic error when Storage fails', async () => {
+    exists.mockRejectedValueOnce(new Error('private Supabase error details'))
+    await expect(studentProfileExists('person-1/x', bucket)).rejects.toThrow(
+      'Unable to check Student Profile upload',
     )
   })
 })

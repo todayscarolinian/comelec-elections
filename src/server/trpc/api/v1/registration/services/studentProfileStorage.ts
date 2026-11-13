@@ -31,3 +31,19 @@ export async function createSignedStudentProfileUpload(
     signedUrl: data.signedUrl,
   }
 }
+
+type ExistsBucket = {
+  exists(path: string): Promise<{ data: boolean; error: unknown }>
+}
+
+export async function studentProfileExists(
+  path: string,
+  bucket: ExistsBucket = getSupabaseAdmin().storage.from(STUDENT_PROFILE_BUCKET),
+) {
+  try {
+    const { data } = await bucket.exists(path)
+    return data === true
+  } catch {
+    throw new Error('Unable to check Student Profile upload')
+  }
+}
