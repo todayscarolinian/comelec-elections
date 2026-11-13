@@ -42,6 +42,7 @@ app/api/trpc/[trpc]/route.ts   # HTTP handler; rejects cross-origin mutations
 
    ```ts
    export const appRouter = createTRPCRouter({
+     admin: adminRouter,
      health: healthRouter,
      registration: registrationRouter,
    })

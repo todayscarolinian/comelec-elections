@@ -5,6 +5,8 @@ export const AUDIT_ACTIONS = [
   'EXPORT_BALLOTS',
   'VIEW_RESULTS',
   'RELEASE_RESULTS',
+  'GRANT_ADMIN',
+  'REVOKE_ADMIN',
 ] as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
