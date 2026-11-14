@@ -20,6 +20,13 @@ export const grantAdminOutputSchema = z.object({ email: z.string() })
 export const revokeAdminInputSchema = z.object({ email: organizationEmail })
 export const revokeAdminOutputSchema = z.object({ ok: z.literal(true) })
 
+const windowStatusSchema = z.enum(['OPEN', 'CLOSED'])
+export const setRegistrationStatusInputSchema = z.object({ status: windowStatusSchema })
+export const registrationWindowOutputSchema = z.object({
+  registrationStatus: windowStatusSchema,
+  electionStatus: windowStatusSchema,
+})
+
 export const listAdminsOutputSchema = z.array(
   z.object({
     email: z.string(),

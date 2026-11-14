@@ -104,6 +104,14 @@ const result = await caller.health.ping()
 - Never log or echo procedure inputs, especially Ballot inputs. Don't add an `errorFormatter` that includes them.
 - `POST /api/trpc` requests must carry an `Origin` matching `AUTH_URL`, or the request's own origin when `AUTH_URL` is unset. Mutations are POST, so cross-origin mutations get a 403.
 
+## Registration window administration (S2-05)
+
+- `admin.getRegistrationStatus()` returns `{ registrationStatus, electionStatus }`.
+- `admin.setRegistrationStatus({ status: 'OPEN' | 'CLOSED' })` sets an explicit Registration window status and returns the same shape. Repeated requests set the requested value rather than flipping it.
+- Both require current Admin rights. The mutation updates `ElectionState('main')` and writes `SET_REGISTRATION_STATUS` to `AuditLog` in one transaction; audit failure aborts the update.
+- A missing seeded `ElectionState` returns `PRECONDITION_FAILED`; neither endpoint creates it.
+- Closing Registration does not close the Election. Submission remains allowed while either window is open (ADR 0008). The query returns both statuses so the future Admin UI can explain this distinction.
+
 ## Testing
 
 Test procedures through `createCallerFactory` with a fake context. There's no HTTP involved:

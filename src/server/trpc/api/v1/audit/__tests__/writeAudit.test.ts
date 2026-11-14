@@ -8,6 +8,7 @@ vi.mock('@/lib/prisma', () => ({
 }))
 
 import { writeAudit } from '../services/writeAudit'
+import type { Prisma } from '@/generated/prisma/client'
 
 describe('writeAudit', () => {
   beforeEach(() => {
@@ -52,5 +53,22 @@ describe('writeAudit', () => {
     await expect(
       writeAudit({ adminEmail: 'admin@example.com', action: 'EXPORT_BALLOTS' }),
     ).resolves.toEqual({ id: 'audit-1' })
+  })
+
+  it('uses the supplied transaction client instead of the global client', async () => {
+    const transactionCreate = vi.fn().mockResolvedValue({ id: 'transaction-audit' })
+    const tx = { auditLog: { create: transactionCreate } } as unknown as Prisma.TransactionClient
+    await expect(
+      writeAudit({ adminEmail: ' Admin@Example.COM ', action: 'VIEW_RESULTS' }, tx),
+    ).resolves.toEqual({ id: 'transaction-audit' })
+    expect(transactionCreate).toHaveBeenCalledWith({
+      data: {
+        adminEmail: 'admin@example.com',
+        action: 'VIEW_RESULTS',
+        target: undefined,
+        detail: undefined,
+      },
+    })
+    expect(create).not.toHaveBeenCalled()
   })
 })
