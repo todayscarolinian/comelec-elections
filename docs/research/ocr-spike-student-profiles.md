@@ -113,7 +113,7 @@ The function ran on Fluid compute with 1 vCPU and 2,048 MB in `iad1`.
 - **Time grows with image dimensions**, not file size. On 1 vCPU it's slower than the dev machine (2–6 s on 16 threads).
 - **Vercel caps request bodies at 4.5 MB**, so images near the 5 MB upload limit couldn't be sent to the test route. The feature downloads images from Supabase instead, so this doesn't apply to it.
 
-**Settings for 2.10b (#25):** `maxDuration = 60` on `/api/trpc` (about 5× the worst run), 2,048 MB memory, one OCR job at a time per instance, and the model files and linux-x64 binary added to the route's file tracing with other platforms' binaries excluded. `onnxruntime-node`'s postinstall stays blocked, because it downloads CUDA libraries that would exceed the 250 MB limit. The full measurements and config are in [#28](https://github.com/todayscarolinian/comelec-elections/issues/28).
+**Settings for 2.10b (#25):** `maxDuration = 300` on `/api/trpc` (the worst run was 12.5 s, but jobs queued behind the one-job-per-instance lock count against the same limit), 2,048 MB memory, one OCR job at a time per instance, and the model files and linux-x64 binary added to the route's file tracing with other platforms' binaries excluded. `onnxruntime-node`'s postinstall stays blocked, because it downloads CUDA libraries that would exceed the 250 MB limit. The full measurements and config are in [#28](https://github.com/todayscarolinian/comelec-elections/issues/28).
 
 ## Decision
 
@@ -125,7 +125,7 @@ The function ran on Fluid compute with 1 vCPU and 2,048 MB in `iad1`.
 
 | Item | Owner / task | Due |
 |---|---|---|
-| ~~Measure cold start, time per image and memory on a Vercel preview; set `maxDuration` for `/api/trpc`~~ Done: go, `maxDuration = 60` (Finding 4) | 2.10a (#28) | Done Nov 16 |
+| ~~Measure cold start, time per image and memory on a Vercel preview; set `maxDuration` for `/api/trpc`~~ Done: go, `maxDuration = 300` (Finding 4) | 2.10a (#28) | Done Nov 16 |
 | Rename Study Load to Student Profile in code (bucket, `studentProfilePath` migration run manually, upload procedure) | 2.11 (#29) | Before 2.2–2.4 |
 | Does the Student Profile prove current enrollment, or is a Study Load also needed? | Commission | Nov 12 |
 | Retention of Student Profile images, which show date of birth | Client | Nov 19 |
