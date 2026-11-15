@@ -43,7 +43,7 @@ Full write-up: [R&D: OCR for Registration review](../research/ocr-spike-student-
 - **Wrong students are rejected.** Scoring each screenshot against another student's details failed name, student ID and Year Level on all 9. Term still matched, as expected, because every sample was from the same term.
 - **The Google account name and the profile can be spelled differently.** In one sample, the account name had an extra letter in a given name compared with the profile. The name check allows small differences, so it still matched, but the review screen should show OCR's reading next to the account name.
 - **Student IDs can start with zero** (for example `01234567`), so they must be compared as text, never as numbers.
-- **Speed is the main risk, not accuracy.** Most images took 1.5–4 s with about 160 MB of memory on a dev machine. But the same image sometimes took 10–23 s on one run and 4 s on another, for no clear reason. Whether this is fast enough has to be measured on a Vercel preview (task 2.10a).
+- **Speed is the main risk, not accuracy.** Most images took 1.5–4 s with about 160 MB of memory on a dev machine. But the same image sometimes took 10–23 s on one run and 4 s on another, for no clear reason. On a Vercel preview (task 2.10a, #28), OCR took 2–12 s per image on 1 vCPU with a peak of about 1.5 GB of the 2 GB limit, and the slow runs didn't happen. The result was a go.
 
 ## Considered Options
 
@@ -51,7 +51,7 @@ Full write-up: [R&D: OCR for Registration review](../research/ocr-spike-student-
 - **No OCR (manual review only, the original design)**: the fallback. If OCR proves unreliable or too slow on Vercel, Registration launches with manual review only.
 - **OCR in the browser (tesseract.js)**: rejected. Free, and the image is never sent anywhere new, but the result comes from the client and can be faked. Admins can't trust it.
 - **OCR on the server with tesseract**: rejected in favor of PaddleOCR, which has the same trust and privacy benefits and is usually more accurate on photos, skewed images and mixed layouts.
-- **OCR on the server with PaddleOCR (ONNX models in Node)**: **chosen**. The result can be trusted, the image stays within our infrastructure, and the models are small enough for a Vercel function. Cold start, time and memory limits still need to be measured on a Vercel preview.
+- **OCR on the server with PaddleOCR (ONNX models in Node)**: **chosen**. The result can be trusted, the image stays within our infrastructure, and the models are small enough for a Vercel function. The Vercel preview confirmed it fits: about 100 MB of the 250 MB function limit, 2–12 s per image, and under 2 GB of memory with one OCR job per instance at a time.
 - **Python OCR engines (EasyOCR, docTR, Surya)**: rejected. They depend on PyTorch, which is too large for Vercel functions, so they would need a separate container host the timeline can't absorb.
 - **Cloud OCR API (for example Google Cloud Vision, AWS Textract, Azure Document Intelligence)**: rejected. Accurate and cheap, but it sends personal documents to a third party, which needs the client's agreement and probably wording in the developer access waiver. PaddleOCR was accurate enough without it.
 - **Vision-capable LLM (for example Claude Haiku or Gemini Flash)**: rejected for the same third-party reason as a cloud OCR API.
@@ -70,4 +70,4 @@ Full write-up: [R&D: OCR for Registration review](../research/ocr-spike-student-
 ## Open questions
 
 - **Does the Student Profile prove current enrollment?** The Study Load did, by listing enrolled courses. If the profile also shows the current semester for students who aren't enrolled, the commission must decide whether that is acceptable, or whether a Study Load is also needed.
-- **Speed on Vercel:** cold start, time per image and memory, including the unexplained slow runs seen on a dev machine (task 2.10a).
+- ~~**Speed on Vercel**~~ Resolved by task 2.10a (#28): go. See [Finding 4 of the R&D write-up](../research/ocr-spike-student-profiles.md#finding-4-it-runs-well-enough-on-vercel-s2-10a).

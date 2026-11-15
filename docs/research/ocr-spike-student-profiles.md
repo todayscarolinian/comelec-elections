@@ -4,6 +4,7 @@
 |---|---|
 | **Status** | Complete. Decision recorded in [ADR 0006](../adr/0006-advisory-ocr-on-student-profiles.md) (accepted) |
 | **Spike** | S1-09, issue #9, timeboxed to 1 day |
+| **Vercel feasibility** | S2-10a, issue #28: **go** (2026-11-16). See [Finding 4](#finding-4-it-runs-well-enough-on-vercel-s2-10a) |
 | **Date** | 2026-11-09 |
 | **Related** | [Software Design §5.4](../software-design.md) · [Sprint plan 2.10a, 2.10b, 2.11](../sprint-plan.md) |
 
@@ -12,7 +13,7 @@
 - **Applicants upload a screenshot of their ISMIS Student Profile, not their Study Load.** The Study Load doesn't show the student's name, and on mobile it needs 2–3 screenshots. The Student Profile shows name, student ID, Year Level and term in one screenshot on any device.
 - **OCR runs on our server with PaddleOCR (PP-OCRv6 models on ONNX Runtime).** Images never leave our infrastructure, so no third-party agreement is needed.
 - **Accuracy is good enough:** 36 of 36 field checks passed across 9 screenshots of 5 students on desktop, tablet and mobile. Wrong students were rejected.
-- **Speed is the remaining risk.** Most images took 1.5–4 s on a dev machine, but some runs took 10–35 s. This must be measured on a Vercel preview before launch (task 2.10a).
+- **Speed on Vercel is good enough (S2-10a: go).** On a 1 vCPU, 2 GB Vercel function, OCR takes 2–12 s per image and peaks at about 1.5 GB of memory. The 10–35 s slow runs from the dev machine didn't happen on Vercel. Because OCR runs in `after()`, Applicants don't wait for it.
 - **OCR stays advisory.** It shows Admins what matched; it never approves or rejects a Registration.
 
 ## Question
@@ -91,6 +92,29 @@ Average OCR confidence was 0.955–0.982 per image.
 
 The slow runs didn't follow any particular image, size or device, and the same file was fast in other runs. They may come from load on the dev machine or from ONNX Runtime adjusting to new image sizes. Either way, dev-machine timings can't decide this; the Vercel measurement can.
 
+## Finding 4: it runs well enough on Vercel (S2-10a)
+
+Measured on a Vercel preview of a throwaway branch (`S2-12`, not merged), with a Node pipeline for the same PP-OCRv6 det and rec models on `onnxruntime-node` 1.31.1. The angle classifier was dropped because screenshots aren't rotated. 11 consented screenshots of 7 students were sent to a test route in the request body. Nothing was stored and no OCR text was logged.
+
+The function ran on Fluid compute with 1 vCPU and 2,048 MB in `iad1`.
+
+| | Vercel |
+|---|---|
+| Function size | about 100 MB (limit 250 MB). Only the linux-x64 `onnxruntime-node` binary is included |
+| OCR time per image, warm | desktop 3.6 s median, 9.3 s worst; tablet 8.4 s median, 11.9 s worst; mobile 3.9 s median, 4.4 s worst |
+| Largest image (2732×2048, 3.8 MB) | 8.9 s |
+| Cold start | +0.3–0.4 s to load the models; worst cold request 14.9 s end to end |
+| Peak memory | 1.3–1.65 GB (limit 2,048 MB) |
+| Slow runs | none; the same image never varied more than 1.45× |
+| Field accuracy | 89/89 requests matched all four fields |
+
+- **`after()` works.** The response returned in 1.1–1.5 s, and OCR finished 2–11 s later in the same invocation.
+- **Concurrency.** 3 simultaneous requests ran on 3 separate instances. Two OCR jobs on one instance would exceed 2 GB, so the feature runs one OCR job per instance at a time.
+- **Time grows with image dimensions**, not file size. On 1 vCPU it's slower than the dev machine (2–6 s on 16 threads).
+- **Vercel caps request bodies at 4.5 MB**, so images near the 5 MB upload limit couldn't be sent to the test route. The feature downloads images from Supabase instead, so this doesn't apply to it.
+
+**Settings for 2.10b (#25):** `maxDuration = 60` on `/api/trpc` (about 5× the worst run), 2,048 MB memory, one OCR job at a time per instance, and the model files and linux-x64 binary added to the route's file tracing with other platforms' binaries excluded. `onnxruntime-node`'s postinstall stays blocked, because it downloads CUDA libraries that would exceed the 250 MB limit. The full measurements and config are in [#28](https://github.com/todayscarolinian/comelec-elections/issues/28).
+
 ## Decision
 
 1. Registration takes a **Student Profile** screenshot instead of a Study Load.
@@ -101,15 +125,15 @@ The slow runs didn't follow any particular image, size or device, and the same f
 
 | Item | Owner / task | Due |
 |---|---|---|
-| Measure cold start, time per image and memory on a Vercel preview; set `maxDuration` for `/api/trpc` | 2.10a (#28) | Before the Nov 15 launch |
+| ~~Measure cold start, time per image and memory on a Vercel preview; set `maxDuration` for `/api/trpc`~~ Done: go, `maxDuration = 60` (Finding 4) | 2.10a (#28) | Done Nov 16 |
 | Rename Study Load to Student Profile in code (bucket, `studentProfilePath` migration run manually, upload procedure) | 2.11 (#29) | Before 2.2–2.4 |
 | Does the Student Profile prove current enrollment, or is a Study Load also needed? | Commission | Nov 12 |
 | Retention of Student Profile images, which show date of birth | Client | Nov 19 |
-| If OCR is too slow or unreliable on Vercel, launch with manual review only | 2.10a (#28) | Cut first if Sprint 2 is at risk |
+| If OCR is too slow or unreliable on Vercel, launch with manual review only | 2.10a (#28) | Not needed: Vercel result is a go. OCR is still cut first if Sprint 2 is at risk |
 
 ## Limitations of this spike
 
 - 9 screenshots of 5 students, all from the same term. Other terms, edited images and photos of a screen weren't tested.
-- All timings are from a dev machine, not Vercel.
-- The Node implementation wasn't built, so `onnxruntime-node` behavior and function size on Vercel are untested.
+- Findings 1–3 use dev-machine timings. Vercel timings are in Finding 4.
+- The Vercel test ran on one region (`iad1`) with only a few concurrent requests. Load during the Registration Period wasn't simulated.
 - Sample screenshots and OCR output are kept off the repo and are to be deleted after the spike. Samples are identified here only as Students A–E.
