@@ -330,7 +330,8 @@ OCR is advisory: it never changes a Registration's `status`, and a failure never
 
 **Rules:**
 - Never store or log the full OCR text. The Student Profile also shows date of birth, which we don't need.
-- `after()` runs within the route's `maxDuration`, so `/api/trpc` needs one long enough for OCR. Measure cold start, time per image and memory on a Vercel preview before launch.
+- `after()` runs within the route's `maxDuration`, so `/api/trpc` sets `maxDuration = 60`. On Vercel (1 vCPU, 2,048 MB), OCR takes 2–12 s per image and peaks at about 1.5 GB (task 2.10a, #28).
+- Run at most one OCR job per function instance at a time. Two concurrent jobs would exceed 2 GB of memory.
 
 ## 6. Casting a Ballot
 
