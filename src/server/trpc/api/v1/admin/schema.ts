@@ -27,3 +27,15 @@ export const listAdminsOutputSchema = z.array(
     grantedAt: z.date(),
   }),
 )
+
+export const WINDOW_STATUSES = ['OPEN', 'CLOSED'] as const
+
+const windowStatus = z.enum(WINDOW_STATUSES)
+
+export const setRegistrationStatusInputSchema = z.object({ status: windowStatus })
+export const setRegistrationStatusOutputSchema = z.object({ registrationStatus: windowStatus })
+
+export const registrationWindowOutputSchema = z.object({
+  registrationStatus: windowStatus,
+  pendingCount: z.number().int().nonnegative(),
+})
