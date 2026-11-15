@@ -53,11 +53,11 @@ export function getEngine(): Promise<Engine> {
 
 async function createEngine(): Promise<Engine> {
   const options: ort.InferenceSession.SessionOptions = {
-    intraOpNumThreads: os.availableParallelism(),
+    intraOpNumThreads: Number(process.env.OCR_THREADS) || os.availableParallelism(),
     graphOptimizationLevel: 'all',
     executionMode: 'sequential',
     enableCpuMemArena: false,
-    enableMemPattern: false,
+    enableMemPattern: process.env.OCR_MEM_PATTERN === '1',
   }
   const [det, rec, dict] = await Promise.all([
     ort.InferenceSession.create(path.join(MODEL_DIR, 'PP-OCRv6_det_small.onnx'), options),
