@@ -1,6 +1,6 @@
 import { adminRouter } from './api/v1/admin/router'
 import { ballotRouter } from './api/v1/ballot/router'
-import { electionRouter } from './api/v1/elections/router'
+import { electionRouter } from './api/v1/election/router'
 import { healthRouter } from './api/v1/health/router'
 import { registrationRouter } from './api/v1/registration/router'
 import { createTRPCRouter } from './init'
