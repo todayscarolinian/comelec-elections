@@ -53,17 +53,20 @@ describe('ballot.myStatus', () => {
   })
 
   it.each(['PENDING', 'REJECTED'] as const)(
-    'held: %s Registration, no Ballot',
+    'held: %s Registration with a Ballot',
     async (registration) => {
-      const { caller } = setup({ registration })
+      const { caller } = setup({ registration, ballot: true })
       await expect(caller.myStatus()).resolves.toEqual({ status: 'held' })
     },
   )
 
-  it('can vote: APPROVED Registration, no Ballot', async () => {
-    const { caller } = setup({ registration: 'APPROVED' })
-    await expect(caller.myStatus()).resolves.toEqual({ status: 'can_vote' })
-  })
+  it.each(['PENDING', 'REJECTED'] as const)(
+    'can vote: %s Registration, no Ballot (ADR 0008 lets them cast a held Ballot)',
+    async (registration) => {
+      const { caller } = setup({ registration })
+      await expect(caller.myStatus()).resolves.toEqual({ status: 'can_vote' })
+    },
+  )
 
   it('already voted: a Ballot exists', async () => {
     const { caller } = setup({ registration: 'APPROVED', ballot: true })
@@ -72,10 +75,12 @@ describe('ballot.myStatus', () => {
 
   it('reads the database on every call', async () => {
     const { caller, state } = setup({ registration: 'PENDING' })
-    await expect(caller.myStatus()).resolves.toEqual({ status: 'held' })
-    state.registration = 'APPROVED'
     await expect(caller.myStatus()).resolves.toEqual({ status: 'can_vote' })
-    state.ballot = true
+
+    state.ballot = true // casts a Ballot while still PENDING
+    await expect(caller.myStatus()).resolves.toEqual({ status: 'held' })
+
+    state.registration = 'APPROVED' // an Admin approves: the held Ballot now counts
     await expect(caller.myStatus()).resolves.toEqual({ status: 'already_voted' })
   })
 
