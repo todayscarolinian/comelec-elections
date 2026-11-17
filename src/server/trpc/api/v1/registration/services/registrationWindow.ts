@@ -20,8 +20,8 @@ export async function lockSubmissionWindow(tx: Prisma.TransactionClient) {
 export async function isRegistrationOpen(db: Db) {
   const state = await db.electionState.findUnique({
     where: { id: 'main' },
-    select: { registrationStatus: true },
+    select: { registrationStatus: true, electionStatus: true },
   })
 
-  return state?.registrationStatus === 'OPEN'
+  return state?.registrationStatus === 'OPEN' || state?.electionStatus === 'OPEN'
 }
