@@ -6,13 +6,13 @@ import { deriveMyStatus } from '../core/myStatus'
 describe('deriveMyStatus', () => {
   it.each([
     [null, false, 'not_registered'],
-    ['PENDING', false, 'held'],
-    ['REJECTED', false, 'held'],
+    ['PENDING', false, 'can_vote'],
+    ['REJECTED', false, 'can_vote'],
     ['APPROVED', false, 'can_vote'],
     ['APPROVED', true, 'already_voted'],
-    ['PENDING', true, 'already_voted'], // held Ballot already cast
-    ['REJECTED', true, 'already_voted'],
-    [null, true, 'already_voted'], // should not happen, but a Ballot always wins
+    ['PENDING', true, 'held'],
+    ['REJECTED', true, 'held'],
+    [null, true, 'held'], // impossible in practice; a Ballot with no approved Registration is held
   ] as const)('registration=%s, ballot=%s -> %s', (registrationStatus, hasBallot, expected) => {
     expect(deriveMyStatus({ registrationStatus, hasBallot })).toBe(expected)
   })
