@@ -1,8 +1,15 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { studentProfileExists } = vi.hoisted(() => ({ studentProfileExists: vi.fn() }))
+const { studentProfileExists, after, runStudentProfileOcr } = vi.hoisted(() => ({
+  studentProfileExists: vi.fn(),
+  after: vi.fn(),
+  runStudentProfileOcr: vi.fn(),
+}))
 
+vi.mock('@/server/ocr', () => ({ readStudentProfile: vi.fn() }))
+vi.mock('next/server', () => ({ after }))
+vi.mock('../core/runStudentProfileOcr', () => ({ runStudentProfileOcr }))
 vi.mock('@/lib/prisma', () => ({ default: {} }))
 vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
 vi.mock('../services/studentProfileStorage', () => ({
@@ -62,12 +69,15 @@ describe('registration.submit', () => {
   beforeEach(() => {
     studentProfileExists.mockReset()
     studentProfileExists.mockResolvedValue(true)
+    after.mockReset()
+    runStudentProfileOcr.mockReset()
   })
 
   it('rejects signed-out callers', async () => {
     const { caller, db } = setup({ currentSession: null })
     await expect(caller.submit(input)).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
     expect(db.$transaction).not.toHaveBeenCalled()
+    expect(after).not.toHaveBeenCalled()
   })
 
   it('rejects a Year Level outside YEAR_LEVELS', async () => {
@@ -76,6 +86,7 @@ describe('registration.submit', () => {
     await expect(caller.submit({ ...input, yearLevel: '5' })).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
+    expect(after).not.toHaveBeenCalled()
   })
 
   it("rejects another person's path without touching Storage", async () => {
@@ -84,6 +95,7 @@ describe('registration.submit', () => {
       caller.submit({ ...input, studentProfilePath: path.replace('person-1', 'person-2') }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
     expect(studentProfileExists).not.toHaveBeenCalled()
+    expect(after).not.toHaveBeenCalled()
   })
 
   it('rejects when the object is missing', async () => {
@@ -94,6 +106,7 @@ describe('registration.submit', () => {
       message: 'Upload your Student Profile first.',
     })
     expect(db.$transaction).not.toHaveBeenCalled()
+    expect(after).not.toHaveBeenCalled()
   })
 
   it.each([
@@ -104,6 +117,7 @@ describe('registration.submit', () => {
     await expect(caller.submit(input)).rejects.toMatchObject({ code: 'FORBIDDEN' })
     expect(tx.registration.create).not.toHaveBeenCalled()
     expect(tx.registration.updateMany).not.toHaveBeenCalled()
+    expect(after).not.toHaveBeenCalled()
   })
 
   it('allows a late Registration while the Election is open (ADR 0008)', async () => {
@@ -112,13 +126,21 @@ describe('registration.submit', () => {
     })
     await expect(caller.submit(input)).resolves.toEqual({ status: 'PENDING' })
     expect(tx.registration.create).toHaveBeenCalled()
+    expect(after).toHaveBeenCalledTimes(1)
   })
 
   it('creates a PENDING Registration when none exists', async () => {
     const { caller, tx } = setup()
     await caller.submit(input)
     expect(tx.registration.create).toHaveBeenCalledWith({
-      data: { personId, yearLevel: '2', studentProfilePath: path, status: 'PENDING' },
+      data: {
+        personId,
+        yearLevel: '2',
+        studentProfilePath: path,
+        status: 'PENDING',
+        ocrStatus: 'PENDING',
+        ocrResult: Prisma.DbNull,
+      },
     })
   })
 
@@ -136,6 +158,8 @@ describe('registration.submit', () => {
           rejectionReason: null,
           reviewedBy: null,
           reviewedAt: null,
+          ocrStatus: 'PENDING',
+          ocrResult: Prisma.DbNull,
         }),
       })
     },
@@ -147,6 +171,7 @@ describe('registration.submit', () => {
       code: 'CONFLICT',
       message: 'Your Registration is already approved',
     })
+    expect(after).not.toHaveBeenCalled()
   })
 
   it('turns a concurrent first submit (P2002) into CONFLICT', async () => {
@@ -158,5 +183,38 @@ describe('registration.submit', () => {
       }),
     )
     await expect(caller.submit(input)).rejects.toMatchObject({ code: 'CONFLICT' })
+    expect(after).not.toHaveBeenCalled()
+  })
+
+  it('schedules exactly one OCR job on first submit', async () => {
+    const { caller } = setup()
+    await caller.submit(input)
+    expect(after).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['PENDING', 'REJECTED'] as const)(
+    'schedules exactly one OCR job when resubmitting a %s Registration',
+    async (status) => {
+      const { caller } = setup({ existing: { status } })
+      await caller.submit(input)
+      expect(after).toHaveBeenCalledTimes(1)
+    },
+  )
+
+  it('runs the job with the Person and submitted values', async () => {
+    const { caller, db } = setup()
+    await caller.submit(input)
+
+    const job = after.mock.calls[0][0] as () => Promise<void>
+    await job()
+
+    expect(runStudentProfileOcr).toHaveBeenCalledWith({
+      db,
+      personId,
+      studentProfilePath: path,
+      name: 'Test Voter',
+      email: 'voter@example.org',
+      yearLevel: '2',
+    })
   })
 })

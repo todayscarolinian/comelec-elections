@@ -5,6 +5,8 @@ import { submitRegistrationInputSchema } from '../../schema'
 import { lockSubmissionWindow } from '../../services/registrationWindow'
 import { studentProfileExists } from '../../services/studentProfileStorage'
 import { isOwnStudentProfilePath } from '../studentProfilePath'
+import { runStudentProfileOcr } from '../runStudentProfileOcr'
+import { after } from 'next/server'
 
 export const submit = protectedProcedure
   .input(submitRegistrationInputSchema)
@@ -42,7 +44,14 @@ export const submit = protectedProcedure
 
         if (!existing) {
           await tx.registration.create({
-            data: { personId, yearLevel, studentProfilePath, status: 'PENDING' },
+            data: {
+              personId,
+              yearLevel,
+              studentProfilePath,
+              status: 'PENDING',
+              ocrStatus: 'PENDING',
+              ocrResult: Prisma.DbNull,
+            },
           })
           return
         }
@@ -59,6 +68,8 @@ export const submit = protectedProcedure
             reviewedBy: null,
             reviewedAt: null,
             submittedAt: new Date(),
+            ocrStatus: 'PENDING',
+            ocrResult: Prisma.DbNull,
           },
         })
         if (count === 0) {
@@ -78,6 +89,17 @@ export const submit = protectedProcedure
       }
       throw error
     }
+
+    after(() =>
+      runStudentProfileOcr({
+        db: ctx.db,
+        personId,
+        studentProfilePath,
+        name: ctx.person.name,
+        email: ctx.person.email,
+        yearLevel,
+      }),
+    )
 
     return { status: 'PENDING' as const }
   })
