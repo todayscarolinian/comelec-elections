@@ -72,3 +72,6 @@ export const ELECTION = {
     },
   ],
 } as const satisfies ElectionDef
+
+// Term printed on the Student Profile; OCR checks it against the uploaded image.
+export const CURRENT_TERM = '1ST Semester 2026'
