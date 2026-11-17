@@ -20,6 +20,14 @@ export const createTRPCContext = async (opts: { headers: Headers }): Promise<TRP
 
 const t = initTRPC.context<TRPCContext>().create({
   transformer: superjson,
+  errorFormatter({ shape, error }) {
+    // Batch input decoding is shared across procedures. A malformed Ballot can
+    // otherwise leak through a companion procedure's error, outside ballot.cast.
+    if (error.code === 'BAD_REQUEST' && error.cause) {
+      return { ...shape, message: 'Invalid input.', data: { ...shape.data, stack: undefined } }
+    }
+    return shape
+  },
 })
 
 export const createTRPCRouter = t.router
