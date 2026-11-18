@@ -53,4 +53,48 @@ describe('writeAudit', () => {
       writeAudit({ adminEmail: 'admin@example.com', action: 'EXPORT_BALLOTS' }),
     ).resolves.toEqual({ id: 'audit-1' })
   })
+
+  it('uses the supplied transaction client instead of the global client', async () => {
+    const transactionCreate = vi.fn().mockResolvedValue({ id: 'transaction-audit-1' })
+    const tx = { auditLog: { create: transactionCreate } }
+
+    await expect(
+      writeAudit(
+        {
+          adminEmail: '  Admin@Example.COM ',
+          action: 'SET_ELECTION_STATUS',
+          target: 'main',
+          detail: { previousStatus: 'CLOSED', status: 'OPEN' },
+        },
+        tx,
+      ),
+    ).resolves.toEqual({ id: 'transaction-audit-1' })
+
+    expect(create).not.toHaveBeenCalled()
+    expect(transactionCreate).toHaveBeenCalledExactlyOnceWith({
+      data: {
+        adminEmail: 'admin@example.com',
+        action: 'SET_ELECTION_STATUS',
+        target: 'main',
+        detail: { previousStatus: 'CLOSED', status: 'OPEN' },
+      },
+    })
+  })
+
+  it('propagates the transaction-client failure without falling back to the global client', async () => {
+    const failure = new Error('Audit insert failed')
+    const transactionCreate = vi.fn().mockRejectedValue(failure)
+
+    await expect(
+      writeAudit(
+        {
+          adminEmail: 'admin@example.com',
+          action: 'SET_ELECTION_STATUS',
+        },
+        { auditLog: { create: transactionCreate } },
+      ),
+    ).rejects.toBe(failure)
+
+    expect(create).not.toHaveBeenCalled()
+  })
 })
