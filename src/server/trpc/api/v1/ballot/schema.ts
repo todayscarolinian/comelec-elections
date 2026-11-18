@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { ELECTION, type QuestionDef } from '@/election'
 
+export const MY_BALLOT_STATUSES = ['not_registered', 'held', 'can_vote', 'already_voted'] as const
+export const myStatusOutputSchema = z.object({ status: z.enum(MY_BALLOT_STATUSES) })
+
 function createAnswerSchema(question: QuestionDef) {
   const candidateIds = new Set(question.candidates.map(({ id }) => id))
 
