@@ -24,6 +24,7 @@ function setup({
   currentSession = session as Session,
   personExists = true,
   registrationStatus = 'OPEN' as RegistrationStatus,
+  electionStatus = 'CLOSED' as 'OPEN' | 'CLOSED',
 } = {}) {
   const personFindUnique = vi.fn(async ({ where }: { where: { id: string } }) =>
     personExists
@@ -31,17 +32,24 @@ function setup({
       : null,
   )
   const electionStateFindUnique = vi.fn(async () =>
-    registrationStatus ? { registrationStatus } : null,
+    registrationStatus ? { registrationStatus, electionStatus } : null,
   )
+  const tx = {
+    $queryRaw: vi.fn(async () =>
+      registrationStatus ? [{ registrationStatus, electionStatus }] : [],
+    ),
+  }
   const db = {
     person: { findUnique: personFindUnique },
     electionState: { findUnique: electionStateFindUnique },
+    $transaction: vi.fn(async (fn: (transaction: typeof tx) => unknown) => fn(tx)),
   } as unknown as Db
 
   return {
     caller: createCaller(makeCtx({ session: currentSession, db })),
     electionStateFindUnique,
     personFindUnique,
+    tx,
   }
 }
 
@@ -87,17 +95,21 @@ describe('registration.createStudentProfileUpload', () => {
   )
 
   it('creates an upload owned by the authenticated Person while Registration is open', async () => {
-    const { caller, electionStateFindUnique } = setup()
+    const { caller, tx } = setup()
 
     await expect(caller.createStudentProfileUpload()).resolves.toEqual({
       path: 'person-1/11111111-1111-4111-8111-111111111111',
       signedUrl: 'https://storage.example.org/signed-upload',
     })
-    expect(electionStateFindUnique).toHaveBeenCalledWith({
-      where: { id: 'main' },
-      select: { registrationStatus: true },
-    })
+    expect(tx.$queryRaw).toHaveBeenCalled()
     expect(createSignedStudentProfileUpload).toHaveBeenCalledWith('person-1')
+  })
+
+  it('allows uploads while the Election is open even if the Registration Period is closed', async () => {
+    const { caller } = setup({ registrationStatus: 'CLOSED', electionStatus: 'OPEN' })
+    await expect(caller.createStudentProfileUpload()).resolves.toMatchObject({
+      path: 'person-1/11111111-1111-4111-8111-111111111111',
+    })
   })
 
   it('returns a safe error when Storage cannot create an upload', async () => {

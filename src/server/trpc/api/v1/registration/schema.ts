@@ -20,3 +20,14 @@ export const submitRegistrationInputSchema = z.object({
   yearLevel: z.enum(YEAR_LEVELS),
   studentProfilePath: z.string().min(1),
 })
+
+export const ownRegistrationOutputSchema = z.object({
+  registration: z
+    .object({
+      status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
+      yearLevel: z.string(),
+      rejectionReason: z.string().nullable(),
+    })
+    .nullable(),
+  canSubmit: z.boolean(),
+})

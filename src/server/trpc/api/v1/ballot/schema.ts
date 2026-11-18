@@ -39,3 +39,7 @@ export const ballotInputSchema = z.strictObject({
 })
 
 export type BallotInput = z.infer<typeof ballotInputSchema>
+
+// Transport typing only: input remains untrusted until validateBallot runs inside
+// the cast transaction. Parsing here would expose raw Zod issues through tRPC.
+export const castBallotInputSchema = z.custom<BallotInput>()
