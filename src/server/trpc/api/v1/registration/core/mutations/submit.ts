@@ -13,6 +13,8 @@ export const submit = protectedProcedure
   .mutation(async ({ ctx, input }) => {
     const personId = ctx.person.id
     const { yearLevel, studentProfilePath } = input
+    // One timestamp per submission: stored on the Registration and used to scope the OCR job.
+    const submittedAt = new Date()
 
     if (!isOwnStudentProfilePath(studentProfilePath, personId)) {
       throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid Student Profile upload.' })
@@ -49,6 +51,7 @@ export const submit = protectedProcedure
               yearLevel,
               studentProfilePath,
               status: 'PENDING',
+              submittedAt,
               ocrStatus: 'PENDING',
               ocrResult: Prisma.DbNull,
             },
@@ -67,7 +70,7 @@ export const submit = protectedProcedure
             rejectionReason: null,
             reviewedBy: null,
             reviewedAt: null,
-            submittedAt: new Date(),
+            submittedAt,
             ocrStatus: 'PENDING',
             ocrResult: Prisma.DbNull,
           },
@@ -98,6 +101,7 @@ export const submit = protectedProcedure
         name: ctx.person.name,
         email: ctx.person.email,
         yearLevel,
+        submittedAt,
       }),
     )
 

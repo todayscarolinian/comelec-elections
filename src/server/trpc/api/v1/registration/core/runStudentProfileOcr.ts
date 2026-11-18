@@ -11,11 +11,13 @@ export type StudentProfileOcrJob = {
   name: string
   email: string
   yearLevel: string
+  // Token for the submission that scheduled this job; stale jobs match 0 rows.
+  submittedAt: Date
 }
 
 export async function runStudentProfileOcr(job: StudentProfileOcrJob): Promise<void> {
-  const { db, personId, studentProfilePath } = job
-  const where = { personId, studentProfilePath }
+  const { db, personId, studentProfilePath, submittedAt } = job
+  const where = { personId, studentProfilePath, submittedAt }
   try {
     const image = await downloadStudentProfile(studentProfilePath)
     const { fields, matches } = await readStudentProfile(image, {

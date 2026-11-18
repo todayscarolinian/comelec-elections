@@ -138,6 +138,7 @@ describe('registration.submit', () => {
         yearLevel: '2',
         studentProfilePath: path,
         status: 'PENDING',
+        submittedAt: expect.any(Date),
         ocrStatus: 'PENDING',
         ocrResult: Prisma.DbNull,
       },
@@ -215,6 +216,29 @@ describe('registration.submit', () => {
       name: 'Test Voter',
       email: 'voter@example.org',
       yearLevel: '2',
+      submittedAt: expect.any(Date),
     })
+  })
+
+  it('gives the job the same submittedAt that was stored', async () => {
+    const { caller, tx } = setup()
+    await caller.submit(input)
+    await (after.mock.calls[0][0] as () => Promise<void>)()
+
+    const stored = (
+      tx.registration.create.mock.calls[0] as unknown as [{ data: { submittedAt: Date } }]
+    )[0].data.submittedAt
+    expect(runStudentProfileOcr.mock.calls[0][0].submittedAt).toEqual(stored)
+  })
+
+  it('stores the same submittedAt on resubmission', async () => {
+    const { caller, tx } = setup({ existing: { status: 'REJECTED' } })
+    await caller.submit(input)
+    await (after.mock.calls[0][0] as () => Promise<void>)()
+
+    const stored = (
+      tx.registration.updateMany.mock.calls[0] as unknown as [{ data: { submittedAt: Date } }]
+    )[0].data.submittedAt
+    expect(runStudentProfileOcr.mock.calls[0][0].submittedAt).toEqual(stored)
   })
 })

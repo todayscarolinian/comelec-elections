@@ -16,6 +16,7 @@ import { runStudentProfileOcr } from '../core/runStudentProfileOcr'
 
 const personId = 'person-1'
 const studentProfilePath = `${personId}/11111111-1111-4111-8111-111111111111`
+const submittedAt = new Date('2026-11-15T10:00:00.000Z')
 const image = Buffer.from('fake-image')
 const reading = {
   fields: { name: 'Test Voter', studentId: '01234567', yearLevel: '2', term: CURRENT_TERM },
@@ -32,6 +33,7 @@ function setup(count = 1) {
     name: 'Test Voter',
     email: '01234567@usc.edu.ph',
     yearLevel: '2',
+    submittedAt,
   }
   return { updateMany, job }
 }
@@ -56,11 +58,11 @@ describe('runStudentProfileOcr', () => {
     })
   })
 
-  it('writes DONE and the result, scoped to the uploaded path', async () => {
+  it('writes DONE and the result, scoped to its own submission', async () => {
     const { job, updateMany } = setup()
     await runStudentProfileOcr(job)
     expect(updateMany).toHaveBeenCalledWith({
-      where: { personId, studentProfilePath },
+      where: { personId, studentProfilePath, submittedAt },
       data: { ocrStatus: 'DONE', ocrResult: reading },
     })
   })
@@ -72,7 +74,7 @@ describe('runStudentProfileOcr', () => {
     await expect(runStudentProfileOcr(job)).resolves.toBeUndefined()
 
     expect(updateMany).toHaveBeenCalledWith({
-      where: { personId, studentProfilePath },
+      where: { personId, studentProfilePath, submittedAt },
       data: { ocrStatus: 'FAILED', ocrResult: Prisma.DbNull },
     })
   })
@@ -85,7 +87,7 @@ describe('runStudentProfileOcr', () => {
 
     expect(readStudentProfile).not.toHaveBeenCalled()
     expect(updateMany).toHaveBeenCalledWith({
-      where: { personId, studentProfilePath },
+      where: { personId, studentProfilePath, submittedAt },
       data: { ocrStatus: 'FAILED', ocrResult: Prisma.DbNull },
     })
   })
@@ -95,12 +97,53 @@ describe('runStudentProfileOcr', () => {
 
     await expect(runStudentProfileOcr(job)).resolves.toBeUndefined()
 
-    // The write is scoped to the path that was uploaded, so a resubmission
-    // with a different path is never matched or overwritten.
+    // The write is scoped to the submission that scheduled the job, so a resubmission
+    // is never matched or overwritten.
     expect(updateMany).toHaveBeenCalledTimes(1)
     expect(updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { personId, studentProfilePath } }),
+      expect.objectContaining({ where: { personId, studentProfilePath, submittedAt } }),
     )
+  })
+
+  describe('older submission that reused the same path', () => {
+    // The newer submission reused the same upload with a different Year Level.
+    function setupNewerSubmission() {
+      const row = {
+        personId,
+        studentProfilePath,
+        submittedAt: new Date('2026-11-15T10:05:00.000Z'),
+        ocrStatus: 'PENDING',
+        ocrResult: null as unknown,
+      }
+      const updateMany = vi.fn(
+        async ({ where, data }: { where: typeof row; data: Partial<typeof row> }) => {
+          const match =
+            row.personId === where.personId &&
+            row.studentProfilePath === where.studentProfilePath &&
+            row.submittedAt.getTime() === where.submittedAt.getTime()
+          if (match) Object.assign(row, data)
+          return { count: match ? 1 : 0 }
+        },
+      )
+      const db = { registration: { updateMany } } as unknown as Db
+      const olderJob = { ...setup().job, db, yearLevel: '1' }
+      return { row, olderJob }
+    }
+
+    it('does not write its DONE result into the newer submission', async () => {
+      const { row, olderJob } = setupNewerSubmission()
+      await runStudentProfileOcr(olderJob)
+      expect(row.ocrStatus).toBe('PENDING')
+      expect(row.ocrResult).toBeNull()
+    })
+
+    it('does not write its FAILED result into the newer submission', async () => {
+      readStudentProfile.mockRejectedValue(new Error('boom'))
+      const { row, olderJob } = setupNewerSubmission()
+      await runStudentProfileOcr(olderJob)
+      expect(row.ocrStatus).toBe('PENDING')
+      expect(row.ocrResult).toBeNull()
+    })
   })
 
   it('does not throw when the FAILED write itself fails', async () => {
@@ -120,7 +163,7 @@ describe('runStudentProfileOcr', () => {
     await runStudentProfileOcr(job)
 
     expect(updateMany).toHaveBeenCalledWith({
-      where: { personId, studentProfilePath },
+      where: { personId, studentProfilePath, submittedAt },
       data: { ocrStatus: 'DONE', ocrResult: reading },
     })
   })
