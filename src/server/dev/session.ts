@@ -22,6 +22,15 @@ export async function createDevSession(headers: Headers): Promise<Session> {
   const email = parseDevEmail(headers.get(DEV_EMAIL_HEADER))
   if (!email) return null
 
-  const person = await upsertPerson(email, headers.get(DEV_NAME_HEADER))
+  const person = await upsertPerson(email, decodeDevName(headers.get(DEV_NAME_HEADER)))
   return { user: { personId: person.id, email: person.email } }
+}
+
+function decodeDevName(value: string | null): string | null {
+  if (!value) return null
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return null
+  }
 }
