@@ -8,6 +8,7 @@ export const AUDIT_ACTIONS = [
   'GRANT_ADMIN',
   'REVOKE_ADMIN',
   'SET_REGISTRATION_STATUS',
+  'SET_ELECTION_STATUS',
 ] as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]

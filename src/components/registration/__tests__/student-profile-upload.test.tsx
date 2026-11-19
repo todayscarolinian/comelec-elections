@@ -133,4 +133,60 @@ describe('StudentProfileUpload', () => {
     expect(container.textContent).not.toContain(signedUrl)
     expect(container.textContent).not.toContain(studentProfilePath)
   })
+
+  it('invalidates the prior upload before validating a replacement', async () => {
+    const events: string[] = []
+    render(
+      <StudentProfileUpload
+        onUploadStart={() => events.push('started')}
+        onUploaded={() => events.push('uploaded')}
+      />,
+    )
+    selectFile(new File(['image'], 'profile.png', { type: 'image/png' }))
+    await waitFor(() => expect(events).toEqual(['started', 'uploaded']))
+
+    selectFile(new File(['pdf'], 'replacement.pdf', { type: 'application/pdf' }))
+    expect(events).toEqual(['started', 'uploaded', 'started'])
+    expect(screen.queryByText('Student Profile uploaded.')).toBeNull()
+  })
+
+  it('can be disabled while the parent form is submitting', () => {
+    render(<StudentProfileUpload disabled onUploaded={vi.fn()} />)
+    expect((screen.getByLabelText('Student Profile') as HTMLInputElement).disabled).toBe(true)
+  })
+
+  it('locks file selection until an in-flight upload finishes', async () => {
+    let finish!: (response: Response) => void
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    render(<StudentProfileUpload onUploaded={vi.fn()} />)
+    selectFile(new File(['image'], 'profile.png', { type: 'image/png' }))
+    await waitFor(() => expect(screen.getByText('Uploading Student Profile...')).toBeDefined())
+    expect((screen.getByLabelText('Student Profile') as HTMLInputElement).disabled).toBe(true)
+    finish(new Response(null, { status: 200 }))
+    await waitFor(() =>
+      expect((screen.getByLabelText('Student Profile') as HTMLInputElement).disabled).toBe(false),
+    )
+  })
+
+  it('invalidates a successful upload when its replacement fails', async () => {
+    const events: string[] = []
+    render(
+      <StudentProfileUpload
+        onUploadStart={() => events.push('started')}
+        onUploaded={() => events.push('uploaded')}
+      />,
+    )
+    selectFile(new File(['image'], 'profile.png', { type: 'image/png' }))
+    await waitFor(() => expect(events).toEqual(['started', 'uploaded']))
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }))
+    selectFile(new File(['replacement'], 'replacement.png', { type: 'image/png' }))
+    await screen.findByRole('alert')
+    expect(events).toEqual(['started', 'uploaded', 'started'])
+    expect(screen.queryByText('Student Profile uploaded.')).toBeNull()
+  })
 })

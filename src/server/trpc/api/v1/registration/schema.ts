@@ -37,3 +37,14 @@ export const ocrResultSchema = z.object({
 })
 
 export type OcrResult = z.infer<typeof ocrResultSchema>
+
+export const ownRegistrationOutputSchema = z.object({
+  registration: z
+    .object({
+      status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
+      yearLevel: z.string(),
+      rejectionReason: z.string().nullable(),
+    })
+    .nullable(),
+  canSubmit: z.boolean(),
+})
