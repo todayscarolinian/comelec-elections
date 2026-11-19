@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/prisma', () => ({ default: {} }))
 vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
+vi.mock('@/server/ocr', () => ({ readStudentProfile: vi.fn() }))
 vi.mock('@/server/storage', () => ({ getSupabaseAdmin: vi.fn() }))
 
 import { now, personId, prismaError, setup, validBallot } from './castHelpers'

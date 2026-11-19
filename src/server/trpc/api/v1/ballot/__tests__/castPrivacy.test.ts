@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const { database, auth } = vi.hoisted(() => ({ database: {}, auth: vi.fn() }))
 vi.mock('@/lib/prisma', () => ({ default: database }))
 vi.mock('@/server/auth', () => ({ auth }))
+vi.mock('@/server/ocr', () => ({ readStudentProfile: vi.fn() }))
 vi.mock('@/server/storage', () => ({ getSupabaseAdmin: vi.fn() }))
 
 import { POST } from '@/app/api/trpc/[trpc]/route'

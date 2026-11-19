@@ -47,3 +47,25 @@ export async function studentProfileExists(
     throw new Error('Unable to check Student Profile upload')
   }
 }
+
+type DownloadBucket = {
+  download(path: string): Promise<{
+    data: Blob | null
+    error: unknown
+  }>
+}
+
+export async function downloadStudentProfile(
+  path: string,
+  bucket: DownloadBucket = getSupabaseAdmin().storage.from(STUDENT_PROFILE_BUCKET),
+): Promise<Buffer> {
+  try {
+    const { data, error } = await bucket.download(path)
+    if (error || !data) {
+      throw new Error()
+    }
+    return Buffer.from(await data.arrayBuffer())
+  } catch {
+    throw new Error('Unable to download Student Profile')
+  }
+}

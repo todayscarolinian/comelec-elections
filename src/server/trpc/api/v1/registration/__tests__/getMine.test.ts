@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/prisma', () => ({ default: {} }))
 vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
+vi.mock('@/server/ocr', () => ({ readStudentProfile: vi.fn() }))
 vi.mock('../services/studentProfileStorage', () => ({
   createSignedStudentProfileUpload: vi.fn(),
   studentProfileExists: vi.fn(),

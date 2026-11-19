@@ -21,6 +21,23 @@ export const submitRegistrationInputSchema = z.object({
   studentProfilePath: z.string().min(1),
 })
 
+export const ocrResultSchema = z.object({
+  fields: z.object({
+    name: z.string(),
+    studentId: z.string(),
+    yearLevel: z.string(),
+    term: z.string(),
+  }),
+  matches: z.object({
+    name: z.boolean(),
+    studentId: z.boolean(),
+    yearLevel: z.boolean(),
+    term: z.boolean(),
+  }),
+})
+
+export type OcrResult = z.infer<typeof ocrResultSchema>
+
 export const ownRegistrationOutputSchema = z.object({
   registration: z
     .object({

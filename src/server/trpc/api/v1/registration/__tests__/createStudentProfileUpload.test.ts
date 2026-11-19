@@ -7,6 +7,7 @@ const { createSignedStudentProfileUpload } = vi.hoisted(() => ({
 
 vi.mock('@/lib/prisma', () => ({ default: {} }))
 vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
+vi.mock('@/server/ocr', () => ({ readStudentProfile: vi.fn() }))
 vi.mock('../services/studentProfileStorage', () => ({ createSignedStudentProfileUpload }))
 
 import { createCallerFactory, type Db, type Session } from '@/server/trpc/init'
