@@ -9,8 +9,8 @@ export const DEV_NAME_HEADER = 'x-dev-name'
 
 const devEmailSchema = z.email()
 
-export function isDevEnvironment() {
-  return process.env.NODE_ENV === 'development'
+export function isDevToolsEnabled() {
+  return process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview'
 }
 
 export function parseDevEmail(value: string | null): string | null {

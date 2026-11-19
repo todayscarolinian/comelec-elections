@@ -1,9 +1,9 @@
 import prisma from '@/lib/prisma'
-import { isDevEnvironment, parseDevEmail } from '@/server/dev/session'
+import { isDevToolsEnabled, parseDevEmail } from '@/server/dev/session'
 import { ocrView } from '@/server/trpc/api/v1/registration/core/ocrView'
 
 export async function GET(req: Request) {
-  if (!isDevEnvironment()) {
+  if (!isDevToolsEnabled()) {
     return new Response(null, { status: 404 })
   }
 

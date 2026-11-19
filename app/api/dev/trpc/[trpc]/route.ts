@@ -1,13 +1,13 @@
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import prisma from '@/lib/prisma'
-import { createDevSession, isDevEnvironment } from '@/server/dev/session'
+import { createDevSession, isDevToolsEnabled } from '@/server/dev/session'
 import { isAllowedOrigin } from '@/server/trpc/origin'
 import { appRouter } from '@/server/trpc/root'
 
 export const maxDuration = 300
 
 const handler = (req: Request) => {
-  if (!isDevEnvironment()) {
+  if (!isDevToolsEnabled()) {
     return new Response(null, { status: 404 })
   }
 
