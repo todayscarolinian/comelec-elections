@@ -1,17 +1,23 @@
-import { action, displayHeading, sectionAnchor, sectionInner } from './landing-styles'
+import {
+  action,
+  displayHeading,
+  sectionAnchor,
+  sectionInner,
+  sectionPadding,
+} from './landing-styles'
 import Link from 'next/link'
 
 export function VoterTurnout() {
   return (
     <section
       id="turnout"
-      className={`${sectionAnchor} flex min-h-svh flex-col bg-(--landing-green) py-[clamp(2.75rem,4.45vw,4rem)] text-(--landing-cream)`}
+      className={`${sectionAnchor} ${sectionPadding} flex min-h-svh flex-col bg-(--landing-green) text-(--landing-cream)`}
       aria-labelledby="turnout-heading"
     >
-      <div className={`${sectionInner} flex w-full flex-1 flex-col`}>
+      <div className={`${sectionInner} flex flex-1 flex-col`}>
         <h2
           id="turnout-heading"
-          className={`${displayHeading} text-[clamp(2.4rem,5vw,4.5rem)] leading-tight`}
+          className={`${displayHeading} text-[clamp(2.75rem,5.7vw,5.25rem)] leading-tight`}
         >
           Voter turnout
         </h2>

@@ -1,4 +1,4 @@
-import { displayHeading, sectionAnchor, sectionInner } from './landing-styles'
+import { displayHeading, sectionAnchor, sectionInner, sectionPadding } from './landing-styles'
 import Image from 'next/image'
 import { ELECTION, type CandidateDef, type ElectionDef } from '@/election'
 
@@ -51,14 +51,14 @@ export function CandidateGallery() {
   return (
     <section
       id="candidates"
-      className={`${sectionAnchor} grid min-h-svh items-center bg-(--landing-cream) bg-[url('/landing/gallery.webp')] bg-top bg-size-[min(100%,100rem)_auto] py-[clamp(3rem,5vw,4.5rem)]`}
+      className={`${sectionAnchor} ${sectionPadding} grid min-h-svh items-center bg-(--landing-cream) bg-[url('/landing/gallery.webp')] bg-top bg-size-[min(100%,100rem)_auto]`}
       aria-labelledby="candidate-heading"
     >
-      <div className={`${sectionInner} w-full`}>
+      <div className={sectionInner}>
         <div className="mb-10 flex items-center justify-between gap-6 max-[38rem]:flex-col max-[38rem]:items-start">
           <h2
             id="candidate-heading"
-            className={`${displayHeading} text-[clamp(2.5rem,6.67vw,6rem)] leading-[1.02]`}
+            className={`${displayHeading} text-[clamp(2.75rem,7.78vw,7rem)] leading-[1.02]`}
           >
             Meet your
             <br /> next council.

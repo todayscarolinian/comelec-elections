@@ -1,6 +1,6 @@
 'use client'
 
-import { displayHeading, sectionAnchor, sectionInner } from './landing-styles'
+import { displayHeading, sectionAnchor, sectionInner, sectionPadding } from './landing-styles'
 import { useState } from 'react'
 
 const year = 2026
@@ -27,12 +27,12 @@ export function ElectionCalendar() {
       aria-labelledby="calendar-heading"
     >
       <div
-        className={`${sectionInner} grid min-h-svh content-center items-start gap-8 py-12 min-[52.01rem]:grid-cols-[minmax(0,1fr)_minmax(0,1.215fr)] min-[52.01rem]:pt-[clamp(4rem,12svh,7.75rem)] min-[52.01rem]:pb-[clamp(3rem,5vw,4.5rem)]`}
+        className={`${sectionInner} ${sectionPadding} grid min-h-svh content-center items-start gap-x-8 gap-y-10 min-[52rem]:grid-cols-[minmax(16rem,min(30%,24.5rem))_minmax(0,1fr)] min-[52rem]:items-center`}
       >
-        <div className="max-w-[24.5rem] text-[clamp(1rem,1.4vw,1.25rem)] leading-[1.4] [&>p+p]:mt-8">
+        <div className="max-w-[24.5rem] text-[clamp(1rem,1.4vw,1.25rem)] leading-relaxed [container-type:inline-size] min-[52rem]:pb-[clamp(2rem,8svh,6rem)] [&>p+p]:mt-5">
           <h2
             id="calendar-heading"
-            className={`${displayHeading} mb-8 text-[clamp(2.5rem,5.83vw,5.25rem)] leading-[1.165]`}
+            className={`${displayHeading} mb-6 text-[min(25.5cqi,clamp(3rem,7.55vw,6.75rem))] leading-[1.02]`}
           >
             Election
             <br /> Calendar
@@ -43,11 +43,11 @@ export function ElectionCalendar() {
           </p>
           <p>Dates are added as they’re confirmed, so check back often.</p>
         </div>
-        <div className="min-w-0">
-          <div className="flex items-center justify-between pb-5">
+        <div className="w-full min-w-0 justify-self-end min-[52rem]:max-w-[68rem]">
+          <div className="flex items-center justify-between px-[clamp(0.2rem,0.87vw,0.8rem)] pb-5">
             <div className="flex items-center gap-2">
               <h3
-                className="text-[clamp(1.25rem,1.87vw,1.7rem)] italic underline underline-offset-4 [font-family:var(--landing-display),Georgia,serif]"
+                className="text-[clamp(1.5rem,2.2vw,2rem)] italic underline underline-offset-4 [font-family:var(--landing-display),Georgia,serif]"
                 aria-live="polite"
               >
                 {month.name}
@@ -61,7 +61,7 @@ export function ElectionCalendar() {
                 {isNovember ? '›' : '‹'}
               </button>
             </div>
-            <span className="text-[clamp(1.25rem,1.87vw,1.7rem)] italic [font-family:var(--landing-fraunces),Georgia,serif]">
+            <span className="text-[clamp(1.5rem,2.2vw,2rem)] italic [font-family:var(--landing-fraunces),Georgia,serif]">
               {year}
             </span>
           </div>
@@ -75,7 +75,7 @@ export function ElectionCalendar() {
                   <th
                     key={day}
                     scope="col"
-                    className="pb-3 ps-[clamp(0.2rem,0.77vw,0.7rem)] text-start text-[clamp(0.6rem,0.73vw,0.66rem)] font-medium uppercase"
+                    className="pb-3 ps-[clamp(0.2rem,0.87vw,0.8rem)] text-start text-[clamp(0.65rem,0.84vw,0.75rem)] font-medium uppercase"
                   >
                     {day}
                   </th>
@@ -93,11 +93,11 @@ export function ElectionCalendar() {
                       <td key={day}>
                         <div
                           data-calendar-day={date}
-                          className={`flex aspect-square flex-col justify-between p-[clamp(0.2rem,0.77vw,0.7rem)] text-[clamp(0.65rem,0.98vw,0.875rem)] leading-none ${event ? 'bg-(--landing-green) text-(--landing-cream) forced-colors:bg-[Highlight] forced-colors:text-[HighlightText] forced-colors:[forced-color-adjust:none]' : ''}`}
+                          className={`flex aspect-square flex-col justify-between p-[clamp(0.2rem,0.87vw,0.8rem)] text-[clamp(0.75rem,1.25vw,1.125rem)] leading-none ${event ? 'bg-(--landing-green) text-(--landing-cream) forced-colors:bg-[Highlight] forced-colors:text-[HighlightText] forced-colors:[forced-color-adjust:none]' : ''}`}
                         >
                           <span>{date}</span>
                           {event && (
-                            <small className="text-[clamp(0.58rem,0.85vw,0.7rem)] leading-tight max-[38rem]:sr-only">
+                            <small className="text-[clamp(0.65rem,0.95vw,0.875rem)] leading-tight max-[38rem]:sr-only">
                               {event}
                             </small>
                           )}
@@ -109,23 +109,25 @@ export function ElectionCalendar() {
               ))}
             </tbody>
           </table>
-          {isNovember && (
-            <ul className="mt-3 hidden text-xs max-[38rem]:block">
-              {Object.entries(novemberEvents).map(([date, event]) => (
-                <li key={date}>
-                  Nov {date} · {event}
-                </li>
-              ))}
-            </ul>
-          )}
-          {isNovember ? (
-            <p className="sr-only">
-              Voting is scheduled for November 20, from 8 AM to 5 PM Philippine time, and may be
-              extended.
-            </p>
-          ) : (
-            <p className="mt-3 text-sm">No December dates have been announced.</p>
-          )}
+          <div className="mt-3 min-h-10">
+            {isNovember ? (
+              <>
+                <ul className="hidden text-xs max-[38rem]:block">
+                  {Object.entries(novemberEvents).map(([date, event]) => (
+                    <li key={date}>
+                      Nov {date} · {event}
+                    </li>
+                  ))}
+                </ul>
+                <p className="sr-only">
+                  Voting is scheduled for November 20, from 8 AM to 5 PM Philippine time, and may be
+                  extended.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm">No December dates have been announced.</p>
+            )}
+          </div>
         </div>
       </div>
     </section>

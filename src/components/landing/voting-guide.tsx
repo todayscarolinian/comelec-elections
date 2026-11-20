@@ -5,14 +5,14 @@ export function VotingGuide() {
   return (
     <section
       id="voting"
-      className={`${sectionAnchor} py-[clamp(2.75rem,4.45vw,4rem)]`}
+      className={`${sectionAnchor} flex min-h-[63svh] flex-col justify-center py-[clamp(4rem,8.5svh,6.5rem)]`}
       aria-labelledby="guide-heading"
     >
-      <div className={sectionInner}>
+      <div className={`${sectionInner} flex flex-col gap-[clamp(2.75rem,6svh,4.25rem)]`}>
         <div className="flex items-center justify-between gap-5 max-[38rem]:flex-col max-[38rem]:items-start">
           <h2
             id="guide-heading"
-            className={`${displayHeading} text-[clamp(2.4rem,5vw,4.5rem)] leading-tight`}
+            className={`${displayHeading} text-[clamp(2.75rem,5.7vw,5.25rem)] leading-tight`}
           >
             Before you vote.
           </h2>
@@ -23,7 +23,7 @@ export function VotingGuide() {
             Check registration status <span aria-hidden="true">↗</span>
           </Link>
         </div>
-        <ol className="mt-8 grid gap-[clamp(1.25rem,3vw,3rem)] border-y border-(--landing-green)/35 py-6 [counter-reset:steps] min-[38.01rem]:grid-cols-3 [&>li]:relative [&>li]:ps-8 [&>li]:[counter-increment:steps] [&>li]:before:absolute [&>li]:before:top-1 [&>li]:before:start-0 [&>li]:before:text-xs [&>li]:before:content-[counter(steps,decimal-leading-zero)] [&_h3]:text-[clamp(1.4rem,2vw,2rem)] [&_h3]:leading-tight [&_h3]:[font-family:var(--landing-text),Georgia,serif] [&_p]:mt-2.5 [&_p]:text-(--landing-muted)">
+        <ol className="grid gap-x-[clamp(1.25rem,3vw,3rem)] gap-y-9 border-y border-(--landing-green)/35 py-[clamp(2rem,4.25svh,3rem)] [counter-reset:steps] min-[38.01rem]:grid-cols-3 [&>li]:relative [&>li]:ps-8 [&>li]:[counter-increment:steps] [&>li]:before:absolute [&>li]:before:top-1 [&>li]:before:start-0 [&>li]:before:text-xs [&>li]:before:content-[counter(steps,decimal-leading-zero)] [&_h3]:text-[clamp(1.4rem,2vw,2rem)] [&_h3]:leading-tight [&_h3]:[font-family:var(--landing-text),Georgia,serif] [&_p]:mt-3.5 [&_p]:max-w-[44ch] [&_p]:leading-relaxed [&_p]:text-(--landing-muted)">
           <li>
             <h3>Register</h3>
             <p>

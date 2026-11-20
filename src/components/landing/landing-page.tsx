@@ -41,7 +41,7 @@ export function LandingPage() {
   return (
     <div
       id="home"
-      className={`[--landing-green:#324e1f] [--landing-cream:#faf3e0] [--landing-muted:#4f6041] [--landing-nav-gutter:clamp(1rem,3.34vw,3rem)] [--landing-header-space:calc(var(--landing-nav-gutter)+4.625rem)] max-[38rem]:[--landing-header-space:calc(var(--landing-nav-gutter)+6.375rem)] bg-(--landing-cream) text-(--landing-green) [font-family:var(--landing-body),Arial,sans-serif] [&_:is(a,button,summary):focus-visible]:outline-2 [&_:is(a,button,summary):focus-visible]:outline-offset-4 ${fraunces.variable} ${inter.variable} ${antinomiaDisplay.variable} ${antinomiaText.variable}`}
+      className={`[--landing-green:#324e1f] [--landing-cream:#faf3e0] [--landing-muted:#4f6041] [--landing-nav-gutter:clamp(1rem,3.34vw,3rem)] [--landing-nav-top:clamp(0.625rem,1.35vw,1.25rem)] [--landing-section-gutter:var(--landing-nav-gutter)] min-[52rem]:[--landing-section-gutter:4rem] [--landing-header-space:calc(var(--landing-nav-top)+4.625rem)] max-[38rem]:[--landing-header-space:calc(var(--landing-nav-top)+6.375rem)] bg-(--landing-cream) text-(--landing-green) [font-family:var(--landing-body),Arial,sans-serif] [&_:is(a,button,summary):focus-visible]:outline-2 [&_:is(a,button,summary):focus-visible]:outline-offset-4 ${fraunces.variable} ${inter.variable} ${antinomiaDisplay.variable} ${antinomiaText.variable}`}
     >
       <a
         className="absolute left-4 top-4 z-30 -translate-y-[calc(100%+1rem)] bg-(--landing-cream) px-4 py-3 focus:translate-y-0"
