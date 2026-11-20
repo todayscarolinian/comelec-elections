@@ -12,14 +12,10 @@ export async function GET() {
 
     return Response.json({ electionStatus, ballotsCast, approvedVoters })
   } catch (error) {
-    // Next.js already logs the underlying error with its digest. Log only identifiers here to
-    // correlate with it, and never echo database internals to the public.
-    const { name, code, digest } = (error ?? {}) as {
-      name?: string
-      code?: string
-      digest?: string
-    }
-    console.error('Turnout query failed', { name, code, digest })
+    // The Prisma `name`/`code` are logged inside getCachedTurnout, before the cache boundary
+    // strips them. The digest matches Next.js's own log of this error.
+    const { digest } = (error ?? {}) as { digest?: string }
+    console.error('Turnout request failed', { digest })
 
     return Response.json(
       { error: 'Turnout is temporarily unavailable.' },

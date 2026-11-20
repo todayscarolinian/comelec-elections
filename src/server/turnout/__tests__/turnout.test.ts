@@ -173,12 +173,13 @@ describe('GET /api/turnout', () => {
     const text = await res.text()
     expect(JSON.parse(text)).toEqual({ error: 'Turnout is temporarily unavailable.' })
     expect(text).not.toMatch(/ECONNREFUSED|db\.internal|hunter2|Ballot|P1001|Prisma/)
-    // Server log keeps identifiers for debugging, not the message.
+    // Prisma identifiers are logged inside the cached function, before the cache boundary would
+    // drop them; the route logs the digest. Never the message.
     expect(log).toHaveBeenCalledWith('Turnout query failed', {
       name: 'PrismaClientInitializationError',
       code: 'P1001',
-      digest: '720153388',
     })
+    expect(log).toHaveBeenCalledWith('Turnout request failed', { digest: '720153388' })
     expect(JSON.stringify(log.mock.calls)).not.toMatch(/hunter2|db\.internal/)
     log.mockRestore()
   })

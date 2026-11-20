@@ -51,5 +51,13 @@ export async function getCachedTurnout(): Promise<Turnout> {
   'use cache: remote'
   cacheLife({ revalidate: TURNOUT_REVALIDATE_SECONDS, expire: TURNOUT_EXPIRE_SECONDS })
 
-  return readTurnout(prisma)
+  try {
+    return await readTurnout(prisma)
+  } catch (error) {
+    // Log here, inside the cache boundary: errors that cross it are serialized and lose fields
+    // such as Prisma's `code` and class `name`. Identifiers only, never the message.
+    const { name, code } = (error ?? {}) as { name?: string; code?: string }
+    console.error('Turnout query failed', { name, code })
+    throw error
+  }
 }
