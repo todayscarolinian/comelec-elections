@@ -19,6 +19,12 @@ export function ElectionHero() {
             <li>
               <a href="#candidates">Candidates</a>
             </li>
+            <li>
+              <a href="#voting">Ballot</a>
+            </li>
+            <li>
+              <a href="#turnout">Results</a>
+            </li>
           </ul>
           <a className="landing-nav-dates" href="#calendar">
             Dates

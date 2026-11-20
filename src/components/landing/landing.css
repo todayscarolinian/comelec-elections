@@ -86,20 +86,24 @@
   justify-self: start;
 }
 
-.landing-nav ul {
+.landing-nav ul,
+.landing-footer nav {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem clamp(1rem, 4.4vw, 4rem);
 }
 
-.landing-nav a {
+.landing-nav a,
+.landing-footer nav a {
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
   font-weight: 550;
 }
 
-.landing-nav a:hover {
+.landing-nav a:hover,
+.landing-footer nav a:hover,
+.landing-guide-heading a:hover {
   text-decoration: underline;
   text-underline-offset: 0.25em;
 }
@@ -413,6 +417,130 @@
   font-size: 0.875rem;
 }
 
+.landing-guide {
+  padding-block: clamp(2.75rem, 4.45vw, 4rem);
+}
+
+.landing-guide-heading,
+.landing-turnout-bottom,
+.landing-footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.landing-guide-heading h2,
+.landing-turnout h2 {
+  font-size: clamp(2.4rem, 5vw, 4.5rem);
+}
+
+.landing-guide-heading a {
+  padding-block: 0.65rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.landing-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.25rem, 3vw, 3rem);
+  counter-reset: steps;
+  margin-top: 2rem;
+  padding-block: 1.5rem;
+  border-block: 1px solid var(--line);
+}
+
+.landing-steps li {
+  position: relative;
+  padding-inline-start: 2rem;
+  counter-increment: steps;
+}
+
+.landing-steps li::before {
+  content: counter(steps, decimal-leading-zero);
+  position: absolute;
+  inset: 0.25rem auto auto 0;
+  font-size: 0.75rem;
+}
+
+.landing-steps h3 {
+  font-family: var(--landing-text), Georgia, serif;
+  font-size: clamp(1.4rem, 2vw, 2rem);
+}
+
+.landing-steps p {
+  margin-top: 0.65rem;
+  color: var(--muted);
+}
+
+.landing-turnout {
+  padding-block: clamp(2.75rem, 4.45vw, 4rem);
+  background: var(--green);
+  color: var(--cream);
+}
+
+.landing-turnout-display {
+  min-height: clamp(15rem, 41vw, 37rem);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  padding-block: 2rem;
+}
+
+.landing-turnout-number {
+  font-family: var(--landing-fraunces), Georgia, serif;
+  font-size: clamp(6rem, 20vw, 18rem);
+  font-style: italic;
+  line-height: 1;
+}
+
+.landing-turnout-display p {
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.landing-inverse-button {
+  background: var(--cream);
+  color: var(--green);
+}
+
+.landing-inverse-button:hover {
+  background: #e7ebcd;
+}
+
+.landing-inverse-button:focus-visible {
+  outline-color: var(--cream);
+}
+
+.landing-footer-inner {
+  min-height: 7.5rem;
+  padding-block: 1.25rem;
+}
+
+.landing-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.landing-footer-brand p {
+  font-family: var(--landing-text), Georgia, serif;
+  font-size: clamp(1.35rem, 2.15vw, 2rem);
+  line-height: 1.15;
+}
+
+.landing-footer-brand small {
+  color: var(--muted);
+}
+
+.landing-footer nav {
+  gap: 0 1.4rem;
+  font-size: 0.875rem;
+}
+
 @media (max-width: 52rem) {
   .landing-hero-content {
     min-height: clamp(30rem, 74vw, 41rem);
@@ -452,12 +580,16 @@
     background: rgb(250 243 224 / 68%);
   }
 
-  .landing-gallery-intro {
+  .landing-gallery-intro,
+  .landing-guide-heading,
+  .landing-turnout-bottom,
+  .landing-footer-inner {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .landing-questions {
+  .landing-questions,
+  .landing-steps {
     grid-template-columns: 1fr;
   }
 

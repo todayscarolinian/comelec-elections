@@ -2,7 +2,10 @@ import { Fraunces, Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import { CandidateGallery } from './candidate-gallery'
 import { ElectionCalendar } from './election-calendar'
+import { ElectionFooter } from './election-footer'
 import { ElectionHero } from './election-hero'
+import { VoterTurnout } from './voter-turnout'
+import { VotingGuide } from './voting-guide'
 import './landing.css'
 
 const fraunces = Fraunces({
@@ -45,7 +48,10 @@ export function LandingPage() {
         <ElectionHero />
         <CandidateGallery />
         <ElectionCalendar />
+        <VotingGuide />
+        <VoterTurnout />
       </main>
+      <ElectionFooter />
     </div>
   )
 }
