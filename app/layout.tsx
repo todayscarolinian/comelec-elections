@@ -1,9 +1,8 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import localFont from "next/font/local";
+import type { Metadata } from 'next'
+import { Geist, Geist_Mono, Inter } from 'next/font/google'
+import localFont from 'next/font/local'
 import { TRPCReactProvider } from '@/lib/trpc/client'
 import './globals.css'
-
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -15,21 +14,35 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
+const inter = Inter({
+  variable: '--font-inter',
+  subsets: ['latin'],
+})
+
 const antinomiaText = localFont({
-  src: "../public/fonts/Antinomia-Text-Regular-TRIAL.ttf",
-  variable: "--font-antinomia-text",
-  weight: "400",
-  style: "normal",
-  display: "swap",
-});
+  src: '../public/fonts/Antinomia-Text-Regular-TRIAL.ttf',
+  variable: '--font-antinomia-text',
+  weight: '400',
+  style: 'normal',
+  display: 'swap',
+})
 
 const antinomiaDisplay = localFont({
-  src: "../public/fonts/Antinomia-Display-Italic-TRIAL.ttf",
-  variable: "--font-antinomia-display",
-  weight: "400",
-  style: "italic",
-  display: "swap",
-});
+  src: [
+    {
+      path: '../public/fonts/Antinomia-Display-Regular-TRIAL.ttf',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Antinomia-Display-Italic-TRIAL.ttf',
+      weight: '400',
+      style: 'italic',
+    },
+  ],
+  variable: '--font-antinomia-display',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -40,7 +53,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${antinomiaText.variable} ${antinomiaDisplay.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${antinomiaText.variable} ${antinomiaDisplay.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <TRPCReactProvider>{children}</TRPCReactProvider>

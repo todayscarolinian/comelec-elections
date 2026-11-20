@@ -1,6 +1,9 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import { AuthErrorMessage } from '../auth-error-message'
+
+const { signIn } = vi.hoisted(() => ({ signIn: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('next-auth/react', () => ({ signIn }))
 
 describe('authentication error message', () => {
   it('explains why non-organization accounts cannot sign in', () => {
@@ -53,10 +56,9 @@ describe('authentication error message', () => {
     },
   )
 
-  it('lets the visitor retry through the built-in sign-in flow', () => {
+  it('retries directly with Google and returns to registration after sign-in', () => {
     render(<AuthErrorMessage error="AccessDenied" allowedDomain="example.com" />)
-    expect(screen.getByRole('link', { name: 'Try again' }).getAttribute('href')).toBe(
-      '/api/auth/signin',
-    )
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(signIn).toHaveBeenCalledWith('google', { redirectTo: '/register' })
   })
 })
