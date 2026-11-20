@@ -13,14 +13,33 @@ type QueryState = {
   error?: unknown
   refetch: ReturnType<typeof vi.fn>
 }
-const { state, approve, reject, invalidateQueries } = vi.hoisted(() => ({
-  state: {} as { query: QueryState; saving: boolean },
+const { state, approve, reject, invalidateQueries, listQueryOptions } = vi.hoisted(() => ({
+  state: {} as { query: QueryState; saving: boolean; pendingCount?: number },
+  listQueryOptions: vi.fn(),
   approve: vi.fn(),
   reject: vi.fn(),
   invalidateQueries: vi.fn(),
 }))
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: () => state.query,
+  useQuery: (options: { kind: string; input?: { status?: string; yearLevel?: string } }) => {
+    if (options.kind === 'window')
+      return {
+        data: {
+          pendingCount:
+            state.pendingCount ??
+            state.query.data?.filter((item) => item.status === 'PENDING').length ??
+            0,
+        },
+      }
+    return {
+      ...state.query,
+      data: state.query.data?.filter(
+        (item) =>
+          (!options.input?.status || item.status === options.input.status) &&
+          (!options.input?.yearLevel || item.yearLevel === options.input.yearLevel),
+      ),
+    }
+  },
   useQueryClient: () => ({ invalidateQueries }),
   useMutation: (options: { kind: string }) => ({
     mutateAsync: options.kind === 'approve' ? approve : reject,
@@ -30,8 +49,17 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('@/lib/trpc/client', () => ({
   useTRPC: () => ({
     admin: {
-      listRegistrations: { queryOptions: () => ({}), queryKey: () => ['listRegistrations'] },
-      getRegistrationWindow: { queryKey: () => ['getRegistrationWindow'] },
+      listRegistrations: {
+        queryOptions: (input: unknown) => {
+          listQueryOptions(input)
+          return { kind: 'list', input }
+        },
+        queryKey: () => ['listRegistrations'],
+      },
+      getRegistrationWindow: {
+        queryOptions: () => ({ kind: 'window' }),
+        queryKey: () => ['getRegistrationWindow'],
+      },
       approveRegistration: { mutationOptions: () => ({ kind: 'approve' }) },
       rejectRegistration: { mutationOptions: () => ({ kind: 'reject' }) },
     },
@@ -70,6 +98,8 @@ beforeEach(() => {
   approve.mockReset().mockResolvedValue({ ok: true })
   reject.mockReset().mockResolvedValue({ ok: true })
   invalidateQueries.mockReset().mockResolvedValue(undefined)
+  listQueryOptions.mockClear()
+  state.pendingCount = undefined
   state.saving = false
   state.query = {
     data: [registration()],
@@ -82,6 +112,50 @@ beforeEach(() => {
 })
 
 describe('RegistrationReview live API wiring', () => {
+  it('requests only the pending queue by default', () => {
+    render(<RegistrationReview />)
+    expect(listQueryOptions).toHaveBeenLastCalledWith({ status: 'PENDING' })
+  })
+  it('sends status and Year Level filters to the server, including explicit All choices', () => {
+    state.query.data = [
+      registration(),
+      registration({ id: 'second', status: 'APPROVED', yearLevel: '2' }),
+    ]
+    render(<RegistrationReview />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Status' }), {
+      target: { value: 'APPROVED' },
+    })
+    expect(listQueryOptions).toHaveBeenLastCalledWith({ status: 'APPROVED' })
+    fireEvent.change(screen.getByRole('combobox', { name: /^Year level$/ }), {
+      target: { value: '2' },
+    })
+    expect(listQueryOptions).toHaveBeenLastCalledWith({ status: 'APPROVED', yearLevel: '2' })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Status' }), { target: { value: 'ALL' } })
+    expect(listQueryOptions).toHaveBeenLastCalledWith({ yearLevel: '2' })
+    fireEvent.change(screen.getByRole('combobox', { name: /^Year level$/ }), {
+      target: { value: 'ALL' },
+    })
+    expect(listQueryOptions).toHaveBeenLastCalledWith({})
+  })
+  it('gets total pending count independently of the signed queue filter', () => {
+    state.pendingCount = 12
+    state.query.data = [registration({ status: 'APPROVED' })]
+    render(<RegistrationReview />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Status' }), {
+      target: { value: 'APPROVED' },
+    })
+    expect(screen.getByText('12 applications awaiting review')).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Pending (12)' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Approved' })).toBeTruthy()
+  })
+  it('keeps name search local without broadening the server query', () => {
+    render(<RegistrationReview />)
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search applicants' }), {
+      target: { value: 'no match' },
+    })
+    expect(screen.getByText('No applications match these filters.')).toBeTruthy()
+    expect(listQueryOptions).toHaveBeenLastCalledWith({ status: 'PENDING' })
+  })
   it('shows both OCR values and uses stored fuzzy match flags', () => {
     render(<RegistrationReview />)
     const findings = screen.getByRole('region', { name: 'OCR findings' })

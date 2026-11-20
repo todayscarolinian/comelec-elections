@@ -2,361 +2,37 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTRPC } from '@/lib/trpc/client'
-import { CURRENT_TERM } from '@/election'
 import { YEAR_LEVELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
-import type { inferRouterOutputs } from '@trpc/server'
-import type { AppRouter } from '@/server/trpc/root'
+import { ApplicationReview } from './application-review'
+import { statusLabels, type RegistrationStatus } from './types'
 
-type Registration = inferRouterOutputs<AppRouter>['admin']['listRegistrations'][number]
-type RegistrationStatus = Registration['status']
+const PAGE_SIZE = 5
 
 function accessError(error: unknown) {
   const code = (error as { data?: { code?: string } } | null)?.data?.code
   return code === 'UNAUTHORIZED' || code === 'FORBIDDEN'
 }
 
-function ProfileImage({
-  url,
-  name,
-  onRefresh,
-}: {
-  url: string | null
-  name: string
-  onRefresh: () => void
-}) {
-  const [failed, setFailed] = useState(false)
-  if (!url || failed)
-    return (
-      <div className="grid min-h-[220px] place-content-center gap-3 border border-review-line p-6 text-center">
-        <p>Student profile unavailable. Refresh the document to try again.</p>
-        <button
-          className="min-h-11 underline"
-          onClick={() => {
-            setFailed(false)
-            onRefresh()
-          }}
-        >
-          Refresh document
-        </button>
-      </div>
-    )
-  return (
-    <Image
-      src={url}
-      alt={`Student profile for ${name}`}
-      unoptimized
-      width={1200}
-      height={1600}
-      className="h-auto max-h-[70dvh] w-full object-contain"
-      onError={() => setFailed(true)}
-    />
-  )
-}
-
-const PAGE_SIZE = 5
-const statusLabels: Record<RegistrationStatus, string> = {
-  PENDING: 'Pending',
-  APPROVED: 'Approved',
-  REJECTED: 'Rejected',
-}
-
-function OcrPanel({ registration }: { registration: Registration }) {
-  const ocr = registration.ocrResult
-  const available = registration.ocrStatus === 'DONE' && ocr !== null
-  const processing = registration.ocrStatus === 'PENDING'
-  const rows = available
-    ? [
-        {
-          label: 'Full name',
-          expected: registration.name,
-          read: ocr.fields.name,
-          matches: ocr.matches.name,
-        },
-        {
-          label: 'Student ID',
-          expected: registration.studentId,
-          read: ocr.fields.studentId,
-          matches: ocr.matches.studentId,
-        },
-        {
-          label: 'Year level',
-          expected: `Year ${registration.yearLevel}`,
-          read: ocr.fields.yearLevel,
-          matches: ocr.matches.yearLevel,
-        },
-        { label: 'Term', expected: CURRENT_TERM, read: ocr.fields.term, matches: ocr.matches.term },
-      ]
-    : []
-  return (
-    <section className="[&>p]:py-2" aria-label="OCR findings">
-      <div className="flex items-center justify-between gap-2 border-b border-review-line pb-2 text-review-muted [&_h3]:text-xs [&_h3]:font-medium min-[761px]:[&_h3]:text-[11px] [&_span]:text-xs">
-        <h3>OCR FINDINGS</h3>
-        <span>{available ? 'Findings available' : processing ? 'Processing' : 'Unavailable'}</span>
-      </div>
-      {available ? (
-        <>
-          <p className="text-xs text-review-muted">
-            Check the readings against the screenshot before deciding.
-          </p>
-          <div className="mb-1.5 grid grid-cols-2 gap-4 wrap-anywhere text-xs text-review-muted min-[761px]:text-[11px]">
-            <span>Expected</span>
-            <span>Read from screenshot</span>
-          </div>
-          {rows.map((row) => (
-            <div
-              className="mt-2.5 border-b border-review-line pb-2 min-[761px]:mt-1.5 min-[761px]:pb-1"
-              key={row.label}
-            >
-              <div className="mb-[3px] flex justify-between gap-2 text-xs text-review-muted min-[761px]:text-[11px]">
-                <span>{row.label}</span>
-                <span className={!row.matches ? 'text-xs text-review-error' : undefined}>
-                  {row.matches ? 'Match' : 'Doesn’t match'}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-4 wrap-anywhere text-sm min-[761px]:text-[13px]">
-                <span>{row.expected}</span>
-                <span>{row.read || 'Not read'}</span>
-              </div>
-            </div>
-          ))}
-        </>
-      ) : (
-        <>
-          <p className="border-b border-review-line py-3 text-[13px] text-review-muted">
-            {processing
-              ? 'Reading the student profile. You can review the image now.'
-              : 'No OCR findings are available. Review the student profile manually.'}
-          </p>
-          <h3 className="mt-2.5 text-[11px] font-medium text-review-muted">APPLICATION DETAILS</h3>
-          <dl className="[&>div]:border-b [&>div]:border-review-line [&>div]:py-1 [&_dt]:text-[11px] [&_dt]:text-review-muted [&_dd]:mt-1 [&_dd]:text-sm">
-            <div>
-              <dt>Full name</dt>
-              <dd>{registration.name}</dd>
-            </div>
-            <div>
-              <dt>Student ID</dt>
-              <dd>{registration.studentId}</dd>
-            </div>
-            <div>
-              <dt>Declared year</dt>
-              <dd>Year {registration.yearLevel}</dd>
-            </div>
-          </dl>
-          <p className="text-xs text-review-muted">Verify the name, ID, year, and current term.</p>
-        </>
-      )}
-    </section>
-  )
-}
-
-function Application({
-  registration,
-  onDecision,
-  onBack,
-  focusOnOpen,
-  saving,
-  onRefresh,
-}: {
-  registration: Registration
-  onDecision: (
-    id: string,
-    status: 'APPROVED' | 'REJECTED',
-    year: YearLevel,
-    reason: string,
-  ) => Promise<void>
-  onBack: () => void
-  focusOnOpen: boolean
-  saving: boolean
-  onRefresh: () => void
-}) {
-  const [year, setYear] = useState(registration.yearLevel as YearLevel)
-  const [reason, setReason] = useState('')
-  const [error, setError] = useState('')
-  const reasonRef = useRef<HTMLTextAreaElement>(null)
-  const headingRef = useRef<HTMLHeadingElement>(null)
-  const documentRef = useRef<HTMLDialogElement>(null)
-  useEffect(() => {
-    if (focusOnOpen && window.matchMedia('(width < 761px)').matches) headingRef.current?.focus()
-  }, [focusOnOpen])
-
-  function reject() {
-    if (!reason.trim()) {
-      setError('Enter a reason so the applicant knows what to correct.')
-      reasonRef.current?.focus()
-      return
-    }
-    void onDecision(registration.id, 'REJECTED', registration.yearLevel as YearLevel, reason.trim())
-  }
-
-  return (
-    <article
-      className="hidden min-w-0 gap-4 border border-review-line p-4 max-[761px]:group-[.is-detail]:grid min-[761px]:grid min-[761px]:gap-3 min-[761px]:p-5"
-      aria-labelledby="applicant-name"
-    >
-      <button
-        className="min-h-11 border-0 bg-transparent p-0 text-review-ink underline underline-offset-3 min-[761px]:min-h-7 block justify-self-start min-[761px]:hidden"
-        onClick={onBack}
-      >
-        ← Back to applicants
-      </button>
-      <header className="flex flex-col items-start justify-between gap-2 border-b border-review-line pb-3 min-[761px]:flex-row min-[761px]:items-center min-[761px]:gap-3 [&_h2]:font-editorial [&_h2]:text-[26px] [&_h2]:leading-[1.2] min-[761px]:[&_h2]:text-2xl [&_p]:mt-1 [&_p]:wrap-anywhere [&_p]:text-review-muted [&_small]:mt-1 [&_small]:block [&_small]:text-[11px] [&_small]:text-review-muted">
-        <div>
-          <h2 id="applicant-name" ref={headingRef} tabIndex={-1}>
-            {registration.name}
-          </h2>
-          <p>{registration.email}</p>
-          <small>
-            Submitted{' '}
-            {new Intl.DateTimeFormat('en-PH', {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-              timeZone: 'Asia/Manila',
-            }).format(registration.submittedAt)}
-          </small>
-          {registration.hasHeldBallot && (
-            <p className="text-xs font-medium">Held Ballot · priority review</p>
-          )}
-        </div>
-        <span className="text-xs whitespace-nowrap text-review-muted min-[761px]:text-[11px]">
-          {registration.status === 'PENDING' ? 'PENDING REVIEW' : registration.status}
-        </span>
-      </header>
-      <div className="grid grid-cols-1 gap-6 min-[761px]:gap-4 min-[1301px]:grid-cols-[minmax(0,344fr)_minmax(0,368fr)] min-[1301px]:gap-6 [&>section]:min-w-0">
-        <section aria-label="Student profile">
-          <div className="mb-2 flex items-center justify-between gap-2 [&_h3]:text-[13px] [&_h3]:font-medium">
-            <h3>Student profile</h3>
-            <button
-              className="min-h-11 border-0 bg-transparent p-0 text-review-ink underline underline-offset-3 min-[761px]:min-h-7"
-              onClick={() => documentRef.current?.showModal()}
-            >
-              Open document ↗
-            </button>
-          </div>
-          <ProfileImage
-            key={registration.studentProfileUrl}
-            url={registration.studentProfileUrl}
-            name={registration.name}
-            onRefresh={onRefresh}
-          />
-        </section>
-        <OcrPanel registration={registration} />
-      </div>
-      {registration.status === 'PENDING' ? (
-        <div className="grid gap-6 border-t border-review-line pt-3 min-[761px]:gap-2">
-          <div className="grid grid-cols-1 items-end gap-3 min-[761px]:grid-cols-2 min-[1301px]:grid-cols-[minmax(130px,216fr)_minmax(100px,256fr)_minmax(170px,216fr)] min-[1301px]:gap-6">
-            <label className="flex flex-col gap-1.5 text-xs text-review-muted min-[761px]:text-[11px] [&_input]:min-h-11 [&_input]:w-full [&_input]:min-w-0 [&_input]:border [&_input]:border-review-line [&_input]:bg-review-paper [&_input]:px-3 [&_input]:py-2.5 [&_input]:text-base [&_input]:text-review-ink [&_input::placeholder]:text-review-muted [&_select]:min-h-11 [&_select]:w-full [&_select]:min-w-0 [&_select]:border [&_select]:border-review-line [&_select]:bg-review-paper [&_select]:px-3 [&_select]:py-2.5 [&_select]:text-base [&_select]:text-review-ink min-[761px]:[&_input]:min-h-[42px] min-[761px]:[&_input]:text-[13px] min-[761px]:[&_select]:min-h-[42px] min-[761px]:[&_select]:text-[13px]">
-              Year level on approval
-              <select
-                disabled={saving}
-                value={year}
-                onChange={(event) => setYear(event.target.value as YearLevel)}
-              >
-                {YEAR_LEVELS.map((value) => (
-                  <option key={value} value={value}>
-                    Year {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="text-xs text-review-muted [&_small]:mt-1 [&_small]:block [&_small]:text-[11px]">
-              Correct the year if needed.
-              <small>Used for the year-level ballot.</small>
-            </p>
-            <button
-              className="col-span-full min-h-12 border border-review-ink bg-review-ink px-3.5 py-2.5 text-sm text-review-paper hover:bg-[#263e17] min-[761px]:min-h-11 min-[1301px]:col-span-1"
-              disabled={saving}
-              onClick={() => {
-                void onDecision(registration.id, 'APPROVED', year, '')
-              }}
-            >
-              Approve registration
-            </button>
-          </div>
-          <div>
-            <label
-              className="flex flex-col gap-1.5 text-xs text-review-muted min-[761px]:text-[11px] [&_input]:min-h-11 [&_input]:w-full [&_input]:min-w-0 [&_input]:border [&_input]:border-review-line [&_input]:bg-review-paper [&_input]:px-3 [&_input]:py-2.5 [&_input]:text-base [&_input]:text-review-ink [&_input::placeholder]:text-review-muted [&_select]:min-h-11 [&_select]:w-full [&_select]:min-w-0 [&_select]:border [&_select]:border-review-line [&_select]:bg-review-paper [&_select]:px-3 [&_select]:py-2.5 [&_select]:text-base [&_select]:text-review-ink min-[761px]:[&_input]:min-h-[42px] min-[761px]:[&_input]:text-[13px] min-[761px]:[&_select]:min-h-[42px] min-[761px]:[&_select]:text-[13px]"
-              htmlFor="rejection-reason"
-            >
-              Rejection reason · required only when rejecting
-            </label>
-            <div className="mt-1.5 grid grid-cols-1 items-start gap-3 min-[761px]:grid-cols-[minmax(0,1fr)_156px] min-[761px]:gap-4 [&_textarea]:min-h-24 [&_textarea]:w-full [&_textarea]:min-w-0 [&_textarea]:resize-y [&_textarea]:border [&_textarea]:border-review-line [&_textarea]:bg-review-paper [&_textarea]:px-3 [&_textarea]:py-2.5 [&_textarea]:text-base [&_textarea]:text-review-ink [&_textarea::placeholder]:text-review-muted [&_textarea[aria-invalid=true]]:border-review-error min-[761px]:[&_textarea]:min-h-[50px] min-[761px]:[&_textarea]:text-xs">
-              <textarea
-                id="rejection-reason"
-                ref={reasonRef}
-                value={reason}
-                onChange={(event) => {
-                  setReason(event.target.value)
-                  setError('')
-                }}
-                placeholder="Explain what the applicant needs to correct"
-                aria-invalid={Boolean(error)}
-                aria-describedby={error ? 'reason-error' : undefined}
-                rows={2}
-                maxLength={2000}
-                disabled={saving}
-              />
-              <button
-                className="min-h-12 border border-review-error bg-review-paper px-3.5 py-2.5 text-sm text-review-error hover:bg-[#f5e4d4] min-[761px]:min-h-11"
-                disabled={saving}
-                onClick={reject}
-              >
-                Reject
-              </button>
-            </div>
-            {error && (
-              <p id="reason-error" className="text-xs text-review-error" role="alert">
-                {error}
-              </p>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="border-t border-review-line pt-3 [&_h3]:text-sm [&_p]:mt-2 [&_p]:wrap-anywhere">
-          <h3>{statusLabels[registration.status]} registration</h3>
-          {registration.rejectionReason && <p>Reason: {registration.rejectionReason}</p>}
-          <p className="text-xs text-review-muted">
-            Reviewed by {registration.reviewedBy ?? 'an Admin'}
-            {registration.reviewedAt
-              ? ` · ${new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' }).format(registration.reviewedAt)}`
-              : ''}
-          </p>
-        </div>
-      )}
-      <dialog
-        ref={documentRef}
-        className="m-auto max-h-[90dvh] w-[min(90vw,760px)] border border-review-line bg-review-paper p-6 text-review-ink backdrop:bg-[#18231199]"
-        aria-labelledby="document-title"
-        closedby="any"
-      >
-        <div className="mb-4 flex items-center justify-between gap-4 [&_h2]:font-editorial [&_h2]:text-2xl">
-          <h2 id="document-title">Student profile</h2>
-          <button
-            className="min-h-11 border-0 bg-transparent p-0 text-review-ink underline underline-offset-3 min-[761px]:min-h-7"
-            onClick={() => documentRef.current?.close()}
-          >
-            Close ×
-          </button>
-        </div>
-        <ProfileImage
-          key={registration.studentProfileUrl}
-          url={registration.studentProfileUrl}
-          name={registration.name}
-          onRefresh={onRefresh}
-        />
-      </dialog>
-    </article>
-  )
-}
-
 export function RegistrationReview() {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const listOptions = trpc.admin.listRegistrations.queryOptions({})
+  const [status, setStatus] = useState<RegistrationStatus | 'ALL'>('PENDING')
+  const [year, setYear] = useState<YearLevel | 'ALL'>('ALL')
+  const listOptions = trpc.admin.listRegistrations.queryOptions({
+    ...(status !== 'ALL' ? { status } : {}),
+    ...(year !== 'ALL' ? { yearLevel: year } : {}),
+  })
   const registrationsQuery = useQuery({
     ...listOptions,
+    refetchInterval: 60_000,
+    gcTime: 0,
+    retry: false,
+  })
+  const windowQuery = useQuery({
+    ...trpc.admin.getRegistrationWindow.queryOptions(),
     refetchInterval: 60_000,
     gcTime: 0,
     retry: false,
@@ -367,21 +43,16 @@ export function RegistrationReview() {
   const saving = approve.isPending || rejectMutation.isPending
   const [saveError, setSaveError] = useState('')
   const [query, setQuery] = useState('')
-  const [status, setStatus] = useState<RegistrationStatus | 'ALL'>('PENDING')
-  const [year, setYear] = useState('ALL')
   const [page, setPage] = useState(0)
   const [selectedId, setSelectedId] = useState('')
   const [mobileDetail, setMobileDetail] = useState(false)
   const [notice, setNotice] = useState('')
   const queueRef = useRef<HTMLHeadingElement>(null)
-  const pending = registrations.filter((item) => item.status === 'PENDING').length
-  const filtered = registrations.filter(
-    (item) =>
-      (status === 'ALL' || item.status === status) &&
-      (year === 'ALL' || item.yearLevel === year) &&
-      `${item.name} ${item.email} ${item.studentId}`
-        .toLowerCase()
-        .includes(query.trim().toLowerCase()),
+  const pending = windowQuery.data?.pendingCount
+  const filtered = registrations.filter((item) =>
+    `${item.name} ${item.email} ${item.studentId}`
+      .toLowerCase()
+      .includes(query.trim().toLowerCase()),
   )
   const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / PAGE_SIZE) - 1))
   const visible = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
@@ -495,7 +166,7 @@ export function RegistrationReview() {
                   className="flex min-h-11 justify-between gap-6 bg-review-ink p-3 text-sm text-[#effed4] no-underline [&_span]:text-xs"
                 >
                   {label}
-                  <span>{pending}</span>
+                  <span>{pending ?? '—'}</span>
                 </Link>
               ) : (
                 <span
@@ -520,7 +191,11 @@ export function RegistrationReview() {
         <header className="[&_p]:text-[11px] [&_p]:leading-4 [&_p]:text-review-muted [&_h1]:my-1.5 [&_h1]:font-display [&_h1]:text-[clamp(30px,8.5vw,40px)] [&_h1]:leading-[1.15] [&_h1]:italic min-[761px]:[&_h1]:my-0.5 min-[761px]:[&_h1]:text-5xl min-[761px]:[&_h1]:leading-[1.1] [&_span]:text-review-muted">
           <p>COMMISSION ADMIN</p>
           <h1>Registration review</h1>
-          <span>{pending} applications awaiting review</span>
+          <span>
+            {pending === undefined
+              ? 'Pending count unavailable'
+              : `${pending} applications awaiting review`}
+          </span>
         </header>
         <p className="pt-2 text-[11px] text-review-muted">
           OCR findings are advisory. Review the student profile before deciding.
@@ -550,8 +225,8 @@ export function RegistrationReview() {
               <option value="ALL">All statuses</option>
               {(['PENDING', 'APPROVED', 'REJECTED'] as const).map((value) => (
                 <option key={value} value={value}>
-                  {statusLabels[value]} (
-                  {registrations.filter((item) => item.status === value).length})
+                  {statusLabels[value]}
+                  {value === 'PENDING' && pending !== undefined ? ` (${pending})` : ''}
                 </option>
               ))}
             </select>
@@ -561,7 +236,7 @@ export function RegistrationReview() {
             <select
               value={year}
               onChange={(event) => {
-                setYear(event.target.value)
+                setYear(event.target.value as YearLevel | 'ALL')
                 resetView()
               }}
             >
@@ -666,7 +341,7 @@ export function RegistrationReview() {
             </footer>
           </section>
           {selected ? (
-            <Application
+            <ApplicationReview
               key={`${selected.id}:${selected.submittedAt.toISOString()}:${selected.status}`}
               registration={selected}
               onDecision={decide}

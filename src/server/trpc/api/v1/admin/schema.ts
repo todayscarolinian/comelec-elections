@@ -44,11 +44,6 @@ export const registrationWindowOutputSchema = z.object({
   pendingCount: z.number().int().nonnegative(),
 })
 
-export const getRegistrationStatusOutputSchema = z.object({
-  registrationStatus: z.enum(WINDOW_STATUSES),
-  electionStatus: z.enum(WINDOW_STATUSES),
-})
-
 const registrationStatusSchema = z.enum(['PENDING', 'APPROVED', 'REJECTED'])
 export const listRegistrationsInputSchema = z
   .object({
