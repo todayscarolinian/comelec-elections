@@ -1,16 +1,18 @@
+import { sectionAnchor } from './landing-styles'
 import { Fraunces, Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import { CandidateGallery } from './candidate-gallery'
 import { ElectionCalendar } from './election-calendar'
 import { ElectionFooter } from './election-footer'
 import { ElectionHero } from './election-hero'
+import { ElectionNavigation } from './election-navigation'
 import { VoterTurnout } from './voter-turnout'
 import { VotingGuide } from './voting-guide'
-import './landing.css'
 
 const fraunces = Fraunces({
   subsets: ['latin'],
   style: 'italic',
+  axes: ['opsz', 'SOFT', 'WONK'],
   variable: '--landing-fraunces',
 })
 const inter = Inter({ subsets: ['latin'], variable: '--landing-body' })
@@ -39,12 +41,16 @@ export function LandingPage() {
   return (
     <div
       id="home"
-      className={`election-landing ${fraunces.variable} ${inter.variable} ${antinomiaDisplay.variable} ${antinomiaText.variable}`}
+      className={`[--landing-green:#324e1f] [--landing-cream:#faf3e0] [--landing-muted:#4f6041] [--landing-nav-gutter:clamp(1rem,3.34vw,3rem)] [--landing-header-space:calc(var(--landing-nav-gutter)+4.625rem)] max-[38rem]:[--landing-header-space:calc(var(--landing-nav-gutter)+6.375rem)] bg-(--landing-cream) text-(--landing-green) [font-family:var(--landing-body),Arial,sans-serif] [&_:is(a,button,summary):focus-visible]:outline-2 [&_:is(a,button,summary):focus-visible]:outline-offset-4 ${fraunces.variable} ${inter.variable} ${antinomiaDisplay.variable} ${antinomiaText.variable}`}
     >
-      <a className="landing-skip-link" href="#election-content">
+      <a
+        className="absolute left-4 top-4 z-30 -translate-y-[calc(100%+1rem)] bg-(--landing-cream) px-4 py-3 focus:translate-y-0"
+        href="#election-content"
+      >
         Skip to content
       </a>
-      <main id="election-content" tabIndex={-1}>
+      <ElectionNavigation />
+      <main id="election-content" className={sectionAnchor} tabIndex={-1}>
         <ElectionHero />
         <CandidateGallery />
         <ElectionCalendar />

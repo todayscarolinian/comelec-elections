@@ -10,5 +10,5 @@ export function ElectionStatus() {
   if (data) message = data.status === 'OPEN' ? 'Election open' : 'Election closed'
   else if (isError) message = 'Election status unavailable'
 
-  return <output className="landing-status">{message}</output>
+  return <output className="text-[0.8rem] font-semibold">{message}</output>
 }
