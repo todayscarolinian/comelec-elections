@@ -1,30 +1,39 @@
 'use client'
 
 import { useMutation } from '@tanstack/react-query'
-import { useId, useState } from 'react'
+import { useId, useRef, useState, type DragEvent } from 'react'
 import { getStudentProfileValidationError, STUDENT_PROFILE_MIME_TYPES } from '@/lib/student-profile'
 import { useTRPC } from '@/lib/trpc/client'
 
 type StudentProfileUploadProps = {
   onUploaded: (path: string) => void
   onUploadStart?: () => void
+  onFileSelected?: (fileName: string) => void
   disabled?: boolean
 }
 
 export function StudentProfileUpload({
   onUploaded,
   onUploadStart,
+  onFileSelected,
   disabled = false,
 }: Readonly<StudentProfileUploadProps>) {
   const trpc = useTRPC()
+  const inputId = useId()
   const hintId = useId()
+  const inputRef = useRef<HTMLInputElement>(null)
   const createUpload = useMutation(trpc.registration.createStudentProfileUpload.mutationOptions())
   const [isUploading, setIsUploading] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string>()
   const [uploaded, setUploaded] = useState(false)
+  const [fileName, setFileName] = useState<string>()
+
+  const isDisabled = disabled || isUploading
 
   async function upload(file: File) {
     onUploadStart?.()
+    setFileName(file.name)
     const validationError = getStudentProfileValidationError(file)
 
     if (validationError) {
@@ -53,6 +62,7 @@ export function StudentProfileUpload({
       }
 
       setUploaded(true)
+      onFileSelected?.(file.name)
       onUploaded(path)
     } catch {
       setError('Unable to upload the Student Profile. Please try again.')
@@ -61,39 +71,91 @@ export function StudentProfileUpload({
     }
   }
 
+  function handleDragOver(event: DragEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    if (!isDisabled) setIsDragging(true)
+  }
+
+  function handleDragLeave() {
+    setIsDragging(false)
+  }
+
+  function handleDrop(event: DragEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    setIsDragging(false)
+    if (isDisabled) return
+    const file = event.dataTransfer.files?.[0]
+    if (file) void upload(file)
+  }
+
   return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium text-zinc-900 dark:text-zinc-100">
-        Student Profile
-        <input
-          type="file"
-          aria-describedby={hintId}
-          accept={STUDENT_PROFILE_MIME_TYPES.join(',')}
-          disabled={disabled || isUploading}
-          className="mt-2 block w-full min-w-0 rounded-xl border border-zinc-300 bg-zinc-50 p-3 text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-200 file:px-3 file:py-2 file:font-medium file:text-zinc-900 hover:file:bg-zinc-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-100 dark:hover:file:bg-zinc-600 dark:focus-visible:outline-emerald-400"
-          onChange={(event) => {
-            const file = event.currentTarget.files?.[0]
-            if (file) void upload(file)
-          }}
-        />
+    <div className="space-y-2">
+      <label htmlFor={inputId} className="block text-sm font-medium text-comelec-forest">
+        Current student profile
       </label>
-      <p id={hintId} className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-        In ISMIS, click your avatar in the top right, then My Profile. Upload a screenshot that
-        shows your name, student ID, Year Level and current term. JPEG, PNG or WebP, up to 5 MB.
+
+      <input
+        ref={inputRef}
+        id={inputId}
+        type="file"
+        aria-describedby={hintId}
+        accept={STUDENT_PROFILE_MIME_TYPES.join(',')}
+        disabled={isDisabled}
+        className="sr-only"
+        onChange={(event) => {
+          const file = event.currentTarget.files?.[0]
+          if (file) void upload(file)
+        }}
+      />
+
+      <button
+        type="button"
+        aria-describedby={hintId}
+        disabled={isDisabled}
+        onClick={() => inputRef.current?.click()}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`flex min-h-[128px] w-full flex-col items-center justify-center gap-2 border border-dashed px-6 py-6 text-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-comelec-forest ${
+          isDisabled
+            ? 'cursor-not-allowed border-comelec-sage/70 opacity-60'
+            : isDragging
+              ? 'cursor-pointer border-comelec-forest bg-comelec-sage-soft'
+              : 'cursor-pointer border-comelec-sage hover:border-comelec-forest hover:bg-comelec-sage-soft/50'
+        }`}
+      >
+        <span className="text-base font-medium text-comelec-forest underline underline-offset-4">
+          {uploaded && fileName ? 'Replace image' : 'Choose an image'}
+        </span>
+        <span className="text-sm text-comelec-olive">
+          {uploaded && fileName ? fileName : 'or drag and drop it here'}
+        </span>
+        <span className="text-xs text-comelec-olive">JPG, PNG or WebP · Up to 5 MB</span>
+      </button>
+
+      <p id={hintId} className="text-sm leading-relaxed text-comelec-olive">
+        Make sure your name and current enrollment are readable.
       </p>
+      <details className="text-sm leading-relaxed text-comelec-olive">
+        <summary className="w-fit cursor-pointer font-medium text-comelec-forest underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-comelec-forest">
+          Where do I find my Student Profile?
+        </summary>
+        <p className="mt-2">
+          In ISMIS, click your avatar in the top right, then My Profile. Upload a screenshot that
+          shows your name, student ID, Year Level and current term.
+        </p>
+      </details>
 
       {isUploading && (
-        <output className="block text-sm text-zinc-600 dark:text-zinc-400">
-          Uploading Student Profile...
-        </output>
+        <output className="block text-sm text-comelec-olive">Uploading Student Profile...</output>
       )}
       {error && (
-        <p role="alert" className="text-sm text-red-700 dark:text-red-300">
+        <p role="alert" className="text-sm text-review-error">
           {error}
         </p>
       )}
       {uploaded && (
-        <output className="block text-sm font-medium text-emerald-800 dark:text-emerald-300">
+        <output className="block text-sm font-medium text-comelec-forest">
           Student Profile uploaded.
         </output>
       )}

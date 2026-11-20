@@ -1,4 +1,5 @@
 import { normalizeHostedDomain } from '@/server/auth/policy'
+import { GoogleSignInButton } from './google-sign-in-button'
 
 export function AuthErrorMessage({
   error,
@@ -24,13 +25,10 @@ export function AuthErrorMessage({
       <p className="mt-4 max-w-prose text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
         {message}
       </p>
-      {/* oxlint-disable-next-line nextjs/no-html-link-for-pages -- Auth.js serves HTML, not a Next.js page. */}
-      <a
-        href="/api/auth/signin"
-        className="mt-8 w-fit rounded-full bg-zinc-900 px-6 py-3 font-medium text-zinc-50 hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-300 dark:focus-visible:outline-zinc-100"
-      >
-        Try again
-      </a>
+      <GoogleSignInButton
+        label="Try again"
+        className="mt-8 w-fit rounded-full bg-zinc-900 px-6 py-3 font-medium text-zinc-50 hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-300 dark:focus-visible:outline-zinc-100"
+      />
     </main>
   )
 }

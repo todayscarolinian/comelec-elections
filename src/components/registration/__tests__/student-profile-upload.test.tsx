@@ -24,7 +24,7 @@ const signedUrl = 'https://storage.example.org/signed-upload'
 const studentProfilePath = 'person-1/11111111-1111-4111-8111-111111111111'
 
 function selectFile(file: File) {
-  fireEvent.change(screen.getByLabelText('Student Profile'), {
+  fireEvent.change(screen.getByLabelText('Current student profile'), {
     target: { files: [file] },
   })
 }
@@ -63,13 +63,20 @@ describe('StudentProfileUpload', () => {
     expect(screen.getByRole('status').textContent).toBe('Student Profile uploaded.')
   })
 
-  it('describes the input with where to find the Student Profile in ISMIS', () => {
+  it('shows a short upload hint and lets students expand the ISMIS instructions', () => {
     render(<StudentProfileUpload onUploaded={vi.fn()} />)
 
-    const input = screen.getByLabelText('Student Profile')
+    const input = screen.getByLabelText('Current student profile')
     const hint = document.getElementById(input.getAttribute('aria-describedby') ?? '')
+    const summary = screen.getByText('Where do I find my Student Profile?')
+    const details = summary.closest('details')
 
-    expect(hint?.textContent).toContain('click your avatar in the top right, then My Profile')
+    expect(hint?.textContent).toBe('Make sure your name and current enrollment are readable.')
+    expect(details?.open).toBe(false)
+    fireEvent.click(summary)
+    expect(details?.open).toBe(true)
+    expect(details?.textContent).toContain('click your avatar in the top right, then My Profile')
+    expect(details?.textContent).toContain('name, student ID, Year Level and current term')
   })
 
   it('rejects an unsupported file type before requesting an upload', () => {
@@ -152,7 +159,9 @@ describe('StudentProfileUpload', () => {
 
   it('can be disabled while the parent form is submitting', () => {
     render(<StudentProfileUpload disabled onUploaded={vi.fn()} />)
-    expect((screen.getByLabelText('Student Profile') as HTMLInputElement).disabled).toBe(true)
+    expect((screen.getByLabelText('Current student profile') as HTMLInputElement).disabled).toBe(
+      true,
+    )
   })
 
   it('locks file selection until an in-flight upload finishes', async () => {
@@ -166,10 +175,14 @@ describe('StudentProfileUpload', () => {
     render(<StudentProfileUpload onUploaded={vi.fn()} />)
     selectFile(new File(['image'], 'profile.png', { type: 'image/png' }))
     await waitFor(() => expect(screen.getByText('Uploading Student Profile...')).toBeDefined())
-    expect((screen.getByLabelText('Student Profile') as HTMLInputElement).disabled).toBe(true)
+    expect((screen.getByLabelText('Current student profile') as HTMLInputElement).disabled).toBe(
+      true,
+    )
     finish(new Response(null, { status: 200 }))
     await waitFor(() =>
-      expect((screen.getByLabelText('Student Profile') as HTMLInputElement).disabled).toBe(false),
+      expect((screen.getByLabelText('Current student profile') as HTMLInputElement).disabled).toBe(
+        false,
+      ),
     )
   })
 
