@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { cacheLife, connection, findUnique, ballotCount, registrationCount, transaction } =
@@ -107,18 +109,23 @@ describe('readTurnout', () => {
 })
 
 describe('getCachedTurnout', () => {
-  it('caches for 15 seconds and expires within the request-time window', async () => {
+  // `next/cache` is mocked and `'use cache: remote'` is a plain string under vitest, so these tests
+  // pin the configuration only. Shared caching itself was verified against `next build` +
+  // `next start` (see PR #50).
+  it('passes cacheLife a 15s revalidate and a hard expiry just above it', async () => {
     await getCachedTurnout()
 
-    expect(cacheLife).toHaveBeenCalledWith({
-      stale: 15,
-      revalidate: 15,
-      expire: TURNOUT_EXPIRE_SECONDS,
-    })
+    expect(cacheLife).toHaveBeenCalledWith({ revalidate: 15, expire: 16 })
     expect(TURNOUT_REVALIDATE_SECONDS).toBe(15)
-    // Under 5 minutes keeps it out of the build-time prerender (no DB access during `next build`).
-    expect(TURNOUT_EXPIRE_SECONDS).toBeGreaterThan(TURNOUT_REVALIDATE_SECONDS)
-    expect(TURNOUT_EXPIRE_SECONDS).toBeLessThan(300)
+    expect(TURNOUT_EXPIRE_SECONDS).toBe(16)
+  })
+
+  it('keeps the shared remote cache directive as the first statement', () => {
+    // Guards against dropping the directive or switching to per-instance `'use cache'`.
+    const source = readFileSync(join(__dirname, '..', 'index.ts'), 'utf8')
+    expect(source).toMatch(
+      /export async function getCachedTurnout\(\): Promise<Turnout> \{\s*'use cache: remote'\n/,
+    )
   })
 })
 

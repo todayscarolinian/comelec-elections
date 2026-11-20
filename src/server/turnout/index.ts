@@ -7,8 +7,12 @@ import prisma from '@/lib/prisma'
 /** Seconds a Turnout snapshot is shared by every visitor before it is refreshed (Design §7.1). */
 export const TURNOUT_REVALIDATE_SECONDS = 15
 
-/** Upper bound on how old a snapshot can get when nobody polls for a while. */
-export const TURNOUT_EXPIRE_SECONDS = 60
+/**
+ * Hard limit on a snapshot's age. Just above `revalidate`, so a stale snapshot is only served
+ * during a 1-second window; after that the next visitor waits for a fresh read. Visitors never get
+ * Turnout more than ~16 seconds old, even after a quiet period.
+ */
+export const TURNOUT_EXPIRE_SECONDS = TURNOUT_REVALIDATE_SECONDS + 1
 
 export type Turnout = {
   electionStatus: 'OPEN' | 'CLOSED'
@@ -45,11 +49,7 @@ export async function readTurnout(db: TurnoutDb): Promise<Turnout> {
  */
 export async function getCachedTurnout(): Promise<Turnout> {
   'use cache: remote'
-  cacheLife({
-    stale: TURNOUT_REVALIDATE_SECONDS,
-    revalidate: TURNOUT_REVALIDATE_SECONDS,
-    expire: TURNOUT_EXPIRE_SECONDS,
-  })
+  cacheLife({ revalidate: TURNOUT_REVALIDATE_SECONDS, expire: TURNOUT_EXPIRE_SECONDS })
 
   return readTurnout(prisma)
 }
