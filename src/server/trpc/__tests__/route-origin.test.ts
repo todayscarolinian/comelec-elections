@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/prisma', () => ({ default: {} })) // don't build a real DB client
 vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
+vi.mock('@/server/ocr', () => ({ readStudentProfile: vi.fn() }))
 vi.mock('@/server/storage', () => ({ getSupabaseAdmin: vi.fn() }))
 
 import { POST } from '../../../../app/api/trpc/[trpc]/route'

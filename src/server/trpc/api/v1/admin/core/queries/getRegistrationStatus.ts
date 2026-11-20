@@ -1,7 +1,7 @@
 import { adminProcedure } from '@/server/trpc/init'
-import { registrationWindowOutputSchema } from '../../schema'
+import { getRegistrationStatusOutputSchema } from '../../schema'
 import { getRegistrationStatus as getRegistrationStatusService } from '../../services/registrationWindow'
 
 export const getRegistrationStatus = adminProcedure
-  .output(registrationWindowOutputSchema)
+  .output(getRegistrationStatusOutputSchema)
   .query(({ ctx }) => getRegistrationStatusService(ctx.db))

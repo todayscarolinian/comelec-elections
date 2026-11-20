@@ -3,6 +3,8 @@ import { createTRPCContext } from '@/server/trpc/init'
 import { isAllowedOrigin } from '@/server/trpc/origin'
 import { appRouter } from '@/server/trpc/root'
 
+export const maxDuration = 300
+
 const handler = (req: Request) => {
   if (!isAllowedOrigin(req, process.env.AUTH_URL)) {
     return Response.json({ error: 'Forbidden origin' }, { status: 403 })

@@ -104,13 +104,13 @@ const result = await caller.health.ping()
 - Never log or echo procedure inputs, especially Ballot inputs. Don't add an `errorFormatter` that includes them.
 - `POST /api/trpc` requests must carry an `Origin` matching `AUTH_URL`, or the request's own origin when `AUTH_URL` is unset. Mutations are POST, so cross-origin mutations get a 403.
 
-## Registration window administration (S2-05)
+## Registration review (S2-05)
 
-- `admin.getRegistrationStatus()` returns `{ registrationStatus, electionStatus }`.
-- `admin.setRegistrationStatus({ status: 'OPEN' | 'CLOSED' })` sets an explicit Registration window status and returns the same shape. Repeated requests set the requested value rather than flipping it.
-- Both require current Admin rights. The mutation updates `ElectionState('main')` and writes `SET_REGISTRATION_STATUS` to `AuditLog` in one transaction; audit failure aborts the update.
-- A missing seeded `ElectionState` returns `PRECONDITION_FAILED`; neither endpoint creates it.
-- Closing Registration does not close the Election. Submission remains allowed while either window is open (ADR 0008). The query returns both statuses so the future Admin UI can explain this distinction.
+- `admin.listRegistrations({ status?, yearLevel? })` lists registrations with identity, review metadata, Held Ballot priority, a signed Student Profile URL valid for 600 seconds, and validated advisory OCR. Storage signing failures return a null URL so other registrations remain reviewable. `ocrView` turns OCR PENDING older than ten minutes into FAILED; malformed OCR becomes null. Raw paths and OCR values are never included in logs or errors.
+- `admin.approveRegistration({ id, yearLevel?, submittedAt? })` and `admin.rejectRegistration({ id, reason, submittedAt? })` require current Admin rights. Rejection reasons are trimmed, required, and limited to 2,000 characters. The UI sends the submission timestamp to detect a document replaced during review.
+- Decisions act only on PENDING registrations, regardless of Registration/Election windows. A row lock and serializable transaction keep the decision, reviewer/time, optional corrected Held Ballot year, and audit together. Already-reviewed, resubmitted, or concurrently changed records return a conflict; no OCR fields are selected by decisions.
+- The review UI polls every minute to renew ten-minute document URLs and OCR results. Decisions wait for server success, then refresh the queue and pending count. No sample registrations are used.
+- Registration window controls retain develop's `admin.getRegistrationWindow()` and `admin.setRegistrationStatus({ status })` contract. The branch's `admin.getRegistrationStatus()` remains a read-only compatibility query returning both window statuses; a missing seeded state returns PRECONDITION_FAILED.
 
 ## Testing
 

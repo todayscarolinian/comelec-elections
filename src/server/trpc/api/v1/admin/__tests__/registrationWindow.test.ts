@@ -1,153 +1,139 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const { setRegistrationStatusService, getRegistrationWindowService } = vi.hoisted(() => ({
+  setRegistrationStatusService: vi.fn(),
+  getRegistrationWindowService: vi.fn(),
+}))
+
+vi.mock('@/server/storage', () => ({ getSupabaseAdmin: vi.fn() }))
 vi.mock('@/lib/prisma', () => ({ default: {} }))
 vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
+vi.mock('../services/electionState', () => ({
+  setElectionStatus: vi.fn(),
+  setRegistrationStatus: setRegistrationStatusService,
+  getRegistrationWindow: getRegistrationWindowService,
+}))
 
-import { Prisma } from '@/generated/prisma/client'
 import { createCallerFactory, type Db, type Session } from '@/server/trpc/init'
 import { makeCtx } from '@/server/trpc/helpers'
 import { adminRouter } from '../router'
 
 const createCaller = createCallerFactory(adminRouter)
-const email = 'admin@example.com'
-const session: Session = { user: { personId: 'person-1', email } }
-type WindowStatus = 'OPEN' | 'CLOSED'
 
-function setup(currentSession: Session = session, admins = new Set([email])) {
-  const state = {
-    registrationStatus: 'CLOSED' as WindowStatus,
-    electionStatus: 'OPEN' as WindowStatus,
-  }
-  const tx = {
-    electionState: {
-      update: vi.fn(async ({ data }: { data: { registrationStatus: WindowStatus } }) => ({
-        ...state,
-        ...data,
-      })),
-    },
-    auditLog: { create: vi.fn(async () => ({ id: 'audit-1' })) },
-  }
-  const db = {
-    person: { findUnique: vi.fn(async () => ({ id: 'person-1', email })) },
-    admin: {
-      findUnique: vi.fn(async () => (admins.has(email) ? { email } : null)),
-    },
-    electionState: {
-      findUnique: vi.fn<() => Promise<typeof state | null>>(async () => ({ ...state })),
-    },
-    $transaction: vi.fn(async (fn: (client: typeof tx) => Promise<unknown>) => fn(tx)),
-  }
-  const caller = createCaller(makeCtx({ session: currentSession, db: db as unknown as Db }))
-  return { caller, db, tx, admins }
+const ADMIN_A = 'a@example.com'
+const ADMIN_B = 'b@example.com'
+
+function sessionFor(email: string): Session {
+  return { user: { personId: `person-${email}`, email } }
 }
 
-describe('Admin registration window', () => {
-  it.each([
-    [null, 'UNAUTHORIZED'],
-    [session, 'FORBIDDEN'],
-  ] as const)(
-    'rejects unauthorized query and mutation callers (%s)',
-    async (currentSession, code) => {
-      const { caller, db } = setup(currentSession, new Set())
-      await expect(caller.getRegistrationStatus()).rejects.toMatchObject({ code })
-      await expect(caller.setRegistrationStatus({ status: 'OPEN' })).rejects.toMatchObject({ code })
-      expect(db.electionState.findUnique).not.toHaveBeenCalled()
-      expect(db.$transaction).not.toHaveBeenCalled()
+function callerFor(email: string | null, admins: Set<string>) {
+  const db = {
+    person: {
+      findUnique: vi.fn(async ({ where }: { where: { id: string } }) => ({
+        id: where.id,
+        email: 'x',
+        name: 'Test',
+        createdAt: new Date(),
+      })),
     },
-  )
+    admin: {
+      findUnique: vi.fn(async ({ where }: { where: { email: string } }) =>
+        admins.has(where.email) ? { email: where.email } : null,
+      ),
+    },
+  } as unknown as Db
 
-  it('rechecks Admin rights on the next query and mutation after revocation', async () => {
-    const { caller, admins } = setup()
-    await expect(caller.getRegistrationStatus()).resolves.toEqual({
+  return createCaller(makeCtx({ session: email ? sessionFor(email) : null, db }))
+}
+
+describe('registration window procedures', () => {
+  beforeEach(() => {
+    setRegistrationStatusService.mockReset()
+    getRegistrationWindowService.mockReset()
+    setRegistrationStatusService.mockImplementation(async (_db: Db, status: string) => ({
+      registrationStatus: status,
+    }))
+    getRegistrationWindowService.mockResolvedValue({
       registrationStatus: 'CLOSED',
-      electionStatus: 'OPEN',
-    })
-    admins.delete(email)
-    await expect(caller.getRegistrationStatus()).rejects.toMatchObject({ code: 'FORBIDDEN' })
-    await expect(caller.setRegistrationStatus({ status: 'OPEN' })).rejects.toMatchObject({
-      code: 'FORBIDDEN',
+      pendingCount: 0,
     })
   })
 
-  it('reads the persisted window statuses without changing them', async () => {
-    const { caller, db } = setup()
-    await expect(caller.getRegistrationStatus()).resolves.toEqual({
-      registrationStatus: 'CLOSED',
-      electionStatus: 'OPEN',
+  describe('permissions', () => {
+    it('rejects signed-out callers', async () => {
+      const caller = callerFor(null, new Set())
+
+      await expect(caller.setRegistrationStatus({ status: 'OPEN' })).rejects.toMatchObject({
+        code: 'UNAUTHORIZED',
+      })
+      await expect(caller.getRegistrationWindow()).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+      expect(setRegistrationStatusService).not.toHaveBeenCalled()
+      expect(getRegistrationWindowService).not.toHaveBeenCalled()
     })
-    expect(db.electionState.findUnique).toHaveBeenCalledWith({
-      where: { id: 'main' },
-      select: { registrationStatus: true, electionStatus: true },
+
+    it('rejects signed-in callers who are not Admins', async () => {
+      const caller = callerFor('voter@example.com', new Set([ADMIN_A]))
+
+      await expect(caller.setRegistrationStatus({ status: 'OPEN' })).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+      })
+      await expect(caller.getRegistrationWindow()).rejects.toMatchObject({ code: 'FORBIDDEN' })
+      expect(setRegistrationStatusService).not.toHaveBeenCalled()
+      expect(getRegistrationWindowService).not.toHaveBeenCalled()
     })
-    expect(db.$transaction).not.toHaveBeenCalled()
+
+    it('rejects a revoked Admin on their next call', async () => {
+      const admins = new Set([ADMIN_A, ADMIN_B])
+      const caller = callerFor(ADMIN_B, admins)
+
+      await expect(caller.setRegistrationStatus({ status: 'OPEN' })).resolves.toEqual({
+        registrationStatus: 'OPEN',
+      })
+
+      admins.delete(ADMIN_B)
+
+      await expect(caller.setRegistrationStatus({ status: 'CLOSED' })).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+      })
+      expect(setRegistrationStatusService).toHaveBeenCalledTimes(1)
+    })
   })
 
-  it.each(['OPEN', 'CLOSED'] as const)(
-    'sets explicit status %s and audits within the transaction',
-    async (status) => {
-      const { caller, db, tx } = setup()
+  describe('setRegistrationStatus', () => {
+    it.each(['OPEN', 'CLOSED'] as const)('sets the window to %s', async (status) => {
+      const caller = callerFor(ADMIN_A, new Set([ADMIN_A]))
+
       await expect(caller.setRegistrationStatus({ status })).resolves.toEqual({
         registrationStatus: status,
-        electionStatus: 'OPEN',
       })
-      expect(db.$transaction).toHaveBeenCalledTimes(1)
-      expect(tx.electionState.update).toHaveBeenCalledWith({
-        where: { id: 'main' },
-        data: { registrationStatus: status },
-        select: { registrationStatus: true, electionStatus: true },
-      })
-      expect(tx.auditLog.create).toHaveBeenCalledWith({
-        data: {
-          adminEmail: email,
-          action: 'SET_REGISTRATION_STATUS',
-          target: 'main',
-          detail: { registrationStatus: status },
-        },
-      })
-    },
-  )
+      expect(setRegistrationStatusService).toHaveBeenCalledWith(expect.anything(), status)
+    })
 
-  it.each(['open', '', 'APPROVED', null])(
-    'rejects invalid status %j before writing',
-    async (status) => {
-      const { caller, db } = setup()
-      // @ts-expect-error invalid input intentionally exercises runtime validation
-      await expect(caller.setRegistrationStatus({ status })).rejects.toMatchObject({
-        code: 'BAD_REQUEST',
-      })
-      expect(db.$transaction).not.toHaveBeenCalled()
-    },
-  )
+    it.each(['open', 'PAUSED', ''])('rejects status %j', async (status) => {
+      const caller = callerFor(ADMIN_A, new Set([ADMIN_A]))
 
-  it('fails closed when the seeded state is missing on read', async () => {
-    const { caller, db } = setup()
-    db.electionState.findUnique.mockResolvedValueOnce(null)
-    await expect(caller.getRegistrationStatus()).rejects.toMatchObject({
-      code: 'PRECONDITION_FAILED',
+      await expect(
+        // @ts-expect-error invalid on purpose
+        caller.setRegistrationStatus({ status }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+      expect(setRegistrationStatusService).not.toHaveBeenCalled()
     })
   })
 
-  it('does not create or audit a missing seeded state', async () => {
-    const { caller, tx } = setup()
-    tx.electionState.update.mockRejectedValueOnce(
-      new Prisma.PrismaClientKnownRequestError('Missing row', {
-        code: 'P2025',
-        clientVersion: 'test',
-      }),
-    )
-    await expect(caller.setRegistrationStatus({ status: 'OPEN' })).rejects.toMatchObject({
-      code: 'PRECONDITION_FAILED',
-    })
-    expect(tx.auditLog.create).not.toHaveBeenCalled()
-  })
+  describe('getRegistrationWindow', () => {
+    it('returns the window status and pending count', async () => {
+      getRegistrationWindowService.mockResolvedValueOnce({
+        registrationStatus: 'OPEN',
+        pendingCount: 7,
+      })
+      const caller = callerFor(ADMIN_A, new Set([ADMIN_A]))
 
-  it('propagates audit failure out of the transaction so Prisma rolls back the update', async () => {
-    const { caller, db, tx } = setup()
-    tx.auditLog.create.mockRejectedValueOnce(new Error('Audit unavailable'))
-    await expect(caller.setRegistrationStatus({ status: 'OPEN' })).rejects.toMatchObject({
-      code: 'INTERNAL_SERVER_ERROR',
+      await expect(caller.getRegistrationWindow()).resolves.toEqual({
+        registrationStatus: 'OPEN',
+        pendingCount: 7,
+      })
     })
-    await expect(db.$transaction.mock.results[0].value).rejects.toThrow('Audit unavailable')
   })
 })

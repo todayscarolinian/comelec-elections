@@ -5,12 +5,16 @@ import { submitRegistrationInputSchema } from '../../schema'
 import { lockSubmissionWindow } from '../../services/registrationWindow'
 import { studentProfileExists } from '../../services/studentProfileStorage'
 import { isOwnStudentProfilePath } from '../studentProfilePath'
+import { runStudentProfileOcr } from '../runStudentProfileOcr'
+import { after } from 'next/server'
 
 export const submit = protectedProcedure
   .input(submitRegistrationInputSchema)
   .mutation(async ({ ctx, input }) => {
     const personId = ctx.person.id
     const { yearLevel, studentProfilePath } = input
+    // One timestamp per submission: stored on the Registration and used to scope the OCR job.
+    const submittedAt = new Date()
 
     if (!isOwnStudentProfilePath(studentProfilePath, personId)) {
       throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid Student Profile upload.' })
@@ -42,7 +46,15 @@ export const submit = protectedProcedure
 
         if (!existing) {
           await tx.registration.create({
-            data: { personId, yearLevel, studentProfilePath, status: 'PENDING' },
+            data: {
+              personId,
+              yearLevel,
+              studentProfilePath,
+              status: 'PENDING',
+              submittedAt,
+              ocrStatus: 'PENDING',
+              ocrResult: Prisma.DbNull,
+            },
           })
           return
         }
@@ -58,7 +70,9 @@ export const submit = protectedProcedure
             rejectionReason: null,
             reviewedBy: null,
             reviewedAt: null,
-            submittedAt: new Date(),
+            submittedAt,
+            ocrStatus: 'PENDING',
+            ocrResult: Prisma.DbNull,
           },
         })
         if (count === 0) {
@@ -78,6 +92,18 @@ export const submit = protectedProcedure
       }
       throw error
     }
+
+    after(() =>
+      runStudentProfileOcr({
+        db: ctx.db,
+        personId,
+        studentProfilePath,
+        name: ctx.person.name,
+        email: ctx.person.email,
+        yearLevel,
+        submittedAt,
+      }),
+    )
 
     return { status: 'PENDING' as const }
   })

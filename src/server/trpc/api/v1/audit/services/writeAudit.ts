@@ -10,11 +10,16 @@ export type AuditDetails = {
   detail?: InputJsonValue
 }
 
+type AuditClient = {
+  auditLog: Pick<Prisma.TransactionClient['auditLog'], 'create'>
+}
+
+// Pass the transaction client when auditing a write so both changes commit together.
 export async function writeAudit(
   { adminEmail, action, target, detail }: AuditDetails,
-  db: Pick<Prisma.TransactionClient, 'auditLog'> = prisma,
+  client: AuditClient = prisma,
 ) {
-  return db.auditLog.create({
+  return client.auditLog.create({
     data: {
       adminEmail: adminEmail.trim().toLowerCase(),
       action,

@@ -8,7 +8,6 @@ vi.mock('@/lib/prisma', () => ({
 }))
 
 import { writeAudit } from '../services/writeAudit'
-import type { Prisma } from '@/generated/prisma/client'
 
 describe('writeAudit', () => {
   beforeEach(() => {
@@ -56,19 +55,46 @@ describe('writeAudit', () => {
   })
 
   it('uses the supplied transaction client instead of the global client', async () => {
-    const transactionCreate = vi.fn().mockResolvedValue({ id: 'transaction-audit' })
-    const tx = { auditLog: { create: transactionCreate } } as unknown as Prisma.TransactionClient
+    const transactionCreate = vi.fn().mockResolvedValue({ id: 'transaction-audit-1' })
+    const tx = { auditLog: { create: transactionCreate } }
+
     await expect(
-      writeAudit({ adminEmail: ' Admin@Example.COM ', action: 'VIEW_RESULTS' }, tx),
-    ).resolves.toEqual({ id: 'transaction-audit' })
-    expect(transactionCreate).toHaveBeenCalledWith({
+      writeAudit(
+        {
+          adminEmail: '  Admin@Example.COM ',
+          action: 'SET_ELECTION_STATUS',
+          target: 'main',
+          detail: { previousStatus: 'CLOSED', status: 'OPEN' },
+        },
+        tx,
+      ),
+    ).resolves.toEqual({ id: 'transaction-audit-1' })
+
+    expect(create).not.toHaveBeenCalled()
+    expect(transactionCreate).toHaveBeenCalledExactlyOnceWith({
       data: {
         adminEmail: 'admin@example.com',
-        action: 'VIEW_RESULTS',
-        target: undefined,
-        detail: undefined,
+        action: 'SET_ELECTION_STATUS',
+        target: 'main',
+        detail: { previousStatus: 'CLOSED', status: 'OPEN' },
       },
     })
+  })
+
+  it('propagates the transaction-client failure without falling back to the global client', async () => {
+    const failure = new Error('Audit insert failed')
+    const transactionCreate = vi.fn().mockRejectedValue(failure)
+
+    await expect(
+      writeAudit(
+        {
+          adminEmail: 'admin@example.com',
+          action: 'SET_ELECTION_STATUS',
+        },
+        { auditLog: { create: transactionCreate } },
+      ),
+    ).rejects.toBe(failure)
+
     expect(create).not.toHaveBeenCalled()
   })
 })

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { normalizeHostedDomain } from '@/server/auth/policy'
+import { YEAR_LEVELS, ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
 
 const organizationEmail = z
   .string()
@@ -20,13 +21,6 @@ export const grantAdminOutputSchema = z.object({ email: z.string() })
 export const revokeAdminInputSchema = z.object({ email: organizationEmail })
 export const revokeAdminOutputSchema = z.object({ ok: z.literal(true) })
 
-const windowStatusSchema = z.enum(['OPEN', 'CLOSED'])
-export const setRegistrationStatusInputSchema = z.object({ status: windowStatusSchema })
-export const registrationWindowOutputSchema = z.object({
-  registrationStatus: windowStatusSchema,
-  electionStatus: windowStatusSchema,
-})
-
 export const listAdminsOutputSchema = z.array(
   z.object({
     email: z.string(),
@@ -34,3 +28,60 @@ export const listAdminsOutputSchema = z.array(
     grantedAt: z.date(),
   }),
 )
+
+export const WINDOW_STATUSES = ['OPEN', 'CLOSED'] as const
+
+const windowStatus = z.enum(WINDOW_STATUSES)
+
+export const setRegistrationStatusInputSchema = z.object({ status: windowStatus })
+export const setRegistrationStatusOutputSchema = z.object({ registrationStatus: windowStatus })
+
+export const setElectionStatusInputSchema = z.object({ status: windowStatus })
+export const setElectionStatusOutputSchema = z.object({ electionStatus: windowStatus })
+
+export const registrationWindowOutputSchema = z.object({
+  registrationStatus: windowStatus,
+  pendingCount: z.number().int().nonnegative(),
+})
+
+export const getRegistrationStatusOutputSchema = z.object({
+  registrationStatus: z.enum(WINDOW_STATUSES),
+  electionStatus: z.enum(WINDOW_STATUSES),
+})
+
+const registrationStatusSchema = z.enum(['PENDING', 'APPROVED', 'REJECTED'])
+export const listRegistrationsInputSchema = z
+  .object({
+    status: registrationStatusSchema.optional(),
+    yearLevel: z.enum(YEAR_LEVELS).optional(),
+  })
+  .default({})
+
+export const registrationReviewOutputSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  studentId: z.string(),
+  yearLevel: z.string(),
+  status: registrationStatusSchema,
+  submittedAt: z.date(),
+  reviewedBy: z.string().nullable(),
+  reviewedAt: z.date().nullable(),
+  rejectionReason: z.string().nullable(),
+  hasHeldBallot: z.boolean(),
+  studentProfileUrl: z.url().nullable(),
+  ocrStatus: z.enum(['PENDING', 'DONE', 'FAILED']),
+  ocrResult: ocrResultSchema.nullable(),
+})
+
+export const approveRegistrationInputSchema = z.object({
+  id: z.uuid(),
+  submittedAt: z.date().optional(),
+  yearLevel: z.enum(YEAR_LEVELS).optional(),
+})
+export const rejectRegistrationInputSchema = z.object({
+  id: z.uuid(),
+  submittedAt: z.date().optional(),
+  reason: z.string().trim().min(1).max(2000),
+})
+export const reviewDecisionOutputSchema = z.object({ ok: z.literal(true) })

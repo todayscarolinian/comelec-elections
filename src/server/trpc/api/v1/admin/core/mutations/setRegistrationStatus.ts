@@ -1,8 +1,8 @@
 import { adminProcedure } from '@/server/trpc/init'
-import { registrationWindowOutputSchema, setRegistrationStatusInputSchema } from '../../schema'
-import { setRegistrationStatus as setRegistrationStatusService } from '../../services/registrationWindow'
+import { setRegistrationStatusInputSchema, setRegistrationStatusOutputSchema } from '../../schema'
+import { setRegistrationStatus as setRegistrationStatusService } from '../../services/electionState'
 
 export const setRegistrationStatus = adminProcedure
   .input(setRegistrationStatusInputSchema)
-  .output(registrationWindowOutputSchema)
-  .mutation(({ ctx, input }) => setRegistrationStatusService(ctx.db, input.status, ctx.adminEmail))
+  .output(setRegistrationStatusOutputSchema)
+  .mutation(({ ctx, input }) => setRegistrationStatusService(ctx.db, input.status))

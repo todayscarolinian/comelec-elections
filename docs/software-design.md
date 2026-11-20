@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Draft for team review |
 | **Last updated** | 2026-11-09 |
-| **Related** | [Product Spec](./product-spec.md) · [Glossary](./GLOSSARY.md) · [ADR 0002: Ballots Linked to Voters](./adr/0002-ballots-linked-to-voters.md) (supersedes [ADR 0001](./adr/0001-unlinkable-ballots.md)) · [ADR 0003: Hardcoded Election Definition](./adr/0003-hardcoded-election-definition.md) · [ADR 0004: Own Person Table](./adr/0004-own-person-table-without-auth-adapter.md) · [ADR 0005: Turnout Public, Results Released](./adr/0005-turnout-public-results-released.md) · [ADR 0006: Advisory OCR on Student Profiles](./adr/0006-advisory-ocr-on-student-profiles.md) · [ADR 0007: tRPC API Layer](./adr/0007-trpc-api-layer.md) · [ADR 0008: Held Ballots for Late Registrations (proposed)](./adr/0008-held-ballots-for-late-registrations.md) |
+| **Related** | [Product Spec](./product-spec.md) · [Glossary](./GLOSSARY.md) · [ADR 0002: Ballots Linked to Voters](./adr/0002-ballots-linked-to-voters.md) (supersedes [ADR 0001](./adr/0001-unlinkable-ballots.md)) · [ADR 0003: Hardcoded Election Definition](./adr/0003-hardcoded-election-definition.md) · [ADR 0004: Own Person Table](./adr/0004-own-person-table-without-auth-adapter.md) · [ADR 0005: Turnout Public, Results Released](./adr/0005-turnout-public-results-released.md) · [ADR 0006: Advisory OCR on Student Profiles](./adr/0006-advisory-ocr-on-student-profiles.md) · [ADR 0007: tRPC API Layer](./adr/0007-trpc-api-layer.md) · [ADR 0008: Held Ballots for Late Registrations](./adr/0008-held-ballots-for-late-registrations.md) |
 
 This document describes *how* we build what the [Product Spec](./product-spec.md) describes. Domain terms (Election, Question, Candidate, Party, Independent, Selection Limit, Registration, Registration Period, Applicant, Student Profile, Year Level, Voter, Ballot, Held Ballot, Abstention, Turnout, Results, Admin) are used exactly as defined in the [Glossary](./GLOSSARY.md).
 
@@ -330,7 +330,8 @@ OCR is advisory: it never changes a Registration's `status`, and a failure never
 
 **Rules:**
 - Never store or log the full OCR text. The Student Profile also shows date of birth, which we don't need.
-- `after()` runs within the route's `maxDuration`, so `/api/trpc` needs one long enough for OCR. Measure cold start, time per image and memory on a Vercel preview before launch.
+- `after()` runs within the route's `maxDuration`, so `/api/trpc` sets `maxDuration = 300`. A job waiting for the one-job-per-instance lock counts against the same limit, so the limit leaves room for a queue. On Vercel (1 vCPU, 2,048 MB), OCR takes 2–12 s per image and peaks at about 1.5 GB (task 2.10a, #28).
+- Run at most one OCR job per function instance at a time. Two concurrent jobs would exceed 2 GB of memory.
 
 ## 6. Casting a Ballot
 
