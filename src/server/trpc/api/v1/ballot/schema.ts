@@ -36,6 +36,7 @@ const answerShape = Object.fromEntries(
 export const ballotInputSchema = z.strictObject({
   answers: z.strictObject(answerShape),
   disclosureAccepted: z.literal(true),
+  heldAcknowledged: z.literal(true).optional(),
 })
 
 export type BallotInput = z.infer<typeof ballotInputSchema>

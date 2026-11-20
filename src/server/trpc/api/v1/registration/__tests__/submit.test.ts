@@ -120,6 +120,22 @@ describe('registration.submit', () => {
     expect(after).not.toHaveBeenCalled()
   })
 
+  it.each(['PENDING', 'REJECTED'] as const)(
+    'rejects resubmission of a %s Registration after Election closure',
+    async (status) => {
+      const { caller, tx } = setup({
+        window: { registrationStatus: 'CLOSED', electionStatus: 'CLOSED' },
+        existing: { status },
+      })
+      await expect(caller.submit(input)).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+        message: 'Registration is closed.',
+      })
+      expect(tx.registration.updateMany).not.toHaveBeenCalled()
+      expect(after).not.toHaveBeenCalled()
+    },
+  )
+
   it('allows a late Registration while the Election is open (ADR 0008)', async () => {
     const { caller, tx } = setup({
       window: { registrationStatus: 'CLOSED', electionStatus: 'OPEN' },
