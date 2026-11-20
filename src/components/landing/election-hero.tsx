@@ -2,6 +2,7 @@ import { action } from './landing-styles'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ElectionStatus } from './election-status'
+import { HeroShader } from './hero-shader'
 
 export function ElectionHero() {
   return (
@@ -9,6 +10,7 @@ export function ElectionHero() {
       className="relative top-0 isolate flex min-h-svh flex-col bg-[#d8e9bd] bg-[url('/landing/hero.webp')] bg-position-[73.73%_90.78%] bg-size-[137.88%_109%] motion-safe:[@media(min-height:36rem)]:sticky has-[:focus-visible]:relative"
       aria-labelledby="election-title"
     >
+      <HeroShader />
       <div className="flex w-full flex-1 flex-col px-(--landing-nav-gutter) pt-(--landing-header-space)">
         <div className="flex flex-1 flex-col justify-between gap-6 pt-[clamp(2rem,6svh,5.5rem)] pb-[clamp(1rem,3.4svh,2.25rem)] [@media(max-height:50rem)]:gap-4 [@media(max-height:50rem)]:pt-8">
           <div className="relative z-10 grid w-full max-w-sm justify-items-start gap-4 self-end me-[clamp(0rem,6.2vw,5.5625rem)] max-[38rem]:me-0 max-[38rem]:self-start max-[38rem]:bg-(--landing-cream)/68 max-[38rem]:p-3.5">
