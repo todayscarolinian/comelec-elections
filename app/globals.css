@@ -6,10 +6,18 @@
 }
 
 @theme inline {
+  --color-review-paper: #faf3e0;
+  --color-review-ink: #324e1f;
+  --color-review-muted: #647357;
+  --color-review-line: #b6c89f;
+  --color-review-selected: #dff5c8;
+  --color-review-error: #9b2c1a;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-editorial: var(--font-antinomia-text), Georgia, serif;
+  --font-display: var(--font-antinomia-display), Georgia, serif;
 }
 
 @media (prefers-color-scheme: dark) {
