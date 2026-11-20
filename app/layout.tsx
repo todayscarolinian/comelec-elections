@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { LandingScroll } from '@/components/landing/landing-scroll'
 import { TRPCReactProvider } from '@/lib/trpc/client'
 import './globals.css'
 
@@ -20,8 +21,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased motion-safe:data-[landing-scroll=true]:scroll-smooth`}
+    >
       <body className="min-h-full flex flex-col">
+        <LandingScroll />
         <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>
     </html>

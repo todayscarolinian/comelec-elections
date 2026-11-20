@@ -6,7 +6,7 @@ import { ElectionStatus } from './election-status'
 export function ElectionHero() {
   return (
     <section
-      className="relative isolate flex min-h-svh flex-col bg-[#d8e9bd] bg-[url('/landing/hero.webp')] bg-position-[73.73%_90.78%] bg-size-[137.88%_109%]"
+      className="relative top-0 isolate flex min-h-svh flex-col bg-[#d8e9bd] bg-[url('/landing/hero.webp')] bg-position-[73.73%_90.78%] bg-size-[137.88%_109%] motion-safe:[@media(min-height:36rem)]:sticky has-[:focus-visible]:relative"
       aria-labelledby="election-title"
     >
       <div className="flex w-full flex-1 flex-col px-(--landing-nav-gutter) pt-(--landing-header-space)">

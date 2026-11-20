@@ -1,4 +1,4 @@
-import { displayHeading, sectionAnchor, sectionInner, sectionPadding } from './landing-styles'
+import { displayHeading, sectionInner, sectionPadding } from './landing-styles'
 import Image from 'next/image'
 import { ELECTION, type CandidateDef, type ElectionDef } from '@/election'
 
@@ -51,7 +51,7 @@ export function CandidateGallery() {
   return (
     <section
       id="candidates"
-      className={`${sectionAnchor} ${sectionPadding} grid min-h-svh items-center bg-(--landing-cream) bg-[url('/landing/gallery.webp')] bg-top bg-size-[min(100%,100rem)_auto]`}
+      className={`${sectionPadding} relative z-10 grid min-h-svh items-center bg-(--landing-cream) bg-[url('/landing/gallery.webp')] bg-top bg-size-[min(100%,100rem)_auto] pt-[calc(var(--landing-header-space)+1rem)]`}
       aria-labelledby="candidate-heading"
     >
       <div className={sectionInner}>

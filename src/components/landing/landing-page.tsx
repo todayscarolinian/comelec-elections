@@ -51,8 +51,10 @@ export function LandingPage() {
       </a>
       <ElectionNavigation />
       <main id="election-content" className={sectionAnchor} tabIndex={-1}>
-        <ElectionHero />
-        <CandidateGallery />
+        <div className="isolate">
+          <ElectionHero />
+          <CandidateGallery />
+        </div>
         <ElectionCalendar />
         <VotingGuide />
         <VoterTurnout />
