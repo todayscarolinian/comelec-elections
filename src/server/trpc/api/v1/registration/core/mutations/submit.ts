@@ -81,6 +81,11 @@ export const submit = protectedProcedure
             message: 'Your Registration is already approved',
           })
         }
+
+        // Only PENDING/REJECTED Registrations get here, so any Ballot is a Held Ballot.
+        // Keep its Year Level snapshot in step with the resubmitted Registration;
+        // approval may still correct both
+        await tx.ballot.updateMany({ where: { personId }, data: { yearLevel } })
       })
     } catch (error) {
       // Two first-time submits at once: the second INSERT hits personId @unique.

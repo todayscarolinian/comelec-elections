@@ -31,7 +31,7 @@ describe('ballot.cast', () => {
         code: 'FORBIDDEN',
         message: 'ElectionClosed',
       })
-      expect(tx.registration.findUnique).not.toHaveBeenCalled()
+      expect(tx.$queryRaw).toHaveBeenCalledTimes(1)
       expect(tx.ballot.create).not.toHaveBeenCalled()
     },
   )
@@ -58,15 +58,15 @@ describe('ballot.cast', () => {
   )
 
   it.each([false, null, 'true', 1] as const)(
-    'rejects %j instead of accepting it as a Held Ballot acknowledgement',
+    'rejects %j as an invalid Ballot rather than a Held Ballot acknowledgement',
     async (heldAcknowledged) => {
       const { caller, tx } = setup({ registration: { status: 'PENDING', yearLevel: '2' } })
       await expect(
         // @ts-expect-error malformed submissions intentionally bypass client typing
         caller.ballot.cast({ ...validBallot(), heldAcknowledged }),
       ).rejects.toMatchObject({
-        code: 'FORBIDDEN',
-        message: 'HeldNotAcknowledged',
+        code: 'BAD_REQUEST',
+        message: 'InvalidBallot',
       })
       expect(tx.ballot.create).not.toHaveBeenCalled()
     },
@@ -78,13 +78,14 @@ describe('ballot.cast', () => {
       const { caller, tx } = setup({ registration: { status, yearLevel: '2' } })
       await expect(
         caller.ballot.cast({ ...validBallot(), heldAcknowledged: true }),
-      ).resolves.toEqual({ ok: true })
+      ).resolves.toEqual({ ok: true, held: true })
       expect(tx.ballot.create).toHaveBeenCalledWith({
         data: {
           personId,
           yearLevel: '2',
           disclosureAcceptedAt: expect.any(Date),
           heldAcknowledgedAt: expect.any(Date),
+          castAt: expect.any(Date),
         },
         select: { id: true },
       })
@@ -93,7 +94,7 @@ describe('ballot.cast', () => {
 
   it('locks main ElectionState FOR SHARE and uses only transaction-scoped reads and writes', async () => {
     const { caller, tx, events, db } = setup()
-    await expect(caller.ballot.cast(validBallot())).resolves.toEqual({ ok: true })
+    await expect(caller.ballot.cast(validBallot())).resolves.toEqual({ ok: true, held: false })
     expect(db.$transaction).toHaveBeenCalledTimes(1)
     const [strings, ...values] = tx.$queryRaw.mock.calls[0] as unknown as [
       TemplateStringsArray,
@@ -102,10 +103,14 @@ describe('ballot.cast', () => {
     expect(strings.join('?')).toMatch(/SELECT\s+"electionStatus"\s+FROM\s+"ElectionState"/i)
     expect(strings.join('?')).toMatch(/WHERE\s+id\s*=\s*'main'\s+FOR SHARE/i)
     expect(values).toEqual([])
-    expect(tx.registration.findUnique).toHaveBeenCalledWith({
-      where: { personId },
-      select: { status: true, yearLevel: true },
-    })
+    const [regStrings, ...regValues] = tx.$queryRaw.mock.calls[1] as unknown as [
+      TemplateStringsArray,
+      ...unknown[],
+    ]
+    expect(regStrings.join('?')).toMatch(
+      /SELECT\s+status,\s+"yearLevel"\s+FROM\s+"Registration"\s+WHERE\s+"personId"\s*=\s*\?\s+FOR SHARE/i,
+    )
+    expect(regValues).toEqual([personId])
     expect(events).toEqual(['begin', 'lock', 'registration', 'ballot', 'answers', 'commit'])
   })
 
@@ -120,6 +125,7 @@ describe('ballot.cast', () => {
         yearLevel: '4',
         disclosureAcceptedAt: now,
         heldAcknowledgedAt: null,
+        castAt: now,
       },
       select: { id: true },
     })
@@ -139,15 +145,16 @@ describe('ballot.cast', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST', message: 'InvalidBallot' })
     expect(tx.ballot.create).not.toHaveBeenCalled()
 
-    await expect(
-      caller.ballot.cast({ ...validBallot(), heldAcknowledged: true }),
-    ).resolves.toEqual({ ok: true })
+    await expect(caller.ballot.cast({ ...validBallot(), heldAcknowledged: true })).resolves.toEqual(
+      { ok: true, held: true },
+    )
     expect(tx.ballot.create).toHaveBeenCalledWith({
       data: {
         personId,
         yearLevel: '2',
         disclosureAcceptedAt: now,
         heldAcknowledgedAt: now,
+        castAt: now,
       },
       select: { id: true },
     })
@@ -177,7 +184,7 @@ describe('ballot.cast', () => {
     const { caller, tx } = setup()
     const input = validBallot()
     input.answers['placeholder-question-2'] = { abstain: true }
-    await expect(caller.ballot.cast(input)).resolves.toEqual({ ok: true })
+    await expect(caller.ballot.cast(input)).resolves.toEqual({ ok: true, held: false })
     expect(tx.ballotAnswer.createMany).toHaveBeenCalledWith({
       data: [
         { ballotId: 'ballot-1', questionId: 'placeholder-question-1', candidateId: null },
@@ -230,6 +237,16 @@ describe('ballot.cast', () => {
     expect(tx.ballotAnswer.createMany).not.toHaveBeenCalled()
   })
 
+  it('reports a malformed Held Ballot as InvalidBallot, not HeldNotAcknowledged', async () => {
+    const { caller, tx } = setup({ registration: { status: 'PENDING', yearLevel: '2' } })
+    // @ts-expect-error invalid on purpose to check ordering
+    await expect(caller.ballot.cast({})).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'InvalidBallot',
+    })
+    expect(tx.ballot.create).not.toHaveBeenCalled()
+  })
+
   it('checks election state before validating choices', async () => {
     const { caller } = setup({ electionStatus: 'CLOSED' })
     // @ts-expect-error invalid on purpose to check ordering
@@ -267,9 +284,7 @@ describe('ballot.cast', () => {
     const { caller, tx, events } = setup({
       registration: { status: 'PENDING', yearLevel: '2' },
     })
-    tx.ballot.create.mockRejectedValueOnce(
-      prismaError('P2002', { target: 'Ballot_personId_key' }),
-    )
+    tx.ballot.create.mockRejectedValueOnce(prismaError('P2002', { target: 'Ballot_personId_key' }))
     await expect(
       caller.ballot.cast({ ...validBallot(), heldAcknowledged: true }),
     ).rejects.toMatchObject({
@@ -281,7 +296,7 @@ describe('ballot.cast', () => {
     expect(tx.ballotAnswer.createMany).not.toHaveBeenCalled()
   })
 
-  it('allows only one of concurrent Held Ballot submissions', async () => {
+  it('maps a second Held Ballot insert (mocked P2002) to AlreadyVoted', async () => {
     const { caller, tx } = setup({
       registration: { status: 'PENDING', yearLevel: '2' },
     })
@@ -341,9 +356,10 @@ describe('ballot.cast', () => {
     const ready = Promise.withResolvers<void>()
     const commit = Promise.withResolvers<void>()
     db.$transaction.mockImplementationOnce(async (fn) => {
-      await fn(tx)
+      const value = await fn(tx)
       ready.resolve()
       await commit.promise
+      return value
     })
     let resolved = false
     const result = caller.ballot.cast(validBallot()).then((value) => {
@@ -353,7 +369,7 @@ describe('ballot.cast', () => {
     await ready.promise
     expect(resolved).toBe(false)
     commit.resolve()
-    await expect(result).resolves.toEqual({ ok: true })
+    await expect(result).resolves.toEqual({ ok: true, held: false })
   })
 
   it('sanitizes commit failures instead of reporting success', async () => {

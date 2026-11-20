@@ -47,12 +47,14 @@ function expectNoLogs() {
 }
 
 describe('ballot.cast transport privacy', () => {
-  it('returns only ok after a successful cast', async () => {
+  it('returns only ok and held after a successful cast', async () => {
     const { db } = setup()
     Object.assign(database, db)
     const response = await request(validBallot())
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({ result: { data: { json: { ok: true } } } })
+    await expect(response.json()).resolves.toEqual({
+      result: { data: { json: { ok: true, held: false } } },
+    })
     expectNoLogs()
   })
 
@@ -86,14 +88,20 @@ describe('ballot.cast transport privacy', () => {
     async (stage) => {
       const { db, tx } = setup()
       const error = new Error(`${sentinel}: ${JSON.stringify(validBallot())}`)
-      const operation = {
-        lock: tx.$queryRaw,
-        registration: tx.registration.findUnique,
-        ballot: tx.ballot.create,
-        answers: tx.ballotAnswer.createMany,
-        commit: db.$transaction,
-      }[stage]
-      operation.mockRejectedValueOnce(error)
+      if (stage === 'registration') {
+        // The Registration lock is the second raw query, after the ElectionState lock.
+        const lock = tx.$queryRaw.getMockImplementation()
+        if (!lock) throw new Error('Missing $queryRaw mock')
+        tx.$queryRaw.mockImplementationOnce(lock).mockRejectedValueOnce(error)
+      } else {
+        const operation = {
+          lock: tx.$queryRaw,
+          ballot: tx.ballot.create,
+          answers: tx.ballotAnswer.createMany,
+          commit: db.$transaction,
+        }[stage]
+        operation.mockRejectedValueOnce(error)
+      }
       Object.assign(database, db)
       const response = await request(validBallot())
       expect(response.status).toBe(500)

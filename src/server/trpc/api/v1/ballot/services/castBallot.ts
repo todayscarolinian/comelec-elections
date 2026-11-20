@@ -13,6 +13,11 @@ export class BallotCastError extends Error {
   }
 }
 
+type RegistrationRow = {
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  yearLevel: string
+}
+
 function isPersonIdTarget(target: unknown) {
   return (
     target === 'Ballot_personId_key' ||
@@ -40,9 +45,13 @@ function isPersonIdUniqueViolation(error: unknown) {
   )
 }
 
-export async function castBallot(db: Db, personId: string, input: unknown): Promise<void> {
+export async function castBallot(
+  db: Db,
+  personId: string,
+  input: unknown,
+): Promise<{ held: boolean }> {
   try {
-    await db.$transaction(async (tx) => {
+    return await db.$transaction(async (tx) => {
       const [state] = await tx.$queryRaw<{ electionStatus: 'OPEN' | 'CLOSED' }[]>`
         SELECT "electionStatus"
         FROM "ElectionState"
@@ -51,22 +60,16 @@ export async function castBallot(db: Db, personId: string, input: unknown): Prom
       `
       if (state?.electionStatus !== 'OPEN') throw new BallotCastError('ElectionClosed')
 
-      const registration = await tx.registration.findUnique({
-        where: { personId },
-        select: { status: true, yearLevel: true },
-      })
+      // Lock the Registration row so a concurrent review or resubmission either
+      // finishes first (and this cast reads its result) or waits for this cast to
+      // commit (and then sees, and updates, the new Ballot).
+      const [registration] = await tx.$queryRaw<RegistrationRow[]>`
+        SELECT status, "yearLevel"
+        FROM "Registration"
+        WHERE "personId" = ${personId}
+        FOR SHARE
+      `
       if (!registration) throw new BallotCastError('NotRegistered')
-
-      const held = registration.status !== 'APPROVED'
-      if (
-        held &&
-        (!input ||
-          typeof input !== 'object' ||
-          !('heldAcknowledged' in input) ||
-          input.heldAcknowledged !== true)
-      ) {
-        throw new BallotCastError('HeldNotAcknowledged')
-      }
 
       let validated: BallotInput
       try {
@@ -76,6 +79,12 @@ export async function castBallot(db: Db, personId: string, input: unknown): Prom
         throw error
       }
 
+      const held = registration.status !== 'APPROVED'
+      if (held && validated.heldAcknowledged !== true) {
+        throw new BallotCastError('HeldNotAcknowledged')
+      }
+
+      // Taken from one clock so castAt is never earlier than the acknowledgements.
       const castAt = new Date()
       const ballot = await tx.ballot.create({
         data: {
@@ -83,6 +92,7 @@ export async function castBallot(db: Db, personId: string, input: unknown): Prom
           yearLevel: registration.yearLevel,
           disclosureAcceptedAt: castAt,
           heldAcknowledgedAt: held ? castAt : null,
+          castAt,
         },
         select: { id: true },
       })
@@ -91,6 +101,7 @@ export async function castBallot(db: Db, personId: string, input: unknown): Prom
         return candidates.map((candidateId) => ({ ballotId: ballot.id, questionId, candidateId }))
       })
       await tx.ballotAnswer.createMany({ data: answers })
+      return { held }
     })
   } catch (error) {
     // The transaction has rolled back before the duplicate-vote error is exposed.

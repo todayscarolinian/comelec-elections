@@ -42,16 +42,14 @@ export function setup({
 } = {}) {
   const events: string[] = []
   const tx = {
-    $queryRaw: vi.fn(async () => {
+    $queryRaw: vi.fn(async (strings: TemplateStringsArray, ..._values: unknown[]) => {
+      if (strings.join('?').includes('"Registration"')) {
+        events.push('registration')
+        return registration ? [registration] : []
+      }
       events.push('lock')
       return electionStatus ? [{ electionStatus }] : []
     }),
-    registration: {
-      findUnique: vi.fn(async () => {
-        events.push('registration')
-        return registration
-      }),
-    },
     ballot: {
       create: vi.fn(async (_args: unknown) => {
         events.push('ballot')
