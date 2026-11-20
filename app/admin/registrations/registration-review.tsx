@@ -1,54 +1,55 @@
-"use client";
+'use client'
 
-import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import Image from 'next/image'
+import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
 import {
   EXPECTED_TERM,
   SAMPLE_REGISTRATIONS,
   YEAR_LEVELS,
   type Registration,
   type RegistrationStatus,
-} from "./sample-data";
+} from './sample-data'
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 5
 const statusLabels: Record<RegistrationStatus, string> = {
-  PENDING: "Pending",
-  APPROVED: "Approved",
-  REJECTED: "Rejected",
-};
+  PENDING: 'Pending',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+}
 
 function OcrPanel({ registration }: { registration: Registration }) {
-  const { ocr } = registration;
+  const { ocr } = registration
   const rows =
-    ocr.state === "available"
+    ocr.state === 'available'
       ? [
-          { label: "Full name", expected: registration.name, read: ocr.name },
+          { label: 'Full name', expected: registration.name, read: ocr.name },
           {
-            label: "Student ID",
+            label: 'Student ID',
             expected: registration.id,
             read: ocr.studentId,
           },
           {
-            label: "Year level",
+            label: 'Year level',
             expected: `Year ${registration.year}`,
             read: `Year ${ocr.year}`,
           },
-          { label: "Term", expected: EXPECTED_TERM, read: ocr.term },
+          { label: 'Term', expected: EXPECTED_TERM, read: ocr.term },
         ]
-      : [];
+      : []
   return (
     <section className="[&>p]:py-2" aria-label="OCR findings">
       <div className="flex items-center justify-between gap-2 border-b border-review-line pb-2 text-review-muted [&_h3]:text-xs [&_h3]:font-medium min-[761px]:[&_h3]:text-[11px] [&_span]:text-xs">
         <h3>OCR FINDINGS</h3>
         <span>
-          {ocr.state === "available"
-            ? "Findings available"
-            : ocr.state === "processing"
-              ? "Processing"
-              : "Unavailable"}
+          {ocr.state === 'available'
+            ? 'Findings available'
+            : ocr.state === 'processing'
+              ? 'Processing'
+              : 'Unavailable'}
         </span>
       </div>
-      {ocr.state === "available" ? (
+      {ocr.state === 'available' ? (
         <>
           <p className="text-xs text-review-muted">
             Check the readings against the screenshot before deciding.
@@ -65,18 +66,14 @@ function OcrPanel({ registration }: { registration: Registration }) {
               <div className="mb-[3px] flex justify-between gap-2 text-xs text-review-muted min-[761px]:text-[11px]">
                 <span>{row.label}</span>
                 <span
-                  className={
-                    row.expected !== row.read
-                      ? "text-xs text-review-error"
-                      : undefined
-                  }
+                  className={row.expected !== row.read ? 'text-xs text-review-error' : undefined}
                 >
-                  {row.expected === row.read ? "Match" : "Doesn’t match"}
+                  {row.expected === row.read ? 'Match' : 'Doesn’t match'}
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-4 wrap-anywhere text-sm min-[761px]:text-[13px]">
                 <span>{row.expected}</span>
-                <span>{row.read || "Not read"}</span>
+                <span>{row.read || 'Not read'}</span>
               </div>
             </div>
           ))}
@@ -84,13 +81,11 @@ function OcrPanel({ registration }: { registration: Registration }) {
       ) : (
         <>
           <p className="border-b border-review-line py-3 text-[13px] text-review-muted">
-            {ocr.state === "processing"
-              ? "Reading the student profile. You can review the image now."
-              : "No OCR findings are available. Review the student profile manually."}
+            {ocr.state === 'processing'
+              ? 'Reading the student profile. You can review the image now.'
+              : 'No OCR findings are available. Review the student profile manually.'}
           </p>
-          <h3 className="mt-2.5 text-[11px] font-medium text-review-muted">
-            APPLICATION DETAILS
-          </h3>
+          <h3 className="mt-2.5 text-[11px] font-medium text-review-muted">APPLICATION DETAILS</h3>
           <dl className="[&>div]:border-b [&>div]:border-review-line [&>div]:py-1 [&_dt]:text-[11px] [&_dt]:text-review-muted [&_dd]:mt-1 [&_dd]:text-sm">
             <div>
               <dt>Full name</dt>
@@ -105,13 +100,11 @@ function OcrPanel({ registration }: { registration: Registration }) {
               <dd>Year {registration.year}</dd>
             </div>
           </dl>
-          <p className="text-xs text-review-muted">
-            Verify the name, ID, year, and current term.
-          </p>
+          <p className="text-xs text-review-muted">Verify the name, ID, year, and current term.</p>
         </>
       )}
     </section>
-  );
+  )
 }
 
 function Application({
@@ -120,34 +113,28 @@ function Application({
   onBack,
   focusOnOpen,
 }: {
-  registration: Registration;
-  onDecision: (
-    id: string,
-    status: "APPROVED" | "REJECTED",
-    year: number,
-    reason: string,
-  ) => void;
-  onBack: () => void;
-  focusOnOpen: boolean;
+  registration: Registration
+  onDecision: (id: string, status: 'APPROVED' | 'REJECTED', year: number, reason: string) => void
+  onBack: () => void
+  focusOnOpen: boolean
 }) {
-  const [year, setYear] = useState(registration.year);
-  const [reason, setReason] = useState("");
-  const [error, setError] = useState("");
-  const reasonRef = useRef<HTMLTextAreaElement>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const documentRef = useRef<HTMLDialogElement>(null);
+  const [year, setYear] = useState(registration.year)
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState('')
+  const reasonRef = useRef<HTMLTextAreaElement>(null)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const documentRef = useRef<HTMLDialogElement>(null)
   useEffect(() => {
-    if (focusOnOpen && window.matchMedia("(width < 761px)").matches)
-      headingRef.current?.focus();
-  }, [focusOnOpen]);
+    if (focusOnOpen && window.matchMedia('(width < 761px)').matches) headingRef.current?.focus()
+  }, [focusOnOpen])
 
   function reject() {
     if (!reason.trim()) {
-      setError("Enter a reason so the applicant knows what to correct.");
-      reasonRef.current?.focus();
-      return;
+      setError('Enter a reason so the applicant knows what to correct.')
+      reasonRef.current?.focus()
+      return
     }
-    onDecision(registration.id, "REJECTED", registration.year, reason.trim());
+    onDecision(registration.id, 'REJECTED', registration.year, reason.trim())
   }
 
   return (
@@ -170,9 +157,7 @@ function Application({
           <small>Submitted Nov 20, 1:58 PM · sample</small>
         </div>
         <span className="text-xs whitespace-nowrap text-review-muted min-[761px]:text-[11px]">
-          {registration.status === "PENDING"
-            ? "PENDING REVIEW"
-            : registration.status}
+          {registration.status === 'PENDING' ? 'PENDING REVIEW' : registration.status}
         </span>
       </header>
       <div className="grid grid-cols-1 gap-6 min-[761px]:gap-4 min-[1301px]:grid-cols-[minmax(0,344fr)_minmax(0,368fr)] min-[1301px]:gap-6 [&>section]:min-w-0">
@@ -197,15 +182,12 @@ function Application({
         </section>
         <OcrPanel registration={registration} />
       </div>
-      {registration.status === "PENDING" ? (
+      {registration.status === 'PENDING' ? (
         <div className="grid gap-6 border-t border-review-line pt-3 min-[761px]:gap-2">
           <div className="grid grid-cols-1 items-end gap-3 min-[761px]:grid-cols-2 min-[1301px]:grid-cols-[minmax(130px,216fr)_minmax(100px,256fr)_minmax(170px,216fr)] min-[1301px]:gap-6">
             <label className="flex flex-col gap-1.5 text-xs text-review-muted min-[761px]:text-[11px] [&_input]:min-h-11 [&_input]:w-full [&_input]:min-w-0 [&_input]:border [&_input]:border-review-line [&_input]:bg-review-paper [&_input]:px-3 [&_input]:py-2.5 [&_input]:text-base [&_input]:text-review-ink [&_input::placeholder]:text-review-muted [&_select]:min-h-11 [&_select]:w-full [&_select]:min-w-0 [&_select]:border [&_select]:border-review-line [&_select]:bg-review-paper [&_select]:px-3 [&_select]:py-2.5 [&_select]:text-base [&_select]:text-review-ink min-[761px]:[&_input]:min-h-[42px] min-[761px]:[&_input]:text-[13px] min-[761px]:[&_select]:min-h-[42px] min-[761px]:[&_select]:text-[13px]">
               Year level on approval
-              <select
-                value={year}
-                onChange={(event) => setYear(Number(event.target.value))}
-              >
+              <select value={year} onChange={(event) => setYear(Number(event.target.value))}>
                 {YEAR_LEVELS.map((value) => (
                   <option key={value} value={value}>
                     Year {value}
@@ -219,7 +201,7 @@ function Application({
             </p>
             <button
               className="col-span-full min-h-12 border border-review-ink bg-review-ink px-3.5 py-2.5 text-sm text-review-paper hover:bg-[#263e17] min-[761px]:min-h-11 min-[1301px]:col-span-1"
-              onClick={() => onDecision(registration.id, "APPROVED", year, "")}
+              onClick={() => onDecision(registration.id, 'APPROVED', year, '')}
             >
               Approve registration
             </button>
@@ -237,12 +219,12 @@ function Application({
                 ref={reasonRef}
                 value={reason}
                 onChange={(event) => {
-                  setReason(event.target.value);
-                  setError("");
+                  setReason(event.target.value)
+                  setError('')
                 }}
                 placeholder="Explain what the applicant needs to correct"
                 aria-invalid={Boolean(error)}
-                aria-describedby={error ? "reason-error" : undefined}
+                aria-describedby={error ? 'reason-error' : undefined}
                 rows={2}
               />
               <button
@@ -253,11 +235,7 @@ function Application({
               </button>
             </div>
             {error && (
-              <p
-                id="reason-error"
-                className="text-xs text-review-error"
-                role="alert"
-              >
+              <p id="reason-error" className="text-xs text-review-error" role="alert">
                 {error}
               </p>
             )}
@@ -276,10 +254,7 @@ function Application({
         ref={documentRef}
         className="m-auto max-h-[90dvh] w-[min(90vw,760px)] border border-review-line bg-review-paper p-6 text-review-ink backdrop:bg-[#18231199]"
         aria-labelledby="document-title"
-        onClick={(event) => {
-          if (event.target === event.currentTarget)
-            documentRef.current?.close();
-        }}
+        closedby="any"
       >
         <div className="mb-4 flex items-center justify-between gap-4 [&_h2]:font-editorial [&_h2]:text-2xl">
           <h2 id="document-title">Student profile</h2>
@@ -296,56 +271,46 @@ function Application({
         </div>
       </dialog>
     </article>
-  );
+  )
 }
 
 export function RegistrationReview() {
-  const [registrations, setRegistrations] = useState(SAMPLE_REGISTRATIONS);
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<RegistrationStatus | "ALL">("PENDING");
-  const [year, setYear] = useState("ALL");
-  const [page, setPage] = useState(0);
-  const [selectedId, setSelectedId] = useState(SAMPLE_REGISTRATIONS[0].id);
-  const [mobileDetail, setMobileDetail] = useState(false);
-  const [notice, setNotice] = useState("");
-  const queueRef = useRef<HTMLHeadingElement>(null);
-  const pending = registrations.filter(
-    (item) => item.status === "PENDING",
-  ).length;
+  const [registrations, setRegistrations] = useState(SAMPLE_REGISTRATIONS)
+  const [query, setQuery] = useState('')
+  const [status, setStatus] = useState<RegistrationStatus | 'ALL'>('PENDING')
+  const [year, setYear] = useState('ALL')
+  const [page, setPage] = useState(0)
+  const [selectedId, setSelectedId] = useState(SAMPLE_REGISTRATIONS[0].id)
+  const [mobileDetail, setMobileDetail] = useState(false)
+  const [notice, setNotice] = useState('')
+  const queueRef = useRef<HTMLHeadingElement>(null)
+  const pending = registrations.filter((item) => item.status === 'PENDING').length
   const filtered = registrations.filter(
     (item) =>
-      (status === "ALL" || item.status === status) &&
-      (year === "ALL" || item.year === Number(year)) &&
-      `${item.name} ${item.email} ${item.id}`
-        .toLowerCase()
-        .includes(query.trim().toLowerCase()),
-  );
-  const currentPage = Math.min(
-    page,
-    Math.max(0, Math.ceil(filtered.length / PAGE_SIZE) - 1),
-  );
-  const visible = filtered.slice(
-    currentPage * PAGE_SIZE,
-    (currentPage + 1) * PAGE_SIZE,
-  );
-  const selected = visible.find((item) => item.id === selectedId) ?? visible[0];
+      (status === 'ALL' || item.status === status) &&
+      (year === 'ALL' || item.year === Number(year)) &&
+      `${item.name} ${item.email} ${item.id}`.toLowerCase().includes(query.trim().toLowerCase()),
+  )
+  const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / PAGE_SIZE) - 1))
+  const visible = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
+  const selected = visible.find((item) => item.id === selectedId) ?? visible[0]
 
   function resetView() {
-    setPage(0);
-    setMobileDetail(false);
+    setPage(0)
+    setMobileDetail(false)
   }
   function backToQueue() {
-    setMobileDetail(false);
-    requestAnimationFrame(() => queueRef.current?.focus());
+    setMobileDetail(false)
+    requestAnimationFrame(() => queueRef.current?.focus())
   }
   function decide(
     id: string,
-    nextStatus: "APPROVED" | "REJECTED",
+    nextStatus: 'APPROVED' | 'REJECTED',
     nextYear: number,
     reason: string,
   ) {
-    const applicant = registrations.find((item) => item.id === id);
-    if (!applicant || applicant.status !== "PENDING") return;
+    const applicant = registrations.find((item) => item.id === id)
+    if (!applicant || applicant.status !== 'PENDING') return
     setRegistrations((items) =>
       items.map((item) =>
         item.id === id
@@ -357,11 +322,11 @@ export function RegistrationReview() {
             }
           : item,
       ),
-    );
+    )
     setNotice(
-      `Sample: ${applicant.name} ${nextStatus === "APPROVED" ? `approved for Year ${nextYear}` : "rejected"}. No live registration was changed.`,
-    );
-    backToQueue();
+      `Sample: ${applicant.name} ${nextStatus === 'APPROVED' ? `approved for Year ${nextYear}` : 'rejected'}. No live registration was changed.`,
+    )
+    backToQueue()
   }
 
   return (
@@ -390,33 +355,27 @@ export function RegistrationReview() {
           </div>
         </div>
         <nav aria-label="Admin navigation">
-          {[
-            "Dashboard",
-            "Registrations",
-            "Ballot audit",
-            "Results",
-            "Admins",
-            "Activity log",
-          ].map((label) =>
-            label === "Registrations" ? (
-              <a
-                key={label}
-                href="/admin/registrations"
-                aria-current="page"
-                className="flex min-h-11 justify-between gap-6 bg-review-ink p-3 text-sm text-[#effed4] no-underline [&_span]:text-xs"
-              >
-                {label}
-                <span>{pending}</span>
-              </a>
-            ) : (
-              <span
-                key={label}
-                className="hidden min-h-11 p-3 text-sm min-[1001px]:block"
-                title="Not included in this UI preview"
-              >
-                {label}
-              </span>
-            ),
+          {['Dashboard', 'Registrations', 'Ballot audit', 'Results', 'Admins', 'Activity log'].map(
+            (label) =>
+              label === 'Registrations' ? (
+                <Link
+                  key={label}
+                  href="/admin/registrations"
+                  aria-current="page"
+                  className="flex min-h-11 justify-between gap-6 bg-review-ink p-3 text-sm text-[#effed4] no-underline [&_span]:text-xs"
+                >
+                  {label}
+                  <span>{pending}</span>
+                </Link>
+              ) : (
+                <span
+                  key={label}
+                  className="hidden min-h-11 p-3 text-sm min-[1001px]:block"
+                  title="Not included in this UI preview"
+                >
+                  {label}
+                </span>
+              ),
           )}
         </nav>
         <div className="mt-auto hidden gap-1 border-t border-review-line pt-4 text-xs min-[1001px]:grid [&_small]:text-[10px] [&_small]:text-review-muted">
@@ -426,7 +385,7 @@ export function RegistrationReview() {
       </aside>
       <main
         id="review-main"
-        className={`group min-w-0 px-4 py-6 min-[761px]:p-6 min-[1301px]:px-10 min-[1301px]:pb-10 ${mobileDetail ? "is-detail" : ""}`}
+        className={`group min-w-0 px-4 py-6 min-[761px]:p-6 min-[1301px]:px-10 min-[1301px]:pb-10 ${mobileDetail ? 'is-detail' : ''}`}
       >
         <header className="[&_p]:text-[11px] [&_p]:leading-4 [&_p]:text-review-muted [&_h1]:my-1.5 [&_h1]:font-display [&_h1]:text-[clamp(30px,8.5vw,40px)] [&_h1]:leading-[1.15] [&_h1]:italic min-[761px]:[&_h1]:my-0.5 min-[761px]:[&_h1]:text-5xl min-[761px]:[&_h1]:leading-[1.1] [&_span]:text-review-muted">
           <p>COMMISSION ADMIN</p>
@@ -444,8 +403,8 @@ export function RegistrationReview() {
               placeholder="Name or organizational email"
               value={query}
               onChange={(event) => {
-                setQuery(event.target.value);
-                resetView();
+                setQuery(event.target.value)
+                resetView()
               }}
             />
           </label>
@@ -454,16 +413,15 @@ export function RegistrationReview() {
             <select
               value={status}
               onChange={(event) => {
-                setStatus(event.target.value as RegistrationStatus | "ALL");
-                resetView();
+                setStatus(event.target.value as RegistrationStatus | 'ALL')
+                resetView()
               }}
             >
               <option value="ALL">All statuses</option>
-              {(["PENDING", "APPROVED", "REJECTED"] as const).map((value) => (
+              {(['PENDING', 'APPROVED', 'REJECTED'] as const).map((value) => (
                 <option key={value} value={value}>
                   {statusLabels[value]} (
-                  {registrations.filter((item) => item.status === value).length}
-                  )
+                  {registrations.filter((item) => item.status === value).length})
                 </option>
               ))}
             </select>
@@ -473,8 +431,8 @@ export function RegistrationReview() {
             <select
               value={year}
               onChange={(event) => {
-                setYear(event.target.value);
-                resetView();
+                setYear(event.target.value)
+                resetView()
               }}
             >
               <option value="ALL">All years</option>
@@ -486,9 +444,7 @@ export function RegistrationReview() {
             </select>
           </label>
         </div>
-        <p className="text-xs not-empty:py-3" role="status">
-          {notice}
-        </p>
+        <output className="block text-xs not-empty:py-3">{notice}</output>
         <div className="mt-4 min-[761px]:grid min-[761px]:grid-cols-[240px_minmax(0,1fr)] min-[761px]:items-start min-[761px]:gap-4 min-[1301px]:grid-cols-[280px_minmax(0,1fr)] min-[1301px]:gap-6">
           <section
             className="min-w-0 border border-review-line max-[761px]:group-[.is-detail]:hidden [&_ul]:list-none [&_ul]:p-0 [&_li]:border-t [&_li]:border-review-line [&_li_button]:flex [&_li_button]:w-full [&_li_button]:flex-col [&_li_button]:gap-1 [&_li_button]:p-4 [&_li_button]:text-left [&_li_button:hover]:bg-review-selected min-[761px]:[&_li_button]:gap-0.5 min-[761px]:[&_li_button]:px-3 min-[761px]:[&_li_button]:py-2.5 [&_li_button>span:not(:first-child)]:text-xs [&_li_button>span:not(:first-child)]:text-review-muted [&_li_button>span]:wrap-anywhere"
@@ -496,11 +452,10 @@ export function RegistrationReview() {
           >
             <header className="p-3 [&_h2]:text-[13px] [&_h2]:leading-5 [&_h2]:font-medium [&_p]:mt-1 [&_p]:text-[11px] [&_p]:text-review-muted">
               <h2 id="queue-heading" tabIndex={-1} ref={queueRef}>
-                {status === "PENDING" ? "Awaiting review" : "Applications"}
+                {status === 'PENDING' ? 'Awaiting review' : 'Applications'}
               </h2>
               <p>
-                {filtered.length}{" "}
-                {status === "PENDING" ? "pending applications" : "applications"}
+                {filtered.length} {status === 'PENDING' ? 'pending applications' : 'applications'}
               </p>
             </header>
             {visible.length ? (
@@ -508,18 +463,14 @@ export function RegistrationReview() {
                 {visible.map((item) => (
                   <li key={item.id}>
                     <button
-                      className={
-                        selected?.id === item.id ? "bg-review-selected" : ""
-                      }
+                      className={selected?.id === item.id ? 'bg-review-selected' : ''}
                       aria-pressed={selected?.id === item.id}
                       onClick={() => {
-                        setSelectedId(item.id);
-                        setMobileDetail(true);
+                        setSelectedId(item.id)
+                        setMobileDetail(true)
                       }}
                     >
-                      <span className="font-editorial text-lg leading-6">
-                        {item.name}
-                      </span>
+                      <span className="font-editorial text-lg leading-6">{item.name}</span>
                       <span>
                         {item.id} · Year {item.year}
                       </span>
@@ -531,15 +482,13 @@ export function RegistrationReview() {
                 ))}
               </ul>
             ) : (
-              <p className="p-6 text-review-muted">
-                No applications match these filters.
-              </p>
+              <p className="p-6 text-review-muted">No applications match these filters.</p>
             )}
             <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-review-line px-4 py-3 text-xs text-review-muted min-[761px]:px-3 [&>div]:flex [&>div]:flex-wrap [&>div]:gap-3">
               <span>
                 {filtered.length
                   ? `${currentPage * PAGE_SIZE + 1}–${Math.min((currentPage + 1) * PAGE_SIZE, filtered.length)} of ${filtered.length}`
-                  : "0 applications"}
+                  : '0 applications'}
               </span>
               <div>
                 {currentPage > 0 && (
@@ -547,8 +496,8 @@ export function RegistrationReview() {
                     className="min-h-11 border-0 bg-transparent p-0 text-review-ink underline underline-offset-3 min-[761px]:min-h-7"
                     aria-label="Previous applicants"
                     onClick={() => {
-                      setPage(currentPage - 1);
-                      setMobileDetail(false);
+                      setPage(currentPage - 1)
+                      setMobileDetail(false)
                     }}
                   >
                     ← Previous
@@ -558,8 +507,8 @@ export function RegistrationReview() {
                   <button
                     className="min-h-11 border-0 bg-transparent p-0 text-review-ink underline underline-offset-3 min-[761px]:min-h-7"
                     onClick={() => {
-                      setPage(currentPage + 1);
-                      setMobileDetail(false);
+                      setPage(currentPage + 1)
+                      setMobileDetail(false)
                     }}
                   >
                     Next applicants →
@@ -584,5 +533,5 @@ export function RegistrationReview() {
         </div>
       </main>
     </div>
-  );
+  )
 }
