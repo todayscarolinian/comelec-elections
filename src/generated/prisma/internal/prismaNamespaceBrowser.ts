@@ -107,7 +107,9 @@ export const RegistrationScalarFieldEnum = {
   reviewedBy: 'reviewedBy',
   reviewedAt: 'reviewedAt',
   submittedAt: 'submittedAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  ocrStatus: 'ocrStatus',
+  ocrResult: 'ocrResult'
 } as const
 
 export type RegistrationScalarFieldEnum = (typeof RegistrationScalarFieldEnum)[keyof typeof RegistrationScalarFieldEnum]
@@ -118,6 +120,7 @@ export const BallotScalarFieldEnum = {
   personId: 'personId',
   yearLevel: 'yearLevel',
   disclosureAcceptedAt: 'disclosureAcceptedAt',
+  heldAcknowledgedAt: 'heldAcknowledgedAt',
   castAt: 'castAt'
 } as const
 

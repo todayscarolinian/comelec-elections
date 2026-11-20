@@ -5,7 +5,7 @@ import type { BallotInput } from '@/server/trpc/api/v1/ballot/schema'
 import type { Db } from '@/server/trpc/init'
 
 type CastFailure =
-  'ElectionClosed' | 'NotRegistered' | 'RegistrationNotApproved' | 'InvalidBallot' | 'AlreadyVoted'
+  'ElectionClosed' | 'NotRegistered' | 'HeldNotAcknowledged' | 'InvalidBallot' | 'AlreadyVoted'
 
 export class BallotCastError extends Error {
   constructor(readonly reason: CastFailure) {
@@ -56,7 +56,17 @@ export async function castBallot(db: Db, personId: string, input: unknown): Prom
         select: { status: true, yearLevel: true },
       })
       if (!registration) throw new BallotCastError('NotRegistered')
-      if (registration.status !== 'APPROVED') throw new BallotCastError('RegistrationNotApproved')
+
+      const held = registration.status !== 'APPROVED'
+      if (
+        held &&
+        (!input ||
+          typeof input !== 'object' ||
+          !('heldAcknowledged' in input) ||
+          input.heldAcknowledged !== true)
+      ) {
+        throw new BallotCastError('HeldNotAcknowledged')
+      }
 
       let validated: BallotInput
       try {
@@ -66,11 +76,13 @@ export async function castBallot(db: Db, personId: string, input: unknown): Prom
         throw error
       }
 
+      const castAt = new Date()
       const ballot = await tx.ballot.create({
         data: {
           personId,
           yearLevel: registration.yearLevel,
-          disclosureAcceptedAt: new Date(),
+          disclosureAcceptedAt: castAt,
+          heldAcknowledgedAt: held ? castAt : null,
         },
         select: { id: true },
       })

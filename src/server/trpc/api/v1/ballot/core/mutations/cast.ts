@@ -6,7 +6,7 @@ import { protectedProcedure } from '@/server/trpc/init'
 const failureCodes = {
   ElectionClosed: 'FORBIDDEN',
   NotRegistered: 'FORBIDDEN',
-  RegistrationNotApproved: 'FORBIDDEN',
+  HeldNotAcknowledged: 'FORBIDDEN',
   InvalidBallot: 'BAD_REQUEST',
   AlreadyVoted: 'CONFLICT',
 } as const

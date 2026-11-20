@@ -46,14 +46,48 @@ describe('ballot.cast', () => {
   })
 
   it.each(['PENDING', 'REJECTED'] as const)(
-    'rejects %s Registration until S3-04',
+    'rejects %s Registration without held acknowledgement',
     async (status) => {
       const { caller, tx } = setup({ registration: { status, yearLevel: '2' } })
       await expect(caller.ballot.cast(validBallot())).rejects.toMatchObject({
         code: 'FORBIDDEN',
-        message: 'RegistrationNotApproved',
+        message: 'HeldNotAcknowledged',
       })
       expect(tx.ballot.create).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each([false, null, 'true', 1] as const)(
+    'rejects %j instead of accepting it as a Held Ballot acknowledgement',
+    async (heldAcknowledged) => {
+      const { caller, tx } = setup({ registration: { status: 'PENDING', yearLevel: '2' } })
+      await expect(
+        // @ts-expect-error malformed submissions intentionally bypass client typing
+        caller.ballot.cast({ ...validBallot(), heldAcknowledged }),
+      ).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+        message: 'HeldNotAcknowledged',
+      })
+      expect(tx.ballot.create).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each(['PENDING', 'REJECTED'] as const)(
+    'allows %s Registration with held acknowledgement',
+    async (status) => {
+      const { caller, tx } = setup({ registration: { status, yearLevel: '2' } })
+      await expect(
+        caller.ballot.cast({ ...validBallot(), heldAcknowledged: true }),
+      ).resolves.toEqual({ ok: true })
+      expect(tx.ballot.create).toHaveBeenCalledWith({
+        data: {
+          personId,
+          yearLevel: '2',
+          disclosureAcceptedAt: expect.any(Date),
+          heldAcknowledgedAt: expect.any(Date),
+        },
+        select: { id: true },
+      })
     },
   )
 
@@ -81,7 +115,40 @@ describe('ballot.cast', () => {
     const { caller, tx } = setup({ registration: { status: 'APPROVED', yearLevel: '4' } })
     await caller.ballot.cast(validBallot())
     expect(tx.ballot.create).toHaveBeenCalledWith({
-      data: { personId: 'person-1', yearLevel: '4', disclosureAcceptedAt: now },
+      data: {
+        personId: 'person-1',
+        yearLevel: '4',
+        disclosureAcceptedAt: now,
+        heldAcknowledgedAt: null,
+      },
+      select: { id: true },
+    })
+  })
+
+  it('stores a server-generated held timestamp and rejects a client timestamp', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(now)
+    const { caller, tx } = setup({ registration: { status: 'PENDING', yearLevel: '2' } })
+    await expect(
+      caller.ballot.cast({
+        ...validBallot(),
+        heldAcknowledged: true,
+        // @ts-expect-error client timestamps are intentionally untyped and rejected
+        heldAcknowledgedAt: '2000-01-01T00:00:00.000Z',
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST', message: 'InvalidBallot' })
+    expect(tx.ballot.create).not.toHaveBeenCalled()
+
+    await expect(
+      caller.ballot.cast({ ...validBallot(), heldAcknowledged: true }),
+    ).resolves.toEqual({ ok: true })
+    expect(tx.ballot.create).toHaveBeenCalledWith({
+      data: {
+        personId,
+        yearLevel: '2',
+        disclosureAcceptedAt: now,
+        heldAcknowledgedAt: now,
+      },
       select: { id: true },
     })
   })
@@ -194,6 +261,46 @@ describe('ballot.cast', () => {
     })
     expect(events.at(-1)).toBe('rollback')
     expect(tx.ballotAnswer.createMany).not.toHaveBeenCalled()
+  })
+
+  it('does not replace or recast an existing Held Ballot', async () => {
+    const { caller, tx, events } = setup({
+      registration: { status: 'PENDING', yearLevel: '2' },
+    })
+    tx.ballot.create.mockRejectedValueOnce(
+      prismaError('P2002', { target: 'Ballot_personId_key' }),
+    )
+    await expect(
+      caller.ballot.cast({ ...validBallot(), heldAcknowledged: true }),
+    ).rejects.toMatchObject({
+      code: 'CONFLICT',
+      message: 'AlreadyVoted',
+      cause: undefined,
+    })
+    expect(events.at(-1)).toBe('rollback')
+    expect(tx.ballotAnswer.createMany).not.toHaveBeenCalled()
+  })
+
+  it('allows only one of concurrent Held Ballot submissions', async () => {
+    const { caller, tx } = setup({
+      registration: { status: 'PENDING', yearLevel: '2' },
+    })
+    let creates = 0
+    tx.ballot.create.mockImplementation(async () => {
+      creates += 1
+      if (creates > 1) throw prismaError('P2002', { target: ['personId'] })
+      return { id: 'ballot-1' }
+    })
+    const input = { ...validBallot(), heldAcknowledged: true as const }
+
+    const attempts = await Promise.allSettled([
+      caller.ballot.cast(input),
+      caller.ballot.cast(input),
+    ])
+
+    expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(1)
+    expect(attempts.filter((attempt) => attempt.status === 'rejected')).toHaveLength(1)
+    expect(tx.ballotAnswer.createMany).toHaveBeenCalledTimes(1)
   })
 
   it.each([
