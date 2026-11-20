@@ -51,10 +51,10 @@ export function CandidateGallery() {
   return (
     <section
       id="candidates"
-      className={`${sectionAnchor} bg-(--landing-cream) bg-[url('/landing/gallery.webp')] bg-top bg-size-[min(100%,100rem)_auto] py-[clamp(3rem,5vw,4.5rem)]`}
+      className={`${sectionAnchor} grid min-h-svh items-center bg-(--landing-cream) bg-[url('/landing/gallery.webp')] bg-top bg-size-[min(100%,100rem)_auto] py-[clamp(3rem,5vw,4.5rem)]`}
       aria-labelledby="candidate-heading"
     >
-      <div className={sectionInner}>
+      <div className={`${sectionInner} w-full`}>
         <div className="mb-10 flex items-center justify-between gap-6 max-[38rem]:flex-col max-[38rem]:items-start">
           <h2
             id="candidate-heading"

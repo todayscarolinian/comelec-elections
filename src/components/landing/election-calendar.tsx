@@ -27,7 +27,7 @@ export function ElectionCalendar() {
       aria-labelledby="calendar-heading"
     >
       <div
-        className={`${sectionInner} grid content-center items-start gap-8 pt-12 pb-12 min-[52.01rem]:min-h-[min(56vw,50rem)] min-[52.01rem]:grid-cols-[minmax(0,1fr)_minmax(0,1.215fr)] min-[52.01rem]:pt-[clamp(5rem,8.6vw,7.75rem)] min-[52.01rem]:pb-[clamp(3rem,5vw,4.5rem)]`}
+        className={`${sectionInner} grid min-h-svh content-center items-start gap-8 py-12 min-[52.01rem]:grid-cols-[minmax(0,1fr)_minmax(0,1.215fr)] min-[52.01rem]:pt-[clamp(4rem,12svh,7.75rem)] min-[52.01rem]:pb-[clamp(3rem,5vw,4.5rem)]`}
       >
         <div className="max-w-[24.5rem] text-[clamp(1rem,1.4vw,1.25rem)] leading-[1.4] [&>p+p]:mt-8">
           <h2
