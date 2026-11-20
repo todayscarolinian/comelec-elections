@@ -4,4 +4,7 @@ import { getOwnRegistration } from '../../services/getOwnRegistration'
 
 export const getMine = protectedProcedure
   .output(ownRegistrationOutputSchema)
-  .query(({ ctx }) => getOwnRegistration(ctx.db, ctx.person.id))
+  .query(async ({ ctx }) => ({
+    ...(await getOwnRegistration(ctx.db, ctx.person.id)),
+    account: { name: ctx.person.name, email: ctx.person.email },
+  }))

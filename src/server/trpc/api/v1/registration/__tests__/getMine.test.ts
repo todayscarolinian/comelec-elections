@@ -17,6 +17,8 @@ const createCaller = createCallerFactory(registrationRouter)
 const session: NonNullable<Session> = {
   user: { personId: 'person-1', email: 'applicant@example.org' },
 }
+const account = { name: 'Applicant', email: session.user.email }
+
 type WindowStatus = 'OPEN' | 'CLOSED'
 type Registration = {
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
@@ -68,11 +70,15 @@ describe('registration.getMine', () => {
 
   it('returns no registration for a new Applicant', async () => {
     const { caller } = setup()
-    await expect(caller.getMine()).resolves.toEqual({ registration: null, canSubmit: true })
+    await expect(caller.getMine()).resolves.toEqual({
+      account,
+      registration: null,
+      canSubmit: true,
+    })
   })
 
   it.each(['PENDING', 'APPROVED', 'REJECTED'] as const)(
-    'returns the caller’s %s status, Year Level and reason only',
+    'returns the caller’s account and %s registration summary',
     async (status) => {
       const { caller, db } = setup({
         registration: {
@@ -82,6 +88,7 @@ describe('registration.getMine', () => {
         },
       })
       await expect(caller.getMine()).resolves.toEqual({
+        account,
         registration: {
           status,
           yearLevel: '3',
@@ -101,7 +108,11 @@ describe('registration.getMine', () => {
       currentSession: { user: { personId: 'person-2', email: 'other@example.org' } },
       registration: { status: 'APPROVED', yearLevel: '4', rejectionReason: null },
     })
-    await expect(caller.getMine()).resolves.toEqual({ registration: null, canSubmit: true })
+    await expect(caller.getMine()).resolves.toEqual({
+      account: { ...account, email: 'other@example.org' },
+      registration: null,
+      canSubmit: true,
+    })
   })
 
   it.each([
@@ -113,12 +124,16 @@ describe('registration.getMine', () => {
     'Registration=%s, Election=%s yields canSubmit=%s',
     async (registrationStatus, electionStatus, canSubmit) => {
       const { caller } = setup({ window: { registrationStatus, electionStatus } })
-      await expect(caller.getMine()).resolves.toEqual({ registration: null, canSubmit })
+      await expect(caller.getMine()).resolves.toEqual({ account, registration: null, canSubmit })
     },
   )
 
   it('fails closed when ElectionState has not been initialized', async () => {
     const { caller } = setup({ window: null })
-    await expect(caller.getMine()).resolves.toEqual({ registration: null, canSubmit: false })
+    await expect(caller.getMine()).resolves.toEqual({
+      account,
+      registration: null,
+      canSubmit: false,
+    })
   })
 })
