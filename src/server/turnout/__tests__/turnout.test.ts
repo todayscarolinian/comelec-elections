@@ -3,20 +3,13 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { cacheLife, connection, findUnique, ballotCount, registrationCount, transaction } =
-  vi.hoisted(() => {
-    const findUnique = vi.fn()
-    const ballotCount = vi.fn()
-    const registrationCount = vi.fn()
-    return {
-      cacheLife: vi.fn(),
-      connection: vi.fn(async () => undefined),
-      findUnique,
-      ballotCount,
-      registrationCount,
-      transaction: vi.fn(async (queries: Promise<unknown>[]) => Promise.all(queries)),
-    }
-  })
+const { cacheLife, connection, findUnique, ballotCount, registrationCount } = vi.hoisted(() => ({
+  cacheLife: vi.fn(),
+  connection: vi.fn(async () => undefined),
+  findUnique: vi.fn(),
+  ballotCount: vi.fn(),
+  registrationCount: vi.fn(),
+}))
 
 // A strict fake: touching any model or method other than the three aggregate reads throws, so a
 // query for Ballot rows, BallotAnswers (choices) or People fails the test instead of passing.
@@ -27,10 +20,9 @@ function strictDb() {
     registration: { count: registrationCount },
   }
   return new Proxy(
-    { $transaction: transaction },
+    {},
     {
-      get(target, prop: string) {
-        if (prop === '$transaction') return target.$transaction
+      get(_target, prop: string) {
         if (prop === 'then') return undefined
         const model = allowed[prop]
         if (!model) throw new Error(`Turnout must not touch db.${prop}`)
@@ -82,7 +74,6 @@ describe('readTurnout', () => {
       where: { id: 'main' },
       select: { electionStatus: true },
     })
-    expect(transaction).toHaveBeenCalledTimes(1)
   })
 
   it('reports CLOSED when the ElectionState row does not exist yet', async () => {
