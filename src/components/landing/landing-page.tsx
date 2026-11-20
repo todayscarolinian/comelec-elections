@@ -1,11 +1,11 @@
 import { sectionAnchor } from './landing-styles'
 import { Fraunces, Inter } from 'next/font/google'
 import localFont from 'next/font/local'
+import { ElectionNavigation } from '@/components/election/election-navigation'
 import { CandidateGallery } from './candidate-gallery'
 import { ElectionCalendar } from './election-calendar'
 import { ElectionFooter } from './election-footer'
 import { ElectionHero } from './election-hero'
-import { ElectionNavigation } from './election-navigation'
 import { VoterTurnout } from './voter-turnout'
 import { VotingGuide } from './voting-guide'
 
@@ -49,7 +49,7 @@ export function LandingPage() {
       >
         Skip to content
       </a>
-      <ElectionNavigation />
+      <ElectionNavigation isLanding />
       <main id="election-content" className={sectionAnchor} tabIndex={-1}>
         <div className="isolate">
           <ElectionHero />
