@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// determines if maka open pa ba ang election cuh
+enum WindowStatus {
+  OPEN
+  CLOSED
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// for both regis and election
+model ElectionState {
+  id                 String       @id @default("main")
+  registrationStatus WindowStatus @default(CLOSED)
+  electionStatus     WindowStatus @default(CLOSED)
+  resultsReleasedAt  DateTime?
+  updatedAt          DateTime     @updatedAt
+}
+
+// after logging in google, it creates its instance of this
+model Person {
+  id        String   @id @default(uuid())
+  email     String   @unique // lowercased and trimmed
+  name      String
+  createdAt DateTime @default(now())
+
+  registration Registration?
+  ballot       Ballot?
+}
+
+model Registration {
+  id                 String             @id @default(uuid())
+  personId           String             @unique
+  person             Person             @relation(fields: [personId], references: [id])
+  yearLevel          String // one of YEAR_LEVELS; may be corrected by an Admin on approval
+  studentProfilePath String // object path in the student-profiles bucket
+  status             RegistrationStatus @default(PENDING)
+  rejectionReason    String?
+  reviewedBy         String? // Admin email
+  reviewedAt         DateTime?
+  submittedAt        DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  ocrStatus OcrStatus @default(PENDING)
+  ocrResult Json?
+
+  @@index([status, yearLevel])
+}
+
+/// A cast Ballot, linked to its Voter.
+model Ballot {
+  id                   String   @id @default(uuid())
+  personId             String   @unique // one Ballot per Voter
+  person               Person   @relation(fields: [personId], references: [id])
+  yearLevel            String // snapshot of the approved Year Level at casting
+  disclosureAcceptedAt DateTime
+  castAt               DateTime @default(now())
+
+  answers BallotAnswer[]
+}
+
+model BallotAnswer {
+  id          String  @id @default(uuid())
+  ballotId    String
+  questionId  String // ELECTION.questions[].id
+  candidateId String? // null = Abstention on this Question
+  ballot      Ballot  @relation(fields: [ballotId], references: [id])
+
+  @@unique([ballotId, questionId, candidateId])
+  @@index([questionId, candidateId])
+}
+
+model Admin {
+  email     String   @id // lowercased and trimmed
+  grantedBy String // Admin email, or "seed"
+  grantedAt DateTime @default(now())
+}
+
+/// Append-only record of every Admin action, including views of Ballots.
+model AuditLog {
+  id         String   @id @default(uuid())
+  adminEmail String
+  action     String // e.g. APPROVE_REGISTRATION, VIEW_BALLOTS, EXPORT_BALLOTS, RELEASE_RESULTS
+  target     String? // e.g. Registration id
+  detail     Json?
+  at         DateTime @default(now())
+
+  @@index([at])
+}
+
+enum OcrStatus {
+  PENDING
+  DONE
+  FAILED
+}

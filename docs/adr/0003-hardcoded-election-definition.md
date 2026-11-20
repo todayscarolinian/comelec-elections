@@ -1,6 +1,6 @@
 # The Election definition is hardcoded in the repo, not stored in the database
 
-There is exactly one Election, and its Questions, Candidates and Year Levels are fixed before voting opens, so they live in a typed config file (`src/election.ts`) rather than in database tables with an Admin editing UI. This removes a whole class of screens and permissions from an 18-day build, and makes the ballot reviewable in a pull request. Ballots store Question and Candidate ids from that file.
+There is exactly one Election, and its Parties, Questions and Candidates are fixed before voting opens, so they live in a typed config file (`src/election.ts`) rather than in database tables with an Admin editing UI. This removes a whole class of screens and permissions from an 18-day build, and makes the ballot reviewable in a pull request. Ballots store Question and Candidate ids from that file.
 
 ## Considered Options
 
