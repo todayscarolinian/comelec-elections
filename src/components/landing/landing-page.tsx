@@ -1,5 +1,7 @@
 import { Fraunces, Inter } from 'next/font/google'
 import localFont from 'next/font/local'
+import { CandidateGallery } from './candidate-gallery'
+import { ElectionCalendar } from './election-calendar'
 import { ElectionHero } from './election-hero'
 import './landing.css'
 
@@ -24,18 +26,25 @@ const antinomiaDisplay = localFont({
   ],
   variable: '--landing-display',
 })
+const antinomiaText = localFont({
+  src: '../../../public/fonts/antimonia/Antinomia-Text-Regular-TRIAL.ttf',
+  variable: '--landing-text',
+  preload: false,
+})
 
 export function LandingPage() {
   return (
     <div
       id="home"
-      className={`election-landing ${fraunces.variable} ${inter.variable} ${antinomiaDisplay.variable}`}
+      className={`election-landing ${fraunces.variable} ${inter.variable} ${antinomiaDisplay.variable} ${antinomiaText.variable}`}
     >
       <a className="landing-skip-link" href="#election-content">
         Skip to content
       </a>
       <main id="election-content" tabIndex={-1}>
         <ElectionHero />
+        <CandidateGallery />
+        <ElectionCalendar />
       </main>
     </div>
   )

@@ -16,10 +16,13 @@ export function ElectionHero() {
                 Home
               </a>
             </li>
+            <li>
+              <a href="#candidates">Candidates</a>
+            </li>
           </ul>
-          <Link className="landing-nav-dates" href="/register">
-            Registration
-          </Link>
+          <a className="landing-nav-dates" href="#calendar">
+            Dates
+          </a>
         </nav>
         <div className="landing-hero-content">
           <div className="landing-hero-copy">
