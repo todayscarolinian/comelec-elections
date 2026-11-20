@@ -72,6 +72,17 @@ describe('StudentProfileUpload', () => {
     expect(hint?.textContent).toContain('click your avatar in the top right, then My Profile')
   })
 
+  it('uploads an image dropped on the file picker', async () => {
+    const onUploaded = vi.fn()
+    render(<StudentProfileUpload onUploaded={onUploaded} />)
+    const file = new File(['image'], 'profile.png', { type: 'image/png' })
+
+    fireEvent.drop(screen.getByLabelText('Student Profile'), { dataTransfer: { files: [file] } })
+
+    await waitFor(() => expect(onUploaded).toHaveBeenCalledWith(studentProfilePath))
+    expect(screen.getByText('profile.png')).toBeDefined()
+  })
+
   it('rejects an unsupported file type before requesting an upload', () => {
     render(<StudentProfileUpload onUploaded={vi.fn()} />)
 

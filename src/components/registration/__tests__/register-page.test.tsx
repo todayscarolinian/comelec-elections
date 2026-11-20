@@ -21,6 +21,7 @@ vi.mock('@/lib/trpc/client', () => ({
   }),
 }))
 
+const account = { name: 'Alex Santos', email: 'alex.santos@example.org' }
 const path = 'person-1/11111111-1111-4111-8111-111111111111'
 const signedUrl = 'https://storage.example.org/signed-upload'
 const fetchMock = vi.fn<typeof fetch>()
@@ -67,7 +68,7 @@ function rejected(canSubmit = true) {
 
 describe('RegisterPage', () => {
   beforeEach(() => {
-    getMine.mockReset().mockResolvedValue({ registration: null, canSubmit: true })
+    getMine.mockReset().mockResolvedValue({ account, registration: null, canSubmit: true })
     submit.mockReset().mockResolvedValue({ status: 'PENDING' })
     createUpload.mockReset().mockResolvedValue({ path, signedUrl })
     fetchMock.mockReset().mockResolvedValue(new Response(null, { status: 200 }))
@@ -89,7 +90,7 @@ describe('RegisterPage', () => {
   it('offers sign-in returning to /register for signed-out visitors', async () => {
     getMine.mockRejectedValue({ data: { code: 'UNAUTHORIZED' }, message: 'private session detail' })
     showPage()
-    const link = await screen.findByRole('link', { name: 'Sign in with Google' })
+    const link = await screen.findByRole('link', { name: 'Continue with Google' })
     expect(link.getAttribute('href')).toBe('/api/auth/signin?callbackUrl=%2Fregister')
     expect(screen.queryByLabelText('Year Level')).toBeNull()
     expect(document.body.textContent).not.toContain('private session detail')
@@ -108,6 +109,8 @@ describe('RegisterPage', () => {
   it('requires both Year Level and a completed upload before submitting', async () => {
     showPage()
     await screen.findByLabelText('Year Level')
+    expect(screen.getByText(account.name)).toBeDefined()
+    expect(screen.getByText(account.email)).toBeDefined()
     expect(button().disabled).toBe(true)
     fireEvent.change(screen.getByLabelText('Year Level'), { target: { value: '2' } })
     expect(button().disabled).toBe(true)
@@ -134,7 +137,7 @@ describe('RegisterPage', () => {
       },
     })
     fireEvent.click(button())
-    await screen.findByRole('heading', { name: 'Pending review' })
+    await screen.findByRole('heading', { name: 'Registration submitted.' })
     expect(submit).toHaveBeenCalledWith(
       { yearLevel: '2', studentProfilePath: path },
       expect.anything(),
@@ -169,11 +172,11 @@ describe('RegisterPage', () => {
     await act(async () => {
       finish({ status: 'PENDING' })
     })
-    await screen.findByRole('heading', { name: 'Pending review' })
+    await screen.findByRole('heading', { name: 'Registration submitted.' })
   })
 
   it.each([
-    ['PENDING', 'Pending review'],
+    ['PENDING', 'Registration submitted.'],
     ['APPROVED', 'Registration approved'],
   ])('shows %s read-only, without upload or submission controls', async (status, heading) => {
     getMine.mockResolvedValue({
@@ -203,7 +206,7 @@ describe('RegisterPage', () => {
       },
     })
     fireEvent.click(button('Resubmit registration'))
-    await screen.findByRole('heading', { name: 'Pending review' })
+    await screen.findByRole('heading', { name: 'Registration submitted.' })
     expect(screen.queryByText('Please include the current term.')).toBeNull()
   })
 
@@ -252,7 +255,7 @@ describe('RegisterPage', () => {
     showPage()
     await fillForm()
     fireEvent.click(button())
-    await screen.findByRole('link', { name: 'Sign in with Google' })
+    await screen.findByRole('link', { name: 'Continue with Google' })
     expect(screen.queryByLabelText('Student Profile')).toBeNull()
   })
 
@@ -267,11 +270,11 @@ describe('RegisterPage', () => {
   })
 
   it('keeps a successful submission read-only if refreshing status fails', async () => {
-    showPage()
+    const client = showPage()
     await fillForm()
     getMine.mockRejectedValue(new Error('refresh failed'))
     fireEvent.click(button())
-    await screen.findByRole('heading', { name: 'Pending review' })
+    await screen.findByRole('heading', { name: 'Registration submitted.' })
     await waitFor(() =>
       expect(screen.getByRole('alert').textContent).toContain('Unable to refresh'),
     )
@@ -285,7 +288,10 @@ describe('RegisterPage', () => {
         rejectionReason: null,
       },
     })
-    fireEvent.click(button('Refresh status'))
+    expect(screen.queryByRole('button', { name: 'Refresh status' })).toBeNull()
+    await act(async () => {
+      await client.invalidateQueries({ queryKey: ['registration', 'getMine'] })
+    })
     await screen.findByRole('heading', { name: 'Registration approved' })
   })
 

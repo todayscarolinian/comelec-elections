@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation } from '@tanstack/react-query'
-import { useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { getStudentProfileValidationError, STUDENT_PROFILE_MIME_TYPES } from '@/lib/student-profile'
 import { useTRPC } from '@/lib/trpc/client'
 
@@ -17,24 +17,27 @@ export function StudentProfileUpload({
   disabled = false,
 }: Readonly<StudentProfileUploadProps>) {
   const trpc = useTRPC()
-  const hintId = useId()
+  const inputId = useId()
+  const hintId = `${inputId}-hint`
   const createUpload = useMutation(trpc.registration.createStudentProfileUpload.mutationOptions())
+  const uploading = useRef(false)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string>()
-  const [uploaded, setUploaded] = useState(false)
+  const [uploadedFileName, setUploadedFileName] = useState('')
 
   async function upload(file: File) {
+    if (disabled || uploading.current) return
     onUploadStart?.()
+    setUploadedFileName('')
     const validationError = getStudentProfileValidationError(file)
 
     if (validationError) {
       setError(validationError)
-      setUploaded(false)
       return
     }
 
     setError(undefined)
-    setUploaded(false)
+    uploading.current = true
     setIsUploading(true)
 
     try {
@@ -52,48 +55,68 @@ export function StudentProfileUpload({
         throw new Error('Storage upload failed')
       }
 
-      setUploaded(true)
+      setUploadedFileName(file.name)
       onUploaded(path)
     } catch {
       setError('Unable to upload the Student Profile. Please try again.')
     } finally {
+      uploading.current = false
       setIsUploading(false)
     }
   }
 
   return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium text-zinc-900 dark:text-zinc-100">
+    <div className="space-y-2">
+      <label htmlFor={inputId} className="block text-sm font-medium">
         Student Profile
+      </label>
+      <div
+        className="relative flex min-h-32 flex-col items-center justify-center gap-1.5 border border-dashed border-[#9fb58b] p-5 text-center has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:enabled]:hover:bg-[#eef0d9]"
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault()
+          const file = event.dataTransfer.files[0]
+          if (file) void upload(file)
+        }}
+      >
         <input
+          id={inputId}
           type="file"
           aria-describedby={hintId}
           accept={STUDENT_PROFILE_MIME_TYPES.join(',')}
           disabled={disabled || isUploading}
-          className="mt-2 block w-full min-w-0 rounded-xl border border-zinc-300 bg-zinc-50 p-3 text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-200 file:px-3 file:py-2 file:font-medium file:text-zinc-900 hover:file:bg-zinc-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-100 dark:hover:file:bg-zinc-600 dark:focus-visible:outline-emerald-400"
+          className="absolute inset-0 size-full cursor-pointer opacity-0 disabled:pointer-events-none"
           onChange={(event) => {
             const file = event.currentTarget.files?.[0]
+            event.currentTarget.value = ''
             if (file) void upload(file)
           }}
         />
-      </label>
-      <p id={hintId} className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+        <p className="max-w-full font-medium wrap-anywhere">
+          {uploadedFileName || (
+            <span className="underline underline-offset-4">Choose an image</span>
+          )}
+        </p>
+        <p className="text-sm text-[#56654a]">
+          {uploadedFileName ? 'Choose another image to replace it' : 'or drag and drop it here'}
+        </p>
+        <p className="text-xs text-[#56654a]">JPEG, PNG or WebP · Up to 5 MB</p>
+      </div>
+      <p id={hintId} className="text-sm leading-relaxed text-[#56654a]">
         In ISMIS, click your avatar in the top right, then My Profile. Upload a screenshot that
         shows your name, student ID, Year Level and current term. JPEG, PNG or WebP, up to 5 MB.
       </p>
 
       {isUploading && (
-        <output className="block text-sm text-zinc-600 dark:text-zinc-400">
-          Uploading Student Profile...
-        </output>
+        <output className="block text-sm text-[#56654a]">Uploading Student Profile...</output>
       )}
       {error && (
-        <p role="alert" className="text-sm text-red-700 dark:text-red-300">
+        <p role="alert" className="text-sm text-[#862f29]">
           {error}
         </p>
       )}
-      {uploaded && (
-        <output className="block text-sm font-medium text-emerald-800 dark:text-emerald-300">
+      {uploadedFileName && (
+        <output className="block text-sm font-medium text-[#324e1f]">
           Student Profile uploaded.
         </output>
       )}

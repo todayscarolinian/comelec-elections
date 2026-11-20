@@ -1,13 +1,36 @@
 'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import Link from 'next/link'
 import { useState } from 'react'
 import { useTRPC } from '@/lib/trpc/client'
 import { YEAR_LEVEL_LABELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationForm } from './registration-form'
+import { registrationAction, registrationHeading } from './registration-styles'
 
-const secondaryButton =
-  'min-h-11 rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:focus-visible:outline-emerald-400'
+const statusCopy = {
+  PENDING: {
+    label: 'Pending review',
+    title: 'Registration submitted.',
+    description: 'Your Student Profile is ready for COMELEC review. Check this page for updates.',
+  },
+  APPROVED: {
+    label: 'Approved',
+    title: 'Registration approved',
+    description: 'You can vote when the election is open. Approved registrations are read-only.',
+  },
+  REJECTED: {
+    label: null,
+    title: 'Registration rejected',
+    description: 'Review the reason below before submitting a corrected Student Profile.',
+  },
+}
+
+const closedMessage =
+  'New registrations and resubmissions are currently closed. You can submit during the registration period or while the election is open.'
+
+const textButton =
+  'inline-flex min-h-11 items-center text-sm font-medium hover:underline hover:underline-offset-4 disabled:opacity-60'
 
 export function RegisterPage() {
   const trpc = useTRPC()
@@ -21,175 +44,185 @@ export function RegisterPage() {
     refetchInterval: 30_000,
   })
   const needsSignIn = sessionExpired || query.error?.data?.code === 'UNAUTHORIZED'
-  const data = query.data
-  const registration = data?.registration
+  const { isPending: isLoading, isError, data } = query
+  const registration = needsSignIn ? null : data?.registration
+  const state = registration ? statusCopy[registration.status] : null
+  const closed = data?.canSubmit === false
 
   function refresh() {
     void query.refetch()
   }
 
   function submitted(yearLevel: YearLevel) {
-    // The mutation committed successfully. Keep that fact even if the following read fails.
-    queryClient.setQueryData(options.queryKey, {
-      canSubmit: data?.canSubmit ?? false,
-      registration: { status: 'PENDING' as const, yearLevel, rejectionReason: null },
-    })
+    // Keep the successful submission visible if the following read fails.
+    if (data) {
+      queryClient.setQueryData(options.queryKey, {
+        ...data,
+        registration: { status: 'PENDING' as const, yearLevel, rejectionReason: null },
+      })
+    }
     void queryClient.invalidateQueries({ queryKey: options.queryKey })
   }
 
   return (
-    <main className="flex-1 bg-zinc-50 px-4 py-8 font-sans text-zinc-950 sm:px-6 sm:py-14 dark:bg-zinc-950 dark:text-zinc-50">
-      <div className="mx-auto w-full max-w-2xl">
-        <header className="mb-8 border-b border-zinc-200 pb-5 dark:border-zinc-800">
-          <p className="text-sm font-semibold tracking-tight">COMELEC Elections</p>
-        </header>
-        <div className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Voter registration</h1>
-          <p className="mt-3 max-w-lg text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Submit your Student Profile for review, then check your registration status here.
+    <div
+      className={`min-w-0 space-y-6 px-[clamp(1.375rem,4.25vw,2.75rem)] py-8 min-[56rem]:px-[clamp(2.5rem,7.23vw,6.5rem)] min-[56rem]:py-12 ${needsSignIn ? '[&>*]:max-w-[35rem]' : ''}`}
+    >
+      <header className="space-y-4" aria-live="polite">
+        {state?.label && (
+          <p className="inline-block border border-[#819667] px-3 py-1.5 text-xs font-medium">
+            {state.label}
           </p>
-        </div>
-
-        <div className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-5 sm:p-8 dark:border-zinc-800 dark:bg-zinc-900/50">
+        )}
+        {!state && (
+          <p className="text-xs font-medium tracking-wide text-[#56654a] uppercase">
+            Voter registration
+          </p>
+        )}
+        <h1
+          className={`${registrationHeading} text-[clamp(2.75rem,3.9vw,3.5rem)] ${needsSignIn ? 'min-[56rem]:text-[clamp(3rem,4.45vw,4rem)]' : ''} ${registration?.status === 'PENDING' ? 'max-w-[13ch] text-balance' : ''}`}
+        >
           {needsSignIn ? (
-            <section aria-labelledby="sign-in-heading" className="space-y-4">
-              <h2 id="sign-in-heading" className="text-xl font-semibold">
-                Sign in to register
-              </h2>
-              <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                Use your organization Google account to submit or check your registration.
-              </p>
-              {/* oxlint-disable-next-line nextjs/no-html-link-for-pages -- Auth.js serves this sign-in endpoint. */}
-              <a
-                href="/api/auth/signin?callbackUrl=%2Fregister"
-                className="inline-flex min-h-12 items-center rounded-xl bg-emerald-800 px-5 py-3 text-sm font-semibold text-zinc-50 hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 dark:bg-emerald-300 dark:text-emerald-950 dark:hover:bg-emerald-200 dark:focus-visible:outline-emerald-400"
-              >
-                Sign in with Google
-              </a>
-            </section>
-          ) : query.isPending ? (
-            <div className="space-y-5">
-              <output className="block text-sm text-zinc-600 dark:text-zinc-400">
-                Loading registration…
-              </output>
-              <div aria-hidden="true" className="h-12 rounded-xl bg-zinc-100 dark:bg-zinc-800" />
-              <div aria-hidden="true" className="h-28 rounded-xl bg-zinc-100 dark:bg-zinc-800" />
-            </div>
-          ) : (
             <>
-              {query.isError && (
-                <div className="space-y-3">
-                  <p
-                    role="alert"
-                    className="text-sm leading-relaxed text-red-700 dark:text-red-300"
-                  >
-                    {data
-                      ? 'Unable to refresh your registration status. Your last known status is shown below.'
-                      : 'Unable to load your registration. Please try again.'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={refresh}
-                    disabled={query.isFetching}
-                    className={secondaryButton}
-                  >
-                    {data ? 'Refresh status' : 'Try again'}
-                  </button>
-                </div>
-              )}
-
-              {registration && (
-                <section
-                  aria-labelledby="registration-status-heading"
-                  aria-live="polite"
-                  className="space-y-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 id="registration-status-heading" className="text-xl font-semibold">
-                      {registration.status === 'APPROVED'
-                        ? 'Registration approved'
-                        : registration.status === 'PENDING'
-                          ? 'Pending review'
-                          : 'Registration rejected'}
-                    </h2>
-                    <span className="rounded-lg bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                      {YEAR_LEVEL_LABELS[registration.yearLevel as YearLevel] ??
-                        registration.yearLevel}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                    {registration.status === 'APPROVED'
-                      ? 'Your registration is approved. You can vote when the Election is open. Approved registrations cannot be changed here.'
-                      : registration.status === 'PENDING'
-                        ? 'Your Student Profile has been submitted. An Admin will review your registration; no further action is needed right now.'
-                        : 'An Admin rejected your registration. Review the reason below before submitting a corrected Student Profile.'}
-                  </p>
-                  {registration.status === 'REJECTED' && (
-                    <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-900">
-                      <p className="text-sm font-semibold">Admin’s reason</p>
-                      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-                        {registration.rejectionReason ||
-                          'No reason was provided. Contact the election administrator.'}
-                      </p>
-                    </div>
-                  )}
-                </section>
-              )}
-
-              {data && !data.canSubmit && (
-                <section
-                  aria-labelledby="registration-closed-heading"
-                  className="space-y-2 border-t border-zinc-200 pt-5 dark:border-zinc-800"
-                >
-                  <h2 id="registration-closed-heading" className="text-xl font-semibold">
-                    Registration closed
-                  </h2>
-                  <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                    New registrations and resubmissions are not being accepted. You can submit only
-                    while the Registration Period or the Election is open.
-                  </p>
-                </section>
-              )}
-
-              {data?.canSubmit &&
-                !query.isError &&
-                (!registration || registration.status === 'REJECTED') && (
-                  <RegistrationForm
-                    key={
-                      registration
-                        ? `rejected-${registration.yearLevel}-${registration.rejectionReason}`
-                        : 'new'
-                    }
-                    initialYearLevel={registration?.yearLevel}
-                    resubmitting={registration?.status === 'REJECTED'}
-                    onSubmitted={submitted}
-                    onSessionExpired={() => setSessionExpired(true)}
-                    onRefresh={refresh}
-                  />
-                )}
-
-              {data && !query.isError && (
-                <div className="flex flex-wrap items-center gap-3 border-t border-zinc-200 pt-5 dark:border-zinc-800">
-                  <button
-                    type="button"
-                    onClick={refresh}
-                    disabled={query.isFetching}
-                    className={secondaryButton}
-                  >
-                    Refresh status
-                  </button>
-                  <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-                    Status also refreshes automatically.
-                  </p>
-                </div>
-              )}
+              Make your
+              <br />
+              voice count.
             </>
+          ) : (
+            (state?.title ?? (closed ? 'Registration closed' : 'Register to vote.'))
           )}
+        </h1>
+        {needsSignIn ? (
+          <p className="text-base leading-relaxed text-[#56654a] sm:text-lg">
+            Sign in with your USC email account through Google to register for the election.
+          </p>
+        ) : (
+          (state || data) && (
+            <p className="max-w-[36rem] text-base leading-relaxed text-[#56654a]">
+              {state?.description ??
+                (closed
+                  ? closedMessage
+                  : 'Submit your year level and Student Profile for COMELEC review.')}
+            </p>
+          )
+        )}
+      </header>
+
+      {needsSignIn ? (
+        <>
+          {/* oxlint-disable-next-line nextjs/no-html-link-for-pages -- Auth.js serves this sign-in endpoint. */}
+          <a
+            href="/api/auth/signin?callbackUrl=%2Fregister"
+            className={`${registrationAction} w-full`}
+          >
+            Continue with Google
+          </a>
+          <p className="text-sm leading-relaxed text-[#56654a]">
+            Have your year level and current Student Profile ready.
+          </p>
+          <div className="border-t border-[#b6c89f] pt-3">
+            <Link href="/" className={textButton}>
+              <span aria-hidden="true" className="me-2">
+                ←
+              </span>{' '}
+              Back to home
+            </Link>
+          </div>
+        </>
+      ) : isLoading ? (
+        <div className="space-y-4 border-t border-[#b6c89f] pt-6">
+          <output className="block text-sm text-[#56654a]">Loading registration…</output>
+          <div aria-hidden="true" className="h-12 border border-[#b6c89f] bg-[#f1edd8]" />
+          <div aria-hidden="true" className="h-24 border border-[#b6c89f] bg-[#f1edd8]" />
         </div>
-        <p className="mt-5 text-center text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-          Your Student Profile is used by Admins to verify your eligibility.
-        </p>
-      </div>
-    </main>
+      ) : (
+        <>
+          {isError && (
+            <div className="space-y-2 border-t border-[#b6c89f] pt-5">
+              <p role="alert" className="text-sm leading-relaxed text-[#862f29]">
+                {data
+                  ? 'Unable to refresh your registration status. Your last known status is shown below.'
+                  : 'Unable to load your registration. Please try again.'}
+              </p>
+              {!data && (
+                <button
+                  type="button"
+                  onClick={refresh}
+                  disabled={query.isFetching}
+                  className={textButton}
+                >
+                  Try again
+                </button>
+              )}
+            </div>
+          )}
+
+          {(data?.account || registration) && (
+            <section
+              aria-label="Registration details"
+              className="space-y-4 border-y border-[#b6c89f] py-5"
+            >
+              {data?.account && (
+                <div className="min-w-0 wrap-anywhere">
+                  <p className="font-medium">{data.account.name}</p>
+                  <p className="mt-1 text-sm text-[#56654a]">{data.account.email}</p>
+                </div>
+              )}
+              {registration && (
+                <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-3 text-sm">
+                  <dt className="text-[#56654a]">Year Level</dt>
+                  <dd className="text-end font-medium">
+                    {YEAR_LEVEL_LABELS[registration.yearLevel as YearLevel] ??
+                      registration.yearLevel}
+                  </dd>
+                  <dt className="text-[#56654a]">Student Profile</dt>
+                  <dd className="text-end font-medium">Submitted</dd>
+                </dl>
+              )}
+            </section>
+          )}
+
+          {registration?.status === 'REJECTED' && (
+            <div className="border-s-2 border-[#862f29] bg-[#f4e8d8] p-4">
+              <p className="text-sm font-semibold">Admin’s reason</p>
+              <p className="mt-2 text-sm leading-relaxed wrap-anywhere whitespace-pre-wrap text-[#56654a]">
+                {registration.rejectionReason ||
+                  'No reason was provided. Contact the election administrator.'}
+              </p>
+            </div>
+          )}
+
+          {registration && closed && (
+            <section aria-labelledby="registration-closed-heading" className="space-y-2">
+              <h2 id="registration-closed-heading" className="text-lg font-medium">
+                Registration closed
+              </h2>
+              <p className="text-sm leading-relaxed text-[#56654a]">{closedMessage}</p>
+            </section>
+          )}
+
+          {data?.canSubmit && !isError && (!registration || registration.status === 'REJECTED') && (
+            <RegistrationForm
+              key={
+                registration
+                  ? `rejected-${registration.yearLevel}-${registration.rejectionReason}`
+                  : 'new'
+              }
+              initialYearLevel={registration?.yearLevel}
+              resubmitting={registration?.status === 'REJECTED'}
+              onSubmitted={submitted}
+              onSessionExpired={() => setSessionExpired(true)}
+              onRefresh={refresh}
+            />
+          )}
+
+          {registration && registration.status !== 'REJECTED' && (
+            <Link href="/" className={`${registrationAction} min-w-48`}>
+              Back to home
+            </Link>
+          )}
+        </>
+      )}
+    </div>
   )
 }

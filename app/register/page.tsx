@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { RegisterPage } from '@/components/registration/register-page'
+import { RegistrationShell } from '@/components/registration/registration-shell'
 
 export const metadata: Metadata = {
   title: 'Register | COMELEC Elections',
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function Page() {
-  return <RegisterPage />
+  return (
+    <RegistrationShell>
+      <RegisterPage />
+    </RegistrationShell>
+  )
 }

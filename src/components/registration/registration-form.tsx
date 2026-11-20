@@ -8,6 +8,7 @@ import {
   YEAR_LEVEL_LABELS,
   type YearLevel,
 } from '@/server/trpc/api/v1/registration/schema'
+import { registrationAction } from './registration-styles'
 import { StudentProfileUpload } from './student-profile-upload'
 
 type RegistrationFormProps = {
@@ -62,10 +63,7 @@ export function RegistrationForm({
       aria-busy={submit.isPending}
     >
       <div className="space-y-2">
-        <label
-          htmlFor="year-level"
-          className="block text-sm font-medium text-zinc-900 dark:text-zinc-100"
-        >
+        <label htmlFor="year-level" className="block text-sm font-medium text-[#324e1f]">
           Year Level
         </label>
         <select
@@ -75,7 +73,7 @@ export function RegistrationForm({
           aria-describedby="year-level-hint"
           disabled={submit.isPending}
           onChange={(event) => setYearLevel(event.target.value)}
-          className="min-h-12 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-3 py-3 text-base text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:outline-emerald-400"
+          className="min-h-14 w-full border border-[#b6c89f] bg-transparent px-4 py-3 text-base text-[#324e1f] disabled:opacity-60"
         >
           <option value="" disabled>
             Choose your Year Level
@@ -86,10 +84,7 @@ export function RegistrationForm({
             </option>
           ))}
         </select>
-        <p
-          id="year-level-hint"
-          className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400"
-        >
+        <p id="year-level-hint" className="text-sm leading-relaxed text-[#56654a]">
           For information only. Your Year Level does not change your ballot.
         </p>
       </div>
@@ -103,22 +98,18 @@ export function RegistrationForm({
         onUploaded={setStudentProfilePath}
       />
 
-      <div className="space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-        <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+      <div className="space-y-3">
+        <p className="text-sm leading-relaxed text-[#56654a]">
           {resubmitting
             ? 'Upload a corrected Student Profile. Resubmitting sends your registration back for Admin review.'
             : 'An Admin will review your Student Profile. You can return to this page to check your status.'}
         </p>
         {submit.isError && (
-          <p role="alert" className="text-sm text-red-700 dark:text-red-300">
+          <p role="alert" className="text-sm text-[#862f29]">
             {errorMessage}
           </p>
         )}
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="min-h-12 w-full whitespace-nowrap rounded-xl bg-emerald-800 px-5 py-3 text-sm font-semibold text-zinc-50 hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto dark:bg-emerald-300 dark:text-emerald-950 dark:hover:bg-emerald-200 dark:focus-visible:outline-emerald-400"
-        >
+        <button type="submit" disabled={!canSubmit} className={`${registrationAction} w-full`}>
           {submit.isPending
             ? 'Submitting…'
             : resubmitting
