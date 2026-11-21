@@ -5,4 +5,6 @@ import { setRegistrationStatus as setRegistrationStatusService } from '../../ser
 export const setRegistrationStatus = adminProcedure
   .input(setRegistrationStatusInputSchema)
   .output(setRegistrationStatusOutputSchema)
-  .mutation(({ ctx, input }) => setRegistrationStatusService(ctx.db, input.status))
+  .mutation(({ ctx, input }) =>
+    setRegistrationStatusService(ctx.db, { status: input.status, adminEmail: ctx.adminEmail }),
+  )

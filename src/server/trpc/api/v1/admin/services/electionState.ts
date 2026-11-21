@@ -63,12 +63,38 @@ export async function setElectionStatus(db: Db, { status, adminEmail }: SetElect
   })
 }
 
-export async function setRegistrationStatus(db: Db, status: WindowStatus) {
-  return db.electionState.upsert({
-    where: { id: 'main' },
-    update: { registrationStatus: status },
-    create: { id: 'main', registrationStatus: status },
-    select: { registrationStatus: true },
+type SetRegistrationStatusInput = {
+  status: WindowStatus
+  adminEmail: string
+}
+
+export async function setRegistrationStatus(
+  db: Db,
+  { status, adminEmail }: SetRegistrationStatusInput,
+) {
+  return db.$transaction(async (tx) => {
+    // Skip duplicates so an existing row keeps its values.
+    await tx.electionState.createMany({ data: { id: 'main' }, skipDuplicates: true })
+
+    // Update only when the status changes, so concurrent toggles audit once.
+    const { count } = await tx.electionState.updateMany({
+      where: { id: 'main', registrationStatus: { not: status } },
+      data: { registrationStatus: status },
+    })
+
+    if (count === 1) {
+      await writeAudit(
+        {
+          adminEmail,
+          action: 'SET_REGISTRATION_STATUS',
+          target: 'main',
+          detail: { previousStatus: status === 'OPEN' ? 'CLOSED' : 'OPEN', status },
+        },
+        tx,
+      )
+    }
+
+    return { registrationStatus: status }
   })
 }
 
