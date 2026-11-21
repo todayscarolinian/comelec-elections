@@ -7,6 +7,7 @@ const services = vi.hoisted(() => ({
   listBallots: vi.fn(),
   exportBallots: vi.fn(),
   listAuditLog: vi.fn(),
+  getResultsBySchool: vi.fn(),
 }))
 
 vi.mock('@/server/storage', () => ({ getSupabaseAdmin: vi.fn() }))
@@ -18,6 +19,9 @@ vi.mock('../services/ballotAudit', () => ({
   exportBallots: services.exportBallots,
 }))
 vi.mock('../services/auditLog', () => ({ listAuditLog: services.listAuditLog }))
+vi.mock('../services/resultsBySchool', () => ({
+  getResultsBySchool: services.getResultsBySchool,
+}))
 vi.mock('../services/electionState', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../services/electionState')>()),
   releaseResults: services.releaseResults,
@@ -53,6 +57,7 @@ const procedures: [string, (caller: Caller) => Promise<unknown>][] = [
   ['listBallots', (caller) => caller.listBallots({})],
   ['exportBallots', (caller) => caller.exportBallots()],
   ['listAuditLog', (caller) => caller.listAuditLog({})],
+  ['getResultsBySchool', (caller) => caller.getResultsBySchool()],
 ]
 
 beforeEach(() => {

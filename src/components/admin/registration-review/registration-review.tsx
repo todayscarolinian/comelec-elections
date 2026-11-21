@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
 import { useTRPC } from '@/lib/trpc/client'
+import { schoolLabel, type School } from '@/server/trpc/api/v1/registration/core/school'
 import { YEAR_LEVELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationReviewSkeleton } from '../admin-skeletons'
 import { formatTime } from '../admin-ui'
@@ -93,7 +94,7 @@ export function RegistrationReview() {
   async function decide(
     id: string,
     nextStatus: 'APPROVED' | 'REJECTED',
-    nextYear: YearLevel,
+    nextSchool: School | undefined,
     reason: string,
   ) {
     if (saving) return
@@ -108,12 +109,14 @@ export function RegistrationReview() {
     setSaveError('')
     try {
       if (nextStatus === 'APPROVED')
-        await approve.mutateAsync({ id, yearLevel: nextYear, submittedAt: applicant.submittedAt })
+        await approve.mutateAsync({
+          id,
+          school: nextSchool,
+          submittedAt: applicant.submittedAt,
+        })
       else await rejectMutation.mutateAsync({ id, reason, submittedAt: applicant.submittedAt })
       setSavedVersions((versions) => new Map(versions).set(id, applicant.submittedAt.getTime()))
-      setNotice(
-        `${applicant.name} ${nextStatus === 'APPROVED' ? `approved for Year ${nextYear}` : 'rejected'}.`,
-      )
+      setNotice(`${applicant.name} ${nextStatus === 'APPROVED' ? 'approved' : 'rejected'}.`)
       await refresh()
       backToQueue()
     } catch (error) {
@@ -291,7 +294,7 @@ export function RegistrationReview() {
                       </span>
                     </span>
                     <span>
-                      {item.studentId} · Year {item.yearLevel}
+                      {item.studentId} · Year {item.yearLevel} · {schoolLabel(item.school)}
                     </span>
                     <span className="text-xs min-[761px]:!text-[10px]">
                       {item.email} · {statusLabels[item.status]}

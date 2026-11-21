@@ -5,23 +5,32 @@ import Link from 'next/link'
 import { useState, type FormEvent } from 'react'
 import { useTRPC } from '@/lib/trpc/client'
 import {
+  SCHOOLS,
+  SCHOOL_LABELS,
+  isSchool,
+  type School,
+} from '@/server/trpc/api/v1/registration/core/school'
+import {
   YEAR_LEVELS,
   YEAR_LEVEL_LABELS,
   type YearLevel,
 } from '@/server/trpc/api/v1/registration/schema'
 import { registrationAction } from './registration-styles'
+import { SelectField } from './select-field'
 import { StudentProfileUpload } from './student-profile-upload'
 
 type RegistrationFormProps = {
   initialYearLevel?: string
+  initialSchool?: string
   resubmitting: boolean
-  onSubmitted: (yearLevel: YearLevel) => void
+  onSubmitted: (yearLevel: YearLevel, school: School) => void
   onSessionExpired: () => void
   onRefresh: () => void
 }
 
 export function RegistrationForm({
   initialYearLevel,
+  initialSchool,
   resubmitting,
   onSubmitted,
   onSessionExpired,
@@ -29,10 +38,11 @@ export function RegistrationForm({
 }: Readonly<RegistrationFormProps>) {
   const trpc = useTRPC()
   const [yearLevel, setYearLevel] = useState(initialYearLevel ?? '')
+  const [school, setSchool] = useState(initialSchool ?? '')
   const [studentProfilePath, setStudentProfilePath] = useState('')
   const submit = useMutation({
     ...trpc.registration.submit.mutationOptions(),
-    onSuccess: (_data, input) => onSubmitted(input.yearLevel),
+    onSuccess: (_data, input) => onSubmitted(input.yearLevel, input.school),
     onError: (error) => {
       if (error.data?.code === 'UNAUTHORIZED') onSessionExpired()
       if (error.data?.code === 'FORBIDDEN' || error.data?.code === 'CONFLICT') onRefresh()
@@ -40,10 +50,10 @@ export function RegistrationForm({
     },
   })
   const selectedYear = YEAR_LEVELS.find((level) => level === yearLevel)
-  const canSubmit = !!selectedYear && !!studentProfilePath && !submit.isPending
+  const canSubmit = !!selectedYear && isSchool(school) && !!studentProfilePath && !submit.isPending
   const errorMessage =
     submit.error?.data?.code === 'BAD_REQUEST'
-      ? 'Please check your Year Level and upload your Student Profile again.'
+      ? 'Please check your Year Level and School, and upload your Student Profile again.'
       : submit.error?.data?.code === 'FORBIDDEN'
         ? 'Registration is closed. Refresh your status before trying again.'
         : submit.error?.data?.code === 'CONFLICT'
@@ -52,8 +62,8 @@ export function RegistrationForm({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!canSubmit || !selectedYear) return
-    submit.mutate({ yearLevel: selectedYear, studentProfilePath })
+    if (!canSubmit || !selectedYear || !isSchool(school)) return
+    submit.mutate({ yearLevel: selectedYear, school, studentProfilePath })
   }
 
   return (
@@ -89,6 +99,18 @@ export function RegistrationForm({
           For information only. Your Year Level does not change your ballot.
         </p>
       </div>
+
+      <SelectField
+        id="school"
+        label="School"
+        placeholder="Choose your School"
+        options={SCHOOLS}
+        labels={SCHOOL_LABELS}
+        value={school}
+        disabled={submit.isPending}
+        hint="Used for turnout statistics only. Your School does not change your ballot."
+        onChange={setSchool}
+      />
 
       <StudentProfileUpload
         disabled={submit.isPending}

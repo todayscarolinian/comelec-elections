@@ -18,6 +18,7 @@ import {
   formatTime,
   isAccessError,
 } from '../admin-ui'
+import { SchoolTurnoutTable } from './school-turnout-table'
 import { DashboardSkeleton } from '../admin-skeletons'
 import { auditLabel } from '../audit-labels'
 
@@ -325,6 +326,8 @@ export function AdminDashboard() {
           </Link>
         </aside>
       </div>
+
+      <SchoolTurnoutTable rows={data.turnoutBySchool} />
 
       <section aria-labelledby="activity-heading" className="mt-6">
         <div className="flex items-baseline justify-between gap-4 border-b border-review-line pb-2">

@@ -108,21 +108,24 @@ describe('ballot.cast', () => {
       ...unknown[],
     ]
     expect(regStrings.join('?')).toMatch(
-      /SELECT\s+status,\s+"yearLevel"\s+FROM\s+"Registration"\s+WHERE\s+"personId"\s*=\s*\?\s+FOR SHARE/i,
+      /SELECT\s+status,\s+"yearLevel",\s+school\s+FROM\s+"Registration"\s+WHERE\s+"personId"\s*=\s*\?\s+FOR SHARE/i,
     )
     expect(regValues).toEqual([personId])
     expect(events).toEqual(['begin', 'lock', 'registration', 'ballot', 'answers', 'commit'])
   })
 
-  it('stores authenticated Person, Registration year snapshot and server timestamp', async () => {
+  it('stores authenticated Person, Registration year and School snapshots and server timestamp', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(now)
-    const { caller, tx } = setup({ registration: { status: 'APPROVED', yearLevel: '4' } })
+    const { caller, tx } = setup({
+      registration: { status: 'APPROVED', yearLevel: '4', school: 'SBE' },
+    })
     await caller.ballot.cast(validBallot())
     expect(tx.ballot.create).toHaveBeenCalledWith({
       data: {
         personId: 'person-1',
         yearLevel: '4',
+        school: 'SBE',
         disclosureAcceptedAt: now,
         heldAcknowledgedAt: null,
         castAt: now,
