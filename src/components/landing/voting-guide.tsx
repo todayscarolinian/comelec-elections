@@ -42,10 +42,7 @@ export function VotingGuide() {
           </li>
           <li>
             <h3>Review &amp; vote</h3>
-            <p>
-              Review your choices before submitting. Your ballot is final. Online ballot submission
-              is currently unavailable here.
-            </p>
+            <p>Review your choices before submitting. Your ballot is final.</p>
           </li>
         </ol>
       </div>

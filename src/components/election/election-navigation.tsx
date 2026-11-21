@@ -9,7 +9,7 @@ import { ElectionAccountMenu, type ElectionAccount } from './election-account-me
 const sections = [
   { section: 'home', label: 'Home' },
   { section: 'candidates', label: 'Candidates' },
-  { section: 'voting', label: 'Ballot' },
+  { section: 'ballot', label: 'Ballot' },
   { section: 'turnout', label: 'Results' },
 ] as const
 
@@ -19,9 +19,16 @@ type ElectionLinkProps = Omit<ComponentPropsWithoutRef<'a'>, 'href'> & {
   section: Section
 }
 
-type NavigationProps = { isLanding: boolean; hideSignIn: boolean }
+type NavigationProps = { isLanding: boolean; isBallot: boolean; hideSignIn: boolean }
 
 function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkProps) {
+  if (section === 'ballot')
+    return (
+      <Link href="/ballot" {...props}>
+        {children}
+      </Link>
+    )
+
   const hash = `#${section}`
   if (isLanding) {
     return (
@@ -40,6 +47,7 @@ function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkPr
 
 function NavigationBar({
   isLanding,
+  isBallot,
   hideSignIn,
   account,
 }: NavigationProps & { account?: ElectionAccount | null }) {
@@ -71,7 +79,11 @@ function NavigationBar({
                 <ElectionLink
                   isLanding={isLanding}
                   section={section}
-                  aria-current={isLanding && section === 'home' ? 'page' : undefined}
+                  aria-current={
+                    (isLanding && section === 'home') || (isBallot && section === 'ballot')
+                      ? 'page'
+                      : undefined
+                  }
                 >
                   {label}
                 </ElectionLink>
@@ -83,7 +95,13 @@ function NavigationBar({
               <ElectionAccountMenu account={account} />
             ) : account === null && !hideSignIn ? (
               <Link
-                href={isLanding ? '/auth/sign-in' : '/auth/sign-in?next=%2Fregister'}
+                href={
+                  isBallot
+                    ? '/auth/sign-in?next=%2Fballot'
+                    : isLanding
+                      ? '/auth/sign-in'
+                      : '/auth/sign-in?next=%2Fregister'
+                }
                 className="gap-2 px-1 text-sm"
               >
                 <LogIn aria-hidden="true" size={18} />
@@ -113,9 +131,13 @@ async function SessionNavigation(props: NavigationProps) {
 
 export function ElectionNavigation({
   isLanding = false,
+  isBallot = false,
   hideSignIn = false,
-}: Partial<NavigationProps>) {
-  const props = { isLanding, hideSignIn }
+  showAccount = true,
+}: Partial<NavigationProps> & { showAccount?: boolean }) {
+  const props = { isLanding, isBallot, hideSignIn }
+  if (!showAccount) return <NavigationBar {...props} />
+
   return (
     <Suspense fallback={<NavigationBar {...props} />}>
       <SessionNavigation {...props} />
