@@ -64,7 +64,13 @@ function ElectionPanel() {
   )
 }
 
-export function RegistrationShell({ children }: { children: ReactNode }) {
+export function RegistrationShell({
+  children,
+  signInPage = false,
+}: {
+  children: ReactNode
+  signInPage?: boolean
+}) {
   return (
     <div
       className={`flex min-h-svh flex-1 flex-col bg-[#faf3e0] text-[#324e1f] [--registration-inset:clamp(1rem,1.67vw,1.5rem)] [font-family:var(--registration-body),Arial,sans-serif] [&_:is(a,button,select):focus-visible]:outline-2 [&_:is(a,button,select):focus-visible]:outline-offset-4 ${inter.variable} ${display.variable} ${text.variable}`}
@@ -73,10 +79,10 @@ export function RegistrationShell({ children }: { children: ReactNode }) {
         href="#registration-content"
         className="absolute start-4 top-4 z-30 -translate-y-[calc(100%+1rem)] bg-[#faf3e0] px-4 py-3 focus:translate-y-0"
       >
-        Skip to registration
+        {signInPage ? 'Skip to sign-in' : 'Skip to registration'}
       </a>
       <div className="flex min-h-svh flex-col">
-        <ElectionNavigation />
+        <ElectionNavigation hideSignIn={signInPage} />
         <main
           id="registration-content"
           tabIndex={-1}

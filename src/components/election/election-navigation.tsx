@@ -19,6 +19,12 @@ type ElectionLinkProps = Omit<ComponentPropsWithoutRef<'a'>, 'href'> & {
   section: Section
 }
 
+type NavigationProps = {
+  isLanding: boolean
+  hideSignIn: boolean
+  activeSection?: Section
+}
+
 function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkProps) {
   const hash = `#${section}`
   if (section === 'turnout') {
@@ -46,13 +52,10 @@ function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkPr
 
 function NavigationBar({
   isLanding,
+  hideSignIn,
   account,
   activeSection,
-}: {
-  isLanding: boolean
-  account?: ElectionAccount | null
-  activeSection?: Section
-}) {
+}: NavigationProps & { account?: ElectionAccount | null }) {
   return (
     <header className={`sticky top-0 z-20 ${isLanding ? 'h-0' : ''}`}>
       <div className="pointer-events-none w-full px-[clamp(0.5rem,1.1vw,1rem)] pt-[clamp(0.625rem,1.35vw,1.25rem)]">
@@ -100,7 +103,7 @@ function NavigationBar({
           <div className="min-w-0 justify-self-end max-[38rem]:col-start-2 max-[38rem]:row-start-1">
             {account ? (
               <ElectionAccountMenu account={account} />
-            ) : account === null ? (
+            ) : account === null && !hideSignIn ? (
               <Link
                 href={isLanding ? '/auth/sign-in' : '/auth/sign-in?next=%2Fregister'}
                 className="gap-2 px-1 text-sm"
@@ -116,18 +119,9 @@ function NavigationBar({
   )
 }
 
-async function SessionNavigation({
-  isLanding,
-  activeSection,
-}: {
-  isLanding: boolean
-  activeSection?: Section
-}) {
+async function SessionNavigation(props: NavigationProps) {
   const session = await auth()
-  if (!session)
-    return (
-      <NavigationBar isLanding={isLanding} account={null} activeSection={activeSection} />
-    )
+  if (!session) return <NavigationBar {...props} account={null} />
 
   // A profile lookup failure should still leave sign-out available for a valid session.
   const person = await prisma.person
@@ -136,25 +130,21 @@ async function SessionNavigation({
 
   return (
     <NavigationBar
-      isLanding={isLanding}
+      {...props}
       account={{ name: person?.name ?? null, email: session.user.email }}
-      activeSection={activeSection}
     />
   )
 }
 
 export function ElectionNavigation({
   isLanding = false,
+  hideSignIn = false,
   activeSection,
-}: {
-  isLanding?: boolean
-  activeSection?: Section
-}) {
+}: Partial<NavigationProps>) {
+  const props = { isLanding, hideSignIn, activeSection }
   return (
-    <Suspense
-      fallback={<NavigationBar isLanding={isLanding} activeSection={activeSection} />}
-    >
-      <SessionNavigation isLanding={isLanding} activeSection={activeSection} />
+    <Suspense fallback={<NavigationBar {...props} />}>
+      <SessionNavigation {...props} />
     </Suspense>
   )
 }

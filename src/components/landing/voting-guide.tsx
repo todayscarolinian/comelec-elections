@@ -29,8 +29,8 @@ export function VotingGuide() {
           <li>
             <h3>Register</h3>
             <p>
-              Sign in with your organization Google account, upload your Student Profile, and select
-              your Year Level.
+              Sign in with your USC email account through Google, upload your Student Profile, and
+              select your Year Level.
             </p>
           </li>
           <li>
