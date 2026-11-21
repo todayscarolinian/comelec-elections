@@ -2,9 +2,11 @@
 
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { RefreshCw } from 'lucide-react'
 import { useTRPC } from '@/lib/trpc/client'
 import { YEAR_LEVELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationReviewSkeleton } from '../admin-skeletons'
+import { formatTime } from '../admin-ui'
 import { ApplicationReview } from './application-review'
 import { statusLabels, type RegistrationStatus } from './types'
 
@@ -212,17 +214,29 @@ export function RegistrationReview() {
           </select>
         </label>
       </div>
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+        <span className="text-[11px] text-review-muted">
+          {registrationsQuery.isFetching
+            ? 'Refreshing…'
+            : registrationsQuery.dataUpdatedAt
+              ? `Updated ${formatTime(new Date(registrationsQuery.dataUpdatedAt))}`
+              : null}
+        </span>
         <button
-          className="min-h-11 underline disabled:opacity-50"
+          type="button"
+          className="inline-flex min-h-11 items-center gap-2 border border-review-line bg-review-paper px-4 text-[13px] text-review-ink hover:bg-review-selected disabled:cursor-not-allowed disabled:text-review-muted disabled:hover:bg-review-paper min-[761px]:min-h-[42px]"
           disabled={saving || registrationsQuery.isFetching}
+          aria-busy={registrationsQuery.isFetching}
           onClick={() => {
             void refresh()
           }}
         >
+          <RefreshCw
+            aria-hidden="true"
+            className={`size-3.5 ${registrationsQuery.isFetching ? 'motion-safe:animate-spin' : ''}`}
+          />
           Refresh queue
         </button>
-        {registrationsQuery.isFetching && <span>Refreshing…</span>}
       </div>
       {registrationsQuery.isError && (
         <p role="alert" className="text-review-error">
