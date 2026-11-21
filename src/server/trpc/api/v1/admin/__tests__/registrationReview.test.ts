@@ -33,6 +33,7 @@ function row(overrides = {}) {
   return {
     id,
     yearLevel: '3',
+    school: 'SAFAD',
     status: 'PENDING',
     submittedAt: new Date(),
     reviewedBy: null,
@@ -56,6 +57,7 @@ function setup({
         personId: 'student-person',
         status: 'PENDING',
         yearLevel: '3',
+        school: 'SAFAD' as string | null,
         submittedAt: new Date(submittedAt),
       },
     ]),
@@ -127,6 +129,7 @@ describe('admin.listRegistrations', () => {
       name: 'Juan Dela Cruz',
       studentId: '21012345',
       yearLevel: '3',
+      school: 'SAFAD',
       studentProfileUrl: 'https://storage.example.org/signed-view',
       ocrStatus: 'DONE',
       ocrResult: validOcr,
@@ -265,6 +268,7 @@ describe('registration decisions', () => {
         data: {
           status: 'APPROVED',
           yearLevel: expectedYear,
+          school: 'SAFAD',
           rejectionReason: null,
           reviewedBy: adminEmail,
           reviewedAt: expect.any(Date),
@@ -273,14 +277,19 @@ describe('registration decisions', () => {
       })
       expect(tx.ballot.updateMany).toHaveBeenCalledWith({
         where: { personId: 'student-person' },
-        data: { yearLevel: expectedYear },
+        data: { yearLevel: expectedYear, school: 'SAFAD' },
       })
       expect(tx.auditLog.create).toHaveBeenCalledExactlyOnceWith({
         data: {
           adminEmail,
           action: 'APPROVE_REGISTRATION',
           target: id,
-          detail: { yearLevel: expectedYear, originalYearLevel: '3' },
+          detail: {
+            yearLevel: expectedYear,
+            originalYearLevel: '3',
+            school: 'SAFAD',
+            originalSchool: 'SAFAD',
+          },
         },
       })
       expect(db.$transaction).toHaveBeenCalledWith(expect.any(Function), {
@@ -289,6 +298,56 @@ describe('registration decisions', () => {
       expect(createSignedStudentProfileView).not.toHaveBeenCalled()
     },
   )
+  it.each([
+    ['SAFAD', 'SAS'],
+    [null, 'SBE'],
+  ] as const)(
+    'approves with a corrected School (%s to %s) and copies it to a Held Ballot',
+    async (original, school) => {
+      const { caller, tx } = setup()
+      tx.$queryRaw.mockResolvedValue([
+        {
+          id,
+          personId: 'student-person',
+          status: 'PENDING',
+          yearLevel: '3',
+          school: original,
+          submittedAt: new Date(submittedAt),
+        },
+      ])
+      await caller.approveRegistration({ ...reviewInput, school })
+      expect(tx.registration.update.mock.calls[0][0]).toMatchObject({ data: { school } })
+      expect(tx.ballot.updateMany).toHaveBeenCalledWith({
+        where: { personId: 'student-person' },
+        data: { yearLevel: '3', school },
+      })
+      expect(tx.auditLog.create.mock.calls[0][0]).toMatchObject({
+        data: { detail: { originalSchool: original, school } },
+      })
+    },
+  )
+  it('keeps a missing School empty when approving without a correction', async () => {
+    const { caller, tx } = setup()
+    tx.$queryRaw.mockResolvedValue([
+      {
+        id,
+        personId: 'student-person',
+        status: 'PENDING',
+        yearLevel: '3',
+        school: null,
+        submittedAt: new Date(submittedAt),
+      },
+    ])
+    await caller.approveRegistration(reviewInput)
+    expect(tx.registration.update.mock.calls[0][0]).toMatchObject({ data: { school: null } })
+  })
+  it('rejects a School outside the list', async () => {
+    const { caller, db } = setup()
+    // @ts-expect-error exercises runtime enum validation
+    const invalid = caller.approveRegistration({ ...reviewInput, school: 'NOT_A_SCHOOL' })
+    await expect(invalid).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    expect(db.$transaction).not.toHaveBeenCalled()
+  })
   it('trims and saves the required rejection reason without reading OCR', async () => {
     const { caller, tx } = setup()
     await caller.rejectRegistration({ ...reviewInput, reason: '  Upload current term  ' })
@@ -335,7 +394,7 @@ describe('registration decisions', () => {
     async (status) => {
       const { caller, tx } = setup()
       tx.$queryRaw.mockResolvedValue([
-        { ...reviewInput, personId: 'student-person', status, yearLevel: '3' },
+        { ...reviewInput, personId: 'student-person', status, yearLevel: '3', school: null },
       ])
       await expect(caller.approveRegistration(reviewInput)).rejects.toMatchObject({
         code: 'CONFLICT',
