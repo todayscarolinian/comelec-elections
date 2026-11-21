@@ -5,12 +5,12 @@ import { Suspense } from 'react'
 import { BallotEntryTrigger } from '@/components/ballot/ballot-sign-in'
 import { auth } from '@/server/auth'
 
-async function LandingBallotEntry() {
+async function FooterBallotEntry() {
   const session = await auth()
   return session ? <Link href="/ballot">Ballot</Link> : <BallotEntryTrigger />
 }
 
-export function ElectionFooter({ isLanding = false }: { isLanding?: boolean }) {
+export function ElectionFooter() {
   return (
     <footer>
       <div
@@ -31,13 +31,9 @@ export function ElectionFooter({ isLanding = false }: { isLanding?: boolean }) {
         >
           <Link href="/#candidates">Candidates</Link>
           <Link href="/register">Registration</Link>
-          {isLanding ? (
-            <Suspense fallback={<BallotEntryTrigger />}>
-              <LandingBallotEntry />
-            </Suspense>
-          ) : (
-            <Link href="/ballot">Ballot</Link>
-          )}
+          <Suspense fallback={<BallotEntryTrigger />}>
+            <FooterBallotEntry />
+          </Suspense>
         </nav>
       </div>
     </footer>

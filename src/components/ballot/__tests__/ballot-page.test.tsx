@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ELECTION } from '@/election'
 import { BallotPage } from '../ballot-page'
+import { BallotSignInDialog } from '../ballot-sign-in'
 
 const { election, myStatus, registration, cast, signIn } = vi.hoisted(() => ({
   election: vi.fn(),
@@ -44,6 +45,7 @@ function showBallot() {
   render(
     <QueryClientProvider client={client}>
       <BallotPage />
+      <BallotSignInDialog />
     </QueryClientProvider>,
   )
 }
