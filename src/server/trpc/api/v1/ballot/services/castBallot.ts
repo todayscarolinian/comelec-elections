@@ -2,6 +2,7 @@ import { ZodError } from 'zod'
 import { Prisma } from '@/generated/prisma/client'
 import { validateBallot } from '@/server/trpc/api/v1/ballot/core/validateBallot'
 import type { BallotInput } from '@/server/trpc/api/v1/ballot/schema'
+import { notifyPerson } from '@/server/trpc/api/v1/notification/services/createNotification'
 import type { Db } from '@/server/trpc/init'
 
 type CastFailure =
@@ -103,6 +104,8 @@ export async function castBallot(
         return candidates.map((candidateId) => ({ ballotId: ballot.id, questionId, candidateId }))
       })
       await tx.ballotAnswer.createMany({ data: answers })
+      // Only whether it is held; never choices or the Ballot id.
+      await notifyPerson(tx, personId, 'BALLOT_RECORDED', { held })
       return { held }
     })
   } catch (error) {

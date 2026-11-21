@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import type { Db } from '@/server/trpc/init'
 import { writeAudit } from '@/server/trpc/api/v1/audit/services/writeAudit'
+import { notifyEveryone } from '@/server/trpc/api/v1/notification/services/createNotification'
 
 type WindowStatus = 'OPEN' | 'CLOSED'
 
@@ -58,6 +59,7 @@ export async function setElectionStatus(db: Db, { status, adminEmail }: SetElect
       },
       tx,
     )
+    await notifyEveryone(tx, status === 'OPEN' ? 'VOTING_OPENED' : 'VOTING_CLOSED')
 
     return updated
   })
@@ -108,6 +110,7 @@ export async function releaseResults(db: Db, { adminEmail }: { adminEmail: strin
     })
 
     await writeAudit({ adminEmail, action: 'RELEASE_RESULTS', target: 'main' }, tx)
+    await notifyEveryone(tx, 'RESULTS_RELEASED')
 
     return { resultsReleasedAt: updated.resultsReleasedAt ?? new Date() }
   })
@@ -142,6 +145,7 @@ export async function setRegistrationStatus(
         },
         tx,
       )
+      await notifyEveryone(tx, status === 'OPEN' ? 'REGISTRATION_OPENED' : 'REGISTRATION_CLOSED')
     }
 
     return { registrationStatus: status }

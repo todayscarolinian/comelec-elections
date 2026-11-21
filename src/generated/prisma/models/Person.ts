@@ -176,6 +176,8 @@ export type PersonWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Person"> | Date | string
   registration?: Prisma.XOR<Prisma.RegistrationNullableScalarRelationFilter, Prisma.RegistrationWhereInput> | null
   ballot?: Prisma.XOR<Prisma.BallotNullableScalarRelationFilter, Prisma.BallotWhereInput> | null
+  notifications?: Prisma.NotificationListRelationFilter
+  notificationReads?: Prisma.NotificationReadListRelationFilter
 }
 
 export type PersonOrderByWithRelationInput = {
@@ -185,6 +187,8 @@ export type PersonOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   registration?: Prisma.RegistrationOrderByWithRelationInput
   ballot?: Prisma.BallotOrderByWithRelationInput
+  notifications?: Prisma.NotificationOrderByRelationAggregateInput
+  notificationReads?: Prisma.NotificationReadOrderByRelationAggregateInput
 }
 
 export type PersonWhereUniqueInput = Prisma.AtLeast<{
@@ -197,6 +201,8 @@ export type PersonWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Person"> | Date | string
   registration?: Prisma.XOR<Prisma.RegistrationNullableScalarRelationFilter, Prisma.RegistrationWhereInput> | null
   ballot?: Prisma.XOR<Prisma.BallotNullableScalarRelationFilter, Prisma.BallotWhereInput> | null
+  notifications?: Prisma.NotificationListRelationFilter
+  notificationReads?: Prisma.NotificationReadListRelationFilter
 }, "id" | "email">
 
 export type PersonOrderByWithAggregationInput = {
@@ -226,6 +232,8 @@ export type PersonCreateInput = {
   createdAt?: Date | string
   registration?: Prisma.RegistrationCreateNestedOneWithoutPersonInput
   ballot?: Prisma.BallotCreateNestedOneWithoutPersonInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutPersonInput
+  notificationReads?: Prisma.NotificationReadCreateNestedManyWithoutPersonInput
 }
 
 export type PersonUncheckedCreateInput = {
@@ -235,6 +243,8 @@ export type PersonUncheckedCreateInput = {
   createdAt?: Date | string
   registration?: Prisma.RegistrationUncheckedCreateNestedOneWithoutPersonInput
   ballot?: Prisma.BallotUncheckedCreateNestedOneWithoutPersonInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutPersonInput
+  notificationReads?: Prisma.NotificationReadUncheckedCreateNestedManyWithoutPersonInput
 }
 
 export type PersonUpdateInput = {
@@ -244,6 +254,8 @@ export type PersonUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   registration?: Prisma.RegistrationUpdateOneWithoutPersonNestedInput
   ballot?: Prisma.BallotUpdateOneWithoutPersonNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutPersonNestedInput
+  notificationReads?: Prisma.NotificationReadUpdateManyWithoutPersonNestedInput
 }
 
 export type PersonUncheckedUpdateInput = {
@@ -253,6 +265,8 @@ export type PersonUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   registration?: Prisma.RegistrationUncheckedUpdateOneWithoutPersonNestedInput
   ballot?: Prisma.BallotUncheckedUpdateOneWithoutPersonNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutPersonNestedInput
+  notificationReads?: Prisma.NotificationReadUncheckedUpdateManyWithoutPersonNestedInput
 }
 
 export type PersonCreateManyInput = {
@@ -302,6 +316,11 @@ export type PersonScalarRelationFilter = {
   isNot?: Prisma.PersonWhereInput
 }
 
+export type PersonNullableScalarRelationFilter = {
+  is?: Prisma.PersonWhereInput | null
+  isNot?: Prisma.PersonWhereInput | null
+}
+
 export type PersonCreateNestedOneWithoutRegistrationInput = {
   create?: Prisma.XOR<Prisma.PersonCreateWithoutRegistrationInput, Prisma.PersonUncheckedCreateWithoutRegistrationInput>
   connectOrCreate?: Prisma.PersonCreateOrConnectWithoutRegistrationInput
@@ -330,12 +349,44 @@ export type PersonUpdateOneRequiredWithoutBallotNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PersonUpdateToOneWithWhereWithoutBallotInput, Prisma.PersonUpdateWithoutBallotInput>, Prisma.PersonUncheckedUpdateWithoutBallotInput>
 }
 
+export type PersonCreateNestedOneWithoutNotificationsInput = {
+  create?: Prisma.XOR<Prisma.PersonCreateWithoutNotificationsInput, Prisma.PersonUncheckedCreateWithoutNotificationsInput>
+  connectOrCreate?: Prisma.PersonCreateOrConnectWithoutNotificationsInput
+  connect?: Prisma.PersonWhereUniqueInput
+}
+
+export type PersonUpdateOneWithoutNotificationsNestedInput = {
+  create?: Prisma.XOR<Prisma.PersonCreateWithoutNotificationsInput, Prisma.PersonUncheckedCreateWithoutNotificationsInput>
+  connectOrCreate?: Prisma.PersonCreateOrConnectWithoutNotificationsInput
+  upsert?: Prisma.PersonUpsertWithoutNotificationsInput
+  disconnect?: Prisma.PersonWhereInput | boolean
+  delete?: Prisma.PersonWhereInput | boolean
+  connect?: Prisma.PersonWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PersonUpdateToOneWithWhereWithoutNotificationsInput, Prisma.PersonUpdateWithoutNotificationsInput>, Prisma.PersonUncheckedUpdateWithoutNotificationsInput>
+}
+
+export type PersonCreateNestedOneWithoutNotificationReadsInput = {
+  create?: Prisma.XOR<Prisma.PersonCreateWithoutNotificationReadsInput, Prisma.PersonUncheckedCreateWithoutNotificationReadsInput>
+  connectOrCreate?: Prisma.PersonCreateOrConnectWithoutNotificationReadsInput
+  connect?: Prisma.PersonWhereUniqueInput
+}
+
+export type PersonUpdateOneRequiredWithoutNotificationReadsNestedInput = {
+  create?: Prisma.XOR<Prisma.PersonCreateWithoutNotificationReadsInput, Prisma.PersonUncheckedCreateWithoutNotificationReadsInput>
+  connectOrCreate?: Prisma.PersonCreateOrConnectWithoutNotificationReadsInput
+  upsert?: Prisma.PersonUpsertWithoutNotificationReadsInput
+  connect?: Prisma.PersonWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PersonUpdateToOneWithWhereWithoutNotificationReadsInput, Prisma.PersonUpdateWithoutNotificationReadsInput>, Prisma.PersonUncheckedUpdateWithoutNotificationReadsInput>
+}
+
 export type PersonCreateWithoutRegistrationInput = {
   id?: string
   email: string
   name: string
   createdAt?: Date | string
   ballot?: Prisma.BallotCreateNestedOneWithoutPersonInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutPersonInput
+  notificationReads?: Prisma.NotificationReadCreateNestedManyWithoutPersonInput
 }
 
 export type PersonUncheckedCreateWithoutRegistrationInput = {
@@ -344,6 +395,8 @@ export type PersonUncheckedCreateWithoutRegistrationInput = {
   name: string
   createdAt?: Date | string
   ballot?: Prisma.BallotUncheckedCreateNestedOneWithoutPersonInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutPersonInput
+  notificationReads?: Prisma.NotificationReadUncheckedCreateNestedManyWithoutPersonInput
 }
 
 export type PersonCreateOrConnectWithoutRegistrationInput = {
@@ -368,6 +421,8 @@ export type PersonUpdateWithoutRegistrationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ballot?: Prisma.BallotUpdateOneWithoutPersonNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutPersonNestedInput
+  notificationReads?: Prisma.NotificationReadUpdateManyWithoutPersonNestedInput
 }
 
 export type PersonUncheckedUpdateWithoutRegistrationInput = {
@@ -376,6 +431,8 @@ export type PersonUncheckedUpdateWithoutRegistrationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ballot?: Prisma.BallotUncheckedUpdateOneWithoutPersonNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutPersonNestedInput
+  notificationReads?: Prisma.NotificationReadUncheckedUpdateManyWithoutPersonNestedInput
 }
 
 export type PersonCreateWithoutBallotInput = {
@@ -384,6 +441,8 @@ export type PersonCreateWithoutBallotInput = {
   name: string
   createdAt?: Date | string
   registration?: Prisma.RegistrationCreateNestedOneWithoutPersonInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutPersonInput
+  notificationReads?: Prisma.NotificationReadCreateNestedManyWithoutPersonInput
 }
 
 export type PersonUncheckedCreateWithoutBallotInput = {
@@ -392,6 +451,8 @@ export type PersonUncheckedCreateWithoutBallotInput = {
   name: string
   createdAt?: Date | string
   registration?: Prisma.RegistrationUncheckedCreateNestedOneWithoutPersonInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutPersonInput
+  notificationReads?: Prisma.NotificationReadUncheckedCreateNestedManyWithoutPersonInput
 }
 
 export type PersonCreateOrConnectWithoutBallotInput = {
@@ -416,6 +477,8 @@ export type PersonUpdateWithoutBallotInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   registration?: Prisma.RegistrationUpdateOneWithoutPersonNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutPersonNestedInput
+  notificationReads?: Prisma.NotificationReadUpdateManyWithoutPersonNestedInput
 }
 
 export type PersonUncheckedUpdateWithoutBallotInput = {
@@ -424,8 +487,160 @@ export type PersonUncheckedUpdateWithoutBallotInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   registration?: Prisma.RegistrationUncheckedUpdateOneWithoutPersonNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutPersonNestedInput
+  notificationReads?: Prisma.NotificationReadUncheckedUpdateManyWithoutPersonNestedInput
 }
 
+export type PersonCreateWithoutNotificationsInput = {
+  id?: string
+  email: string
+  name: string
+  createdAt?: Date | string
+  registration?: Prisma.RegistrationCreateNestedOneWithoutPersonInput
+  ballot?: Prisma.BallotCreateNestedOneWithoutPersonInput
+  notificationReads?: Prisma.NotificationReadCreateNestedManyWithoutPersonInput
+}
+
+export type PersonUncheckedCreateWithoutNotificationsInput = {
+  id?: string
+  email: string
+  name: string
+  createdAt?: Date | string
+  registration?: Prisma.RegistrationUncheckedCreateNestedOneWithoutPersonInput
+  ballot?: Prisma.BallotUncheckedCreateNestedOneWithoutPersonInput
+  notificationReads?: Prisma.NotificationReadUncheckedCreateNestedManyWithoutPersonInput
+}
+
+export type PersonCreateOrConnectWithoutNotificationsInput = {
+  where: Prisma.PersonWhereUniqueInput
+  create: Prisma.XOR<Prisma.PersonCreateWithoutNotificationsInput, Prisma.PersonUncheckedCreateWithoutNotificationsInput>
+}
+
+export type PersonUpsertWithoutNotificationsInput = {
+  update: Prisma.XOR<Prisma.PersonUpdateWithoutNotificationsInput, Prisma.PersonUncheckedUpdateWithoutNotificationsInput>
+  create: Prisma.XOR<Prisma.PersonCreateWithoutNotificationsInput, Prisma.PersonUncheckedCreateWithoutNotificationsInput>
+  where?: Prisma.PersonWhereInput
+}
+
+export type PersonUpdateToOneWithWhereWithoutNotificationsInput = {
+  where?: Prisma.PersonWhereInput
+  data: Prisma.XOR<Prisma.PersonUpdateWithoutNotificationsInput, Prisma.PersonUncheckedUpdateWithoutNotificationsInput>
+}
+
+export type PersonUpdateWithoutNotificationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  registration?: Prisma.RegistrationUpdateOneWithoutPersonNestedInput
+  ballot?: Prisma.BallotUpdateOneWithoutPersonNestedInput
+  notificationReads?: Prisma.NotificationReadUpdateManyWithoutPersonNestedInput
+}
+
+export type PersonUncheckedUpdateWithoutNotificationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  registration?: Prisma.RegistrationUncheckedUpdateOneWithoutPersonNestedInput
+  ballot?: Prisma.BallotUncheckedUpdateOneWithoutPersonNestedInput
+  notificationReads?: Prisma.NotificationReadUncheckedUpdateManyWithoutPersonNestedInput
+}
+
+export type PersonCreateWithoutNotificationReadsInput = {
+  id?: string
+  email: string
+  name: string
+  createdAt?: Date | string
+  registration?: Prisma.RegistrationCreateNestedOneWithoutPersonInput
+  ballot?: Prisma.BallotCreateNestedOneWithoutPersonInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutPersonInput
+}
+
+export type PersonUncheckedCreateWithoutNotificationReadsInput = {
+  id?: string
+  email: string
+  name: string
+  createdAt?: Date | string
+  registration?: Prisma.RegistrationUncheckedCreateNestedOneWithoutPersonInput
+  ballot?: Prisma.BallotUncheckedCreateNestedOneWithoutPersonInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutPersonInput
+}
+
+export type PersonCreateOrConnectWithoutNotificationReadsInput = {
+  where: Prisma.PersonWhereUniqueInput
+  create: Prisma.XOR<Prisma.PersonCreateWithoutNotificationReadsInput, Prisma.PersonUncheckedCreateWithoutNotificationReadsInput>
+}
+
+export type PersonUpsertWithoutNotificationReadsInput = {
+  update: Prisma.XOR<Prisma.PersonUpdateWithoutNotificationReadsInput, Prisma.PersonUncheckedUpdateWithoutNotificationReadsInput>
+  create: Prisma.XOR<Prisma.PersonCreateWithoutNotificationReadsInput, Prisma.PersonUncheckedCreateWithoutNotificationReadsInput>
+  where?: Prisma.PersonWhereInput
+}
+
+export type PersonUpdateToOneWithWhereWithoutNotificationReadsInput = {
+  where?: Prisma.PersonWhereInput
+  data: Prisma.XOR<Prisma.PersonUpdateWithoutNotificationReadsInput, Prisma.PersonUncheckedUpdateWithoutNotificationReadsInput>
+}
+
+export type PersonUpdateWithoutNotificationReadsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  registration?: Prisma.RegistrationUpdateOneWithoutPersonNestedInput
+  ballot?: Prisma.BallotUpdateOneWithoutPersonNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutPersonNestedInput
+}
+
+export type PersonUncheckedUpdateWithoutNotificationReadsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  registration?: Prisma.RegistrationUncheckedUpdateOneWithoutPersonNestedInput
+  ballot?: Prisma.BallotUncheckedUpdateOneWithoutPersonNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutPersonNestedInput
+}
+
+
+/**
+ * Count Type PersonCountOutputType
+ */
+
+export type PersonCountOutputType = {
+  notifications: number
+  notificationReads: number
+}
+
+export type PersonCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  notifications?: boolean | PersonCountOutputTypeCountNotificationsArgs
+  notificationReads?: boolean | PersonCountOutputTypeCountNotificationReadsArgs
+}
+
+/**
+ * PersonCountOutputType without action
+ */
+export type PersonCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PersonCountOutputType
+   */
+  select?: Prisma.PersonCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * PersonCountOutputType without action
+ */
+export type PersonCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationWhereInput
+}
+
+/**
+ * PersonCountOutputType without action
+ */
+export type PersonCountOutputTypeCountNotificationReadsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationReadWhereInput
+}
 
 
 export type PersonSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -435,6 +650,9 @@ export type PersonSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   createdAt?: boolean
   registration?: boolean | Prisma.Person$registrationArgs<ExtArgs>
   ballot?: boolean | Prisma.Person$ballotArgs<ExtArgs>
+  notifications?: boolean | Prisma.Person$notificationsArgs<ExtArgs>
+  notificationReads?: boolean | Prisma.Person$notificationReadsArgs<ExtArgs>
+  _count?: boolean | Prisma.PersonCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["person"]>
 
 export type PersonSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -462,6 +680,9 @@ export type PersonOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 export type PersonInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   registration?: boolean | Prisma.Person$registrationArgs<ExtArgs>
   ballot?: boolean | Prisma.Person$ballotArgs<ExtArgs>
+  notifications?: boolean | Prisma.Person$notificationsArgs<ExtArgs>
+  notificationReads?: boolean | Prisma.Person$notificationReadsArgs<ExtArgs>
+  _count?: boolean | Prisma.PersonCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PersonIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 export type PersonIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -471,6 +692,8 @@ export type $PersonPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
   objects: {
     registration: Prisma.$RegistrationPayload<ExtArgs> | null
     ballot: Prisma.$BallotPayload<ExtArgs> | null
+    notifications: Prisma.$NotificationPayload<ExtArgs>[]
+    notificationReads: Prisma.$NotificationReadPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -873,6 +1096,8 @@ export interface Prisma__PersonClient<T, Null = never, ExtArgs extends runtime.T
   readonly [Symbol.toStringTag]: "PrismaPromise"
   registration<T extends Prisma.Person$registrationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Person$registrationArgs<ExtArgs>>): Prisma.Prisma__RegistrationClient<runtime.Types.Result.GetResult<Prisma.$RegistrationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   ballot<T extends Prisma.Person$ballotArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Person$ballotArgs<ExtArgs>>): Prisma.Prisma__BallotClient<runtime.Types.Result.GetResult<Prisma.$BallotPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  notifications<T extends Prisma.Person$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Person$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  notificationReads<T extends Prisma.Person$notificationReadsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Person$notificationReadsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationReadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1334,6 +1559,54 @@ export type Person$ballotArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    */
   include?: Prisma.BallotInclude<ExtArgs> | null
   where?: Prisma.BallotWhereInput
+}
+
+/**
+ * Person.notifications
+ */
+export type Person$notificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Notification
+   */
+  select?: Prisma.NotificationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Notification
+   */
+  omit?: Prisma.NotificationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationInclude<ExtArgs> | null
+  where?: Prisma.NotificationWhereInput
+  orderBy?: Prisma.NotificationOrderByWithRelationInput | Prisma.NotificationOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
+}
+
+/**
+ * Person.notificationReads
+ */
+export type Person$notificationReadsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationRead
+   */
+  select?: Prisma.NotificationReadSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NotificationRead
+   */
+  omit?: Prisma.NotificationReadOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationReadInclude<ExtArgs> | null
+  where?: Prisma.NotificationReadWhereInput
+  orderBy?: Prisma.NotificationReadOrderByWithRelationInput | Prisma.NotificationReadOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationReadWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationReadScalarFieldEnum | Prisma.NotificationReadScalarFieldEnum[]
 }
 
 /**
