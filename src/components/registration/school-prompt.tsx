@@ -3,7 +3,8 @@
 import { useMutation } from '@tanstack/react-query'
 import { useId, useState, type FormEvent } from 'react'
 import { useTRPC } from '@/lib/trpc/client'
-import { SCHOOLS, SCHOOL_LABELS } from '@/server/trpc/api/v1/registration/schema'
+import { SCHOOLS, SCHOOL_LABELS, isSchool } from '@/server/trpc/api/v1/registration/core/school'
+import { SelectField } from './select-field'
 
 type SchoolPromptProps = {
   /** Classes for the save button, so the prompt matches the page it appears on. */
@@ -32,12 +33,11 @@ export function SchoolPrompt({ actionClassName, onSaved }: Readonly<SchoolPrompt
       if (error.data?.code === 'CONFLICT') onSaved()
     },
   })
-  const selected = SCHOOLS.find((value) => value === school)
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!selected || save.isPending) return
-    save.mutate({ school: selected })
+    if (!isSchool(school) || save.isPending) return
+    save.mutate({ school })
   }
 
   return (
@@ -55,32 +55,26 @@ export function SchoolPrompt({ actionClassName, onSaved }: Readonly<SchoolPrompt
         </p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-3" aria-busy={save.isPending}>
-        <label htmlFor={`${id}-school`} className="block text-sm font-medium">
-          School
-        </label>
-        <select
+        <SelectField
           id={`${id}-school`}
+          label="School"
+          placeholder="Choose your School"
+          options={SCHOOLS}
+          labels={SCHOOL_LABELS}
           value={school}
-          required
           disabled={save.isPending}
-          onChange={(event) => setSchool(event.target.value)}
-          className="min-h-12 w-full border border-[#b6c89f] bg-transparent px-4 py-3 text-base disabled:opacity-60"
-        >
-          <option value="" disabled>
-            Choose your School
-          </option>
-          {SCHOOLS.map((value) => (
-            <option key={value} value={value}>
-              {SCHOOL_LABELS[value]}
-            </option>
-          ))}
-        </select>
+          onChange={setSchool}
+        />
         {save.isError && (
           <p role="alert" className="text-sm text-[#862f29]">
             {errors[save.error.data?.code ?? ''] ?? 'Unable to save your School. Please try again.'}
           </p>
         )}
-        <button type="submit" disabled={!selected || save.isPending} className={actionClassName}>
+        <button
+          type="submit"
+          disabled={!isSchool(school) || save.isPending}
+          className={actionClassName}
+        >
           {save.isPending ? 'Saving…' : 'Save School'}
         </button>
       </form>

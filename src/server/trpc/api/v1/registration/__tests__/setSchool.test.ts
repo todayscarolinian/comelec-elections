@@ -25,10 +25,11 @@ function setup({
 } = {}) {
   const tx = {
     electionState: { findUnique: vi.fn(async () => ({ resultsReleasedAt })) },
-    $queryRaw: vi.fn(async (_strings: TemplateStringsArray, ..._values: unknown[]) =>
-      registration ? [registration] : [],
-    ),
-    registration: { update: vi.fn(async () => ({ id: 'registration-1' })) },
+    registration: {
+      // Mirrors the conditional update: only a Registration with no School matches.
+      updateMany: vi.fn(async () => ({ count: registration?.school === null ? 1 : 0 })),
+      findUnique: vi.fn(async () => (registration ? { id: 'registration-1' } : null)),
+    },
     ballot: { updateMany: vi.fn(async () => ({ count: 1 })) },
   }
   const db = {
@@ -45,59 +46,52 @@ function setup({
 }
 
 describe('registration.setSchool', () => {
-  it('records the School once and fills a Ballot already cast', async () => {
+  it('records the School only where none is set, then fills a Ballot already cast', async () => {
     const { caller, tx } = setup()
 
-    await expect(caller.setSchool({ school: 'SCHOOL_B' })).resolves.toEqual({
-      school: 'SCHOOL_B',
+    await expect(caller.setSchool({ school: 'SAS' })).resolves.toEqual({
+      school: 'SAS',
     })
 
-    const [strings, ...values] = tx.$queryRaw.mock.calls[0] as unknown as [
-      TemplateStringsArray,
-      ...unknown[],
-    ]
-    expect(strings.join('?')).toMatch(
-      /FROM\s+"Registration"\s+WHERE\s+"personId"\s*=\s*\?\s+FOR UPDATE/i,
-    )
-    expect(values).toEqual(['person-1'])
-    expect(tx.registration.update).toHaveBeenCalledExactlyOnceWith({
-      where: { personId: 'person-1' },
-      data: { school: 'SCHOOL_B' },
-      select: { id: true },
+    expect(tx.registration.updateMany).toHaveBeenCalledExactlyOnceWith({
+      where: { personId: 'person-1', school: null },
+      data: { school: 'SAS' },
     })
     expect(tx.ballot.updateMany).toHaveBeenCalledExactlyOnceWith({
       where: { personId: 'person-1', school: null },
-      data: { school: 'SCHOOL_B' },
+      data: { school: 'SAS' },
     })
+    expect(tx.ballot.updateMany.mock.invocationCallOrder[0]).toBeGreaterThan(
+      tx.registration.updateMany.mock.invocationCallOrder[0],
+    )
+    expect(tx.registration.findUnique).not.toHaveBeenCalled()
   })
 
   it('refuses to change a School that is already recorded', async () => {
-    const { caller, tx } = setup({ registration: { school: 'SCHOOL_A' } })
+    const { caller, tx } = setup({ registration: { school: 'SAFAD' } })
 
-    await expect(caller.setSchool({ school: 'SCHOOL_B' })).rejects.toMatchObject({
+    await expect(caller.setSchool({ school: 'SAS' })).rejects.toMatchObject({
       code: 'CONFLICT',
     })
-    expect(tx.registration.update).not.toHaveBeenCalled()
     expect(tx.ballot.updateMany).not.toHaveBeenCalled()
   })
 
   it('requires a Registration', async () => {
     const { caller, tx } = setup({ registration: null })
 
-    await expect(caller.setSchool({ school: 'SCHOOL_A' })).rejects.toMatchObject({
+    await expect(caller.setSchool({ school: 'SAFAD' })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
-    expect(tx.registration.update).not.toHaveBeenCalled()
+    expect(tx.ballot.updateMany).not.toHaveBeenCalled()
   })
 
   it('is closed once Results are released', async () => {
     const { caller, tx } = setup({ resultsReleasedAt: new Date('2026-11-23T09:00:00Z') })
 
-    await expect(caller.setSchool({ school: 'SCHOOL_A' })).rejects.toMatchObject({
+    await expect(caller.setSchool({ school: 'SAFAD' })).rejects.toMatchObject({
       code: 'FORBIDDEN',
     })
-    expect(tx.$queryRaw).not.toHaveBeenCalled()
-    expect(tx.registration.update).not.toHaveBeenCalled()
+    expect(tx.registration.updateMany).not.toHaveBeenCalled()
   })
 
   it.each(['NOT_A_SCHOOL', '', 'school_a'])(
@@ -114,7 +108,7 @@ describe('registration.setSchool', () => {
   it('rejects signed-out callers', async () => {
     const { caller, db } = setup({ currentSession: null })
 
-    await expect(caller.setSchool({ school: 'SCHOOL_A' })).rejects.toMatchObject({
+    await expect(caller.setSchool({ school: 'SAFAD' })).rejects.toMatchObject({
       code: 'UNAUTHORIZED',
     })
     expect(db.$transaction).not.toHaveBeenCalled()

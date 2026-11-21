@@ -26,7 +26,7 @@ const createCaller = createCallerFactory(registrationRouter)
 const personId = 'person-1'
 const path = `${personId}/11111111-1111-4111-8111-111111111111`
 const session: NonNullable<Session> = { user: { personId, email: 'voter@example.org' } }
-const input = { yearLevel: '2' as const, school: 'SCHOOL_A' as const, studentProfilePath: path }
+const input = { yearLevel: '2' as const, school: 'SAFAD' as const, studentProfilePath: path }
 
 type Status = 'OPEN' | 'CLOSED'
 type RegStatus = 'PENDING' | 'REJECTED' | 'APPROVED'
@@ -155,7 +155,7 @@ describe('registration.submit', () => {
       data: {
         personId,
         yearLevel: '2',
-        school: 'SCHOOL_A',
+        school: 'SAFAD',
         studentProfilePath: path,
         status: 'PENDING',
         submittedAt: expect.any(Date),
@@ -174,7 +174,7 @@ describe('registration.submit', () => {
         where: { personId, status: { in: ['PENDING', 'REJECTED'] } },
         data: expect.objectContaining({
           yearLevel: '2',
-          school: 'SCHOOL_A',
+          school: 'SAFAD',
           studentProfilePath: path,
           status: 'PENDING',
           rejectionReason: null,
@@ -191,10 +191,10 @@ describe('registration.submit', () => {
     'updates a Held Ballot Year Level and School when resubmitting a %s Registration',
     async (status) => {
       const { caller, tx } = setup({ existing: { status } })
-      await caller.submit({ ...input, yearLevel: '4', school: 'SCHOOL_B' })
+      await caller.submit({ ...input, yearLevel: '4', school: 'SAS' })
       expect(tx.ballot.updateMany).toHaveBeenCalledExactlyOnceWith({
         where: { personId },
-        data: { yearLevel: '4', school: 'SCHOOL_B' },
+        data: { yearLevel: '4', school: 'SAS' },
       })
       expect(tx.ballot.updateMany.mock.invocationCallOrder[0]).toBeGreaterThan(
         tx.registration.updateMany.mock.invocationCallOrder[0],

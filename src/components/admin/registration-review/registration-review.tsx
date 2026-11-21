@@ -3,12 +3,8 @@
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTRPC } from '@/lib/trpc/client'
-import {
-  SCHOOL_LABELS,
-  YEAR_LEVELS,
-  type School,
-  type YearLevel,
-} from '@/server/trpc/api/v1/registration/schema'
+import { schoolLabel, type School } from '@/server/trpc/api/v1/registration/core/school'
+import { YEAR_LEVELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationReviewSkeleton } from '../admin-skeletons'
 import { ApplicationReview } from './application-review'
 import { statusLabels, type RegistrationStatus } from './types'
@@ -274,9 +270,7 @@ export function RegistrationReview() {
                     <span className="font-editorial text-lg leading-6">{item.name}</span>
                     <span>
                       {item.studentId} · Year {item.yearLevel}
-                      {item.school
-                        ? ` · ${SCHOOL_LABELS[item.school as School] ?? item.school}`
-                        : ''}
+                      {item.school ? ` · ${schoolLabel(item.school)}` : ''}
                     </span>
                     <span className="text-xs min-[761px]:!text-[10px]">
                       {item.email} · {statusLabels[item.status]}

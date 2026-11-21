@@ -33,7 +33,7 @@ function row(overrides = {}) {
   return {
     id,
     yearLevel: '3',
-    school: 'SCHOOL_A',
+    school: 'SAFAD',
     status: 'PENDING',
     submittedAt: new Date(),
     reviewedBy: null,
@@ -57,7 +57,7 @@ function setup({
         personId: 'student-person',
         status: 'PENDING',
         yearLevel: '3',
-        school: 'SCHOOL_A' as string | null,
+        school: 'SAFAD' as string | null,
         submittedAt: new Date(submittedAt),
       },
     ]),
@@ -129,7 +129,7 @@ describe('admin.listRegistrations', () => {
       name: 'Juan Dela Cruz',
       studentId: '21012345',
       yearLevel: '3',
-      school: 'SCHOOL_A',
+      school: 'SAFAD',
       studentProfileUrl: 'https://storage.example.org/signed-view',
       ocrStatus: 'DONE',
       ocrResult: validOcr,
@@ -268,7 +268,7 @@ describe('registration decisions', () => {
         data: {
           status: 'APPROVED',
           yearLevel: expectedYear,
-          school: 'SCHOOL_A',
+          school: 'SAFAD',
           rejectionReason: null,
           reviewedBy: adminEmail,
           reviewedAt: expect.any(Date),
@@ -277,7 +277,7 @@ describe('registration decisions', () => {
       })
       expect(tx.ballot.updateMany).toHaveBeenCalledWith({
         where: { personId: 'student-person' },
-        data: { yearLevel: expectedYear, school: 'SCHOOL_A' },
+        data: { yearLevel: expectedYear, school: 'SAFAD' },
       })
       expect(tx.auditLog.create).toHaveBeenCalledExactlyOnceWith({
         data: {
@@ -287,8 +287,8 @@ describe('registration decisions', () => {
           detail: {
             yearLevel: expectedYear,
             originalYearLevel: '3',
-            school: 'SCHOOL_A',
-            originalSchool: 'SCHOOL_A',
+            school: 'SAFAD',
+            originalSchool: 'SAFAD',
           },
         },
       })
@@ -299,8 +299,8 @@ describe('registration decisions', () => {
     },
   )
   it.each([
-    ['SCHOOL_A', 'SCHOOL_B'],
-    [null, 'SCHOOL_C'],
+    ['SAFAD', 'SAS'],
+    [null, 'SBE'],
   ] as const)(
     'approves with a corrected School (%s to %s) and copies it to a Held Ballot',
     async (original, school) => {

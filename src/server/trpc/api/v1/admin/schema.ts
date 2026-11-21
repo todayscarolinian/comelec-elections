@@ -1,7 +1,8 @@
 import { z } from 'zod'
 import { normalizeHostedDomain } from '@/server/auth/policy'
 import { AUDIT_ACTIONS } from '@/server/trpc/api/v1/audit/schema'
-import { SCHOOLS, YEAR_LEVELS, ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
+import { SCHOOLS } from '@/server/trpc/api/v1/registration/core/school'
+import { YEAR_LEVELS, ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
 import { resultsOutputSchema } from '@/server/trpc/api/v1/results/schema'
 
 const organizationEmail = z
@@ -85,6 +86,19 @@ export const rejectRegistrationInputSchema = z.object({
 })
 export const reviewDecisionOutputSchema = z.object({ ok: z.literal(true) })
 
+const count = z.number().int().nonnegative()
+
+/** Ballot totals for one School; `school` is null for Ballots whose Voter hasn't given one. */
+export const schoolTotalsSchema = z.object({
+  school: z.string().nullable(),
+  label: z.string(),
+  counted: count,
+  heldPending: count,
+  heldRejected: count,
+})
+
+export type SchoolTotals = z.infer<typeof schoolTotalsSchema>
+
 export const DASHBOARD_PHASES = [
   'BEFORE_VOTING',
   'VOTING_OPEN',
@@ -118,14 +132,7 @@ export const dashboardOutputSchema = z.object({
     z.object({ id: z.string(), name: z.string(), email: z.string(), yearLevel: z.string() }),
   ),
   recentActivity: z.array(auditEntryOutputSchema),
-  turnoutBySchool: z.array(
-    z.object({
-      school: z.string().nullable(),
-      label: z.string(),
-      counted: z.number().int().nonnegative(),
-      held: z.number().int().nonnegative(),
-    }),
-  ),
+  turnoutBySchool: z.array(schoolTotalsSchema),
 })
 
 export const releaseResultsOutputSchema = z.object({ resultsReleasedAt: z.date() })

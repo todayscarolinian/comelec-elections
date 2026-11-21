@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { SCHOOLS } from './core/school'
 
 export const YEAR_LEVELS = ['1', '2', '3', '4'] as const
 
@@ -9,18 +10,6 @@ export const YEAR_LEVEL_LABELS: Record<YearLevel, string> = {
   '2': '2nd Year',
   '3': '3rd Year',
   '4': '4th Year',
-}
-
-// Placeholder Schools until the client confirms the official list. Codes are stored in the
-// database, so keep them stable; change only the labels when a School is renamed.
-export const SCHOOLS = ['SCHOOL_A', 'SCHOOL_B', 'SCHOOL_C'] as const
-
-export type School = (typeof SCHOOLS)[number]
-
-export const SCHOOL_LABELS: Record<School, string> = {
-  SCHOOL_A: 'School A',
-  SCHOOL_B: 'School B',
-  SCHOOL_C: 'School C',
 }
 
 export const createStudentProfileUploadOutputSchema = z.object({

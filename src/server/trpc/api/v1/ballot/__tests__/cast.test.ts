@@ -128,14 +128,14 @@ describe('ballot.cast', () => {
     vi.useFakeTimers()
     vi.setSystemTime(now)
     const { caller, tx } = setup({
-      registration: { status: 'APPROVED', yearLevel: '4', school: 'SCHOOL_C' },
+      registration: { status: 'APPROVED', yearLevel: '4', school: 'SBE' },
     })
     await caller.ballot.cast(validBallot())
     expect(tx.ballot.create).toHaveBeenCalledWith({
       data: {
         personId: 'person-1',
         yearLevel: '4',
-        school: 'SCHOOL_C',
+        school: 'SBE',
         disclosureAcceptedAt: now,
         heldAcknowledgedAt: null,
         castAt: now,

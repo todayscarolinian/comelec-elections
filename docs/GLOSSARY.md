@@ -46,10 +46,6 @@ _Avoid_: Study Load, COR, enrollment proof, ID
 The year a person declares they are in, recorded on their Registration and Ballot for information only; it does not change which Questions appear on their Ballot.
 _Avoid_: Batch, year, grade
 
-**School**:
-The school a person declares they belong to, picked from a fixed list and recorded on their Registration and Ballot for statistics only; it does not change which Questions appear on their Ballot. Registrations made before School was collected have none until the person answers a one-time prompt.
-_Avoid_: College, department, unit
-
 **Registration Period**:
 The window before the Election in which Registrations can be submitted and reviewed. Registrations are also accepted while the Election is open, but never after it closes.
 _Avoid_: Pre-registration, validation period

@@ -61,8 +61,8 @@ describe('AdminResults by School', () => {
     results.mockResolvedValue(tally(9))
     dashboard.mockResolvedValue({ phase: 'VOTING_OPEN' })
     bySchool.mockResolvedValue([
-      { school: 'SCHOOL_A', label: 'School A', results: tally(7) },
-      { school: 'SCHOOL_B', label: 'School B', results: tally(2) },
+      { school: 'SAFAD', label: 'SAFAD', results: tally(7) },
+      { school: 'SAS', label: 'SAS', results: tally(2) },
     ])
   })
 
@@ -80,7 +80,7 @@ describe('AdminResults by School', () => {
       within(select)
         .getAllByRole('option')
         .map((option) => option.textContent),
-    ).toEqual(['School A (7 counted)', 'School B (2 counted)'])
+    ).toEqual(['SAFAD (7 counted)', 'SAS (2 counted)'])
     expect(within(section).getByText('7 votes')).toBeDefined()
 
     fireEvent.change(select, { target: { value: '1' } })

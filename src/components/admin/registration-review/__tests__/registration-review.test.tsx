@@ -74,7 +74,7 @@ function registration(overrides: Partial<Registration> = {}): Registration {
     email: '21012345@example.org',
     studentId: '21012345',
     yearLevel: '3',
-    school: 'SCHOOL_A',
+    school: 'SAFAD',
     status: 'PENDING',
     submittedAt,
     reviewedBy: null,
@@ -186,11 +186,11 @@ describe('RegistrationReview live API wiring', () => {
   it('submits a corrected School with the approval', async () => {
     render(<RegistrationReview />)
     fireEvent.change(screen.getByRole('combobox', { name: 'School on approval' }), {
-      target: { value: 'SCHOOL_C' },
+      target: { value: 'SBE' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Approve registration' }))
     await waitFor(() =>
-      expect(approve).toHaveBeenCalledWith({ id, yearLevel: '3', school: 'SCHOOL_C', submittedAt }),
+      expect(approve).toHaveBeenCalledWith({ id, yearLevel: '3', school: 'SBE', submittedAt }),
     )
   })
   it('submits corrected Year Level and submission version, then refreshes the queue', async () => {
@@ -200,7 +200,7 @@ describe('RegistrationReview live API wiring', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Approve registration' }))
     await waitFor(() =>
-      expect(approve).toHaveBeenCalledWith({ id, yearLevel: '2', school: 'SCHOOL_A', submittedAt }),
+      expect(approve).toHaveBeenCalledWith({ id, yearLevel: '2', school: 'SAFAD', submittedAt }),
     )
     await waitFor(() =>
       expect(screen.getByRole('status').textContent).toContain(

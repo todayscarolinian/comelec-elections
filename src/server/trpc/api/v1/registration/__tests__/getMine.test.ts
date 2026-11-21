@@ -85,7 +85,7 @@ describe('registration.getMine', () => {
         registration: {
           status,
           yearLevel: '3',
-          school: 'SCHOOL_B',
+          school: 'SAS',
           rejectionReason: 'Please include the current term.',
         },
       })
@@ -94,7 +94,7 @@ describe('registration.getMine', () => {
         registration: {
           status,
           yearLevel: '3',
-          school: 'SCHOOL_B',
+          school: 'SAS',
           rejectionReason: 'Please include the current term.',
         },
         canSubmit: true,

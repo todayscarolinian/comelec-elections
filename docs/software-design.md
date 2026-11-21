@@ -132,7 +132,6 @@ model Registration {
   personId        String             @unique
   person          Person             @relation(fields: [personId], references: [id])
   yearLevel       String             // one of YEAR_LEVELS; may be corrected by an Admin on approval
-  school          String?            // one of SCHOOLS; null for Registrations made before School was collected
   studentProfilePath String          // object path in the student-profiles bucket
   ocrStatus       OcrStatus          @default(PENDING)
   ocrResult       Json?              // the four extracted fields and their match results only, never the full OCR text (ADR 0006)
@@ -164,7 +163,6 @@ model Ballot {
   personId              String         @unique // one Ballot per Voter
   person                Person         @relation(fields: [personId], references: [id])
   yearLevel             String         // snapshot of the Registration's Year Level at casting; updated if an Admin corrects it when approving a Held Ballot's Registration
-  school                String?        // snapshot of the Registration's School at casting, kept in step the same way; filled by the one-time School prompt if the Voter voted first
   disclosureAcceptedAt  DateTime
   heldAcknowledgedAt    DateTime?      // set when cast without an approved Registration (FR-5.10)
   castAt                DateTime       @default(now())
@@ -205,7 +203,6 @@ model AuditLog {
 
 **Design notes**
 - `Ballot.personId @unique` replaces the old `Participation` table as the one-Ballot-per-Voter guard.
-- **School is for statistics only.** It works like Year Level: declared on the Registration (from `SCHOOLS` in `v1/registration/schema.ts`), correctable by an Admin on approval, and snapshotted on the Ballot. Both columns are nullable because School was added after Registration opened; see §5.5.
 - **Year Level is information only.** It doesn't affect which Questions a Voter sees. `Registration.yearLevel` is declared by the Applicant and can be corrected by an Admin; `Ballot.yearLevel` is a snapshot at casting, so the audit and export show the Year Level as it was, even if the Registration is edited later.
 - A Person with no Registration is just someone who signed in. Being an Applicant or Voter is derived from `Registration.status`.
 - **Whether a Ballot counts is derived, not stored** (ADR 0008). A Ballot counts when its person's `Registration.status` is `APPROVED`; otherwise it's a Held Ballot. There's no status column on `Ballot` to keep in sync.
@@ -290,17 +287,17 @@ In the sections below, "`protectedProcedure`" and "`adminProcedure`" name the pr
 2. The browser uploads the image directly to that URL.
 3. The bucket is **private** and restricted to `image/jpeg`, `image/png` and `image/webp`, max **5 MB** (enforced in bucket settings, and checked in the browser for a friendly error).
 
-### 5.2 `submitRegistration({ yearLevel, school, studentProfilePath })`
+### 5.2 `submitRegistration({ yearLevel, studentProfilePath })`
 
 ```
 1. person = ctx.person  (protectedProcedure)
-2. validate: yearLevel ∈ YEAR_LEVELS and school ∈ SCHOOLS (zod enums in v1/registration/schema.ts, information only); studentProfilePath starts with "{personId}/"; object exists in bucket
+2. validate: yearLevel ∈ YEAR_LEVELS (zod enum in v1/registration/schema.ts, information only); studentProfilePath starts with "{personId}/"; object exists in bucket
 3. transaction:
      a. registrationStatus or electionStatus must be OPEN (FOR SHARE on ElectionState)
         → so nothing can be submitted or resubmitted after the Election closes (ADR 0008)
      b. existing = Registration for person
         - none           → INSERT (status PENDING)
-        - PENDING/REJECTED → UPDATE yearLevel, school, studentProfilePath, status=PENDING, clear rejection fields; a Held Ballot takes the new Year Level and School
+        - PENDING/REJECTED → UPDATE yearLevel, studentProfilePath, status=PENDING, clear rejection fields
         - APPROVED       → reject: "Your Registration is already approved"
      c. set ocrStatus=PENDING, ocrResult=null
 4. after commit: schedule Student Profile OCR with Next.js after() (§5.4)
@@ -311,7 +308,7 @@ Old Student Profile objects from resubmissions are kept until after the Election
 ### 5.3 Review
 
 - `listRegistrations({ status?, yearLevel? })`: `adminProcedure`. Returns name, email, Year Level, status, whether the person has a Held Ballot, a signed **view** URL for each Student Profile (valid 10 minutes), and its `ocrStatus` and `ocrResult`. Registrations with a Held Ballot are sorted first.
-- `approveRegistration(id, yearLevel, school?)`: `adminProcedure`. Sets `APPROVED`, the (possibly corrected) Year Level and School, `reviewedBy`, `reviewedAt`. If the person has a Held Ballot, sets `Ballot.yearLevel` and `Ballot.school` to the approved values in the same transaction, and the Ballot now counts. Writes `AuditLog`, including the original and approved School.
+- `approveRegistration(id, yearLevel)`: `adminProcedure`. Sets `APPROVED`, the (possibly corrected) Year Level, `reviewedBy`, `reviewedAt`. If the person has a Held Ballot, sets `Ballot.yearLevel` to the approved Year Level in the same transaction, and the Ballot now counts. Writes `AuditLog`.
 - `rejectRegistration(id, reason)`: `adminProcedure`. Reason is required and non-empty. Sets `REJECTED`. Writes `AuditLog`.
 - OCR results are shown as hints next to the image. Neither procedure reads them.
 - Review is allowed whether or not the Registration Period or the Election is open, so Admins can clear pending Registrations after either closes. Review acts only on `PENDING` Registrations, so after the Election closes a `REJECTED` Registration stays rejected.
@@ -335,14 +332,6 @@ OCR is advisory: it never changes a Registration's `status`, and a failure never
 - Never store or log the full OCR text. The Student Profile also shows date of birth, which we don't need.
 - `after()` runs within the route's `maxDuration`, so `/api/trpc` sets `maxDuration = 300`. A job waiting for the one-job-per-instance lock counts against the same limit, so the limit leaves room for a queue. On Vercel (1 vCPU, 2,048 MB), OCR takes 2–12 s per image and peaks at about 1.5 GB (task 2.10a, #28).
 - Run at most one OCR job per function instance at a time. Two concurrent jobs would exceed 2 GB of memory.
-
-### 5.5 One-time School prompt
-
-School was added after Registration opened, so earlier Registrations (and their Ballots) have none.
-
-- `registration.getMine` returns `school`. When it is null, the register page and the ballot page ask "Which School are you in?". On the ballot page the question comes before the Ballot, so new Ballots are counted under a School; a Voter who already voted sees it beside their receipt.
-- `registration.setSchool({ school })`: `protectedProcedure`, acts only on the caller's own Registration. In one transaction: rejected once `resultsReleasedAt` is set; `FOR UPDATE` on the Registration; rejected with `CONFLICT` if a School is already recorded; otherwise sets `Registration.school` and fills `Ballot.school` where it is null. The row lock means a concurrent cast either reads the new School or is updated by it.
-- Answers are self-declared. Only an Admin can change a recorded School, on approval, so a person can't change their answer to shift the statistics.
 
 ## 6. Casting a Ballot
 
@@ -372,7 +361,7 @@ Uses `protectedProcedure`, not `voterProcedure`, because Applicants can cast a H
         → if none: throw NotRegistered
         → held = reg.status != APPROVED; if held and !input.heldAcknowledged: throw HeldNotAcknowledged
      c. validated = validateBallot(input) → reject on failure
-     d. INSERT INTO "Ballot" (personId, yearLevel and school = reg snapshots, disclosureAcceptedAt,
+     d. INSERT INTO "Ballot" (personId, yearLevel = reg.yearLevel snapshot, disclosureAcceptedAt,
                               heldAcknowledgedAt = held ? now() : null)
         → unique violation on personId: throw AlreadyVoted
      e. INSERT INTO "BallotAnswer" rows (candidateId null for Abstentions)
@@ -408,8 +397,6 @@ No per-Candidate data, ever. `ballotsCast` includes Held Ballots. Caching keeps 
 - Admins see Results at any time on the Admin panel. Viewing them writes `AuditLog` (`VIEW_RESULTS`).
 - `releaseResults()`: `adminProcedure`; the Election must be `CLOSED` and not already released, and no Ballot's Registration may be `PENDING`. All three are checked in one transaction with `FOR UPDATE` on `ElectionState`. Sets `resultsReleasedAt`. Writes `AuditLog`. There is no un-release. Since resubmitting needs the Election open, and the Election can't reopen after release, released Results can't change.
 - The public `/results` page renders only when `resultsReleasedAt` is set.
-- `admin.getDashboard` includes turnout per School: counted and held Ballots for each School in `SCHOOLS` order (zeros included), any stored code no longer in the list, and a "Not recorded" row when some Ballots have no School.
-- `admin.getResultsBySchool()`: `adminProcedure`, Admin-only even after release, because in a small School the tally can point to how individuals voted. Same counting rule as `results.get`, split by `Ballot.school`; Prisma's `groupBy` can't group answers by a Ballot column, so the tally is one SQL query joining `BallotAnswer`, `Ballot` and `Registration`. Before release, each view writes `AuditLog` (`VIEW_RESULTS`, detail `{ bySchool: true }`), so the Admin page loads it only when asked.
 
 ### 7.3 Ballot audit
 

@@ -154,9 +154,9 @@ export function BallotPage() {
   const castError = cast.error
   // Registrations made before School was collected are asked once; see SchoolPrompt.
   const needsSchool = !!voter && !voter.school
-  const schoolPrompt = needsSchool ? (
+  const schoolPrompt = (
     <SchoolPrompt actionClassName={ballotAction} onSaved={() => void refresh()} />
-  ) : null
+  )
   const unauthorized =
     ballot.error?.data?.code === 'UNAUTHORIZED' ||
     registration.error?.data?.code === 'UNAUTHORIZED' ||
@@ -168,7 +168,7 @@ export function BallotPage() {
   } else if (receipt || status === 'already_voted' || status === 'held') {
     content = (
       <>
-        {schoolPrompt}
+        {needsSchool && schoolPrompt}
         <BallotReceipt
           held={held}
           justCast={Boolean(receipt)}
@@ -222,7 +222,7 @@ export function BallotPage() {
         action="Back to home"
       />
     )
-  } else if (schoolPrompt) {
+  } else if (needsSchool) {
     // Ask before the Ballot so this Ballot is counted under the right School.
     content = <div className="grow border-t border-comelec-sage py-12">{schoolPrompt}</div>
   } else {

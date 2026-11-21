@@ -4,12 +4,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useTRPC } from '@/lib/trpc/client'
-import {
-  SCHOOL_LABELS,
-  YEAR_LEVEL_LABELS,
-  type School,
-  type YearLevel,
-} from '@/server/trpc/api/v1/registration/schema'
+import { schoolLabel, type School } from '@/server/trpc/api/v1/registration/core/school'
+import { YEAR_LEVEL_LABELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationForm } from './registration-form'
 import { SchoolPrompt } from './school-prompt'
 import { RegistrationSignIn } from './registration-sign-in'
@@ -155,9 +151,7 @@ export function RegisterPage() {
                   {registration.school && (
                     <>
                       <dt className="text-[#56654a]">School</dt>
-                      <dd className="text-end font-medium">
-                        {SCHOOL_LABELS[registration.school as School] ?? registration.school}
-                      </dd>
+                      <dd className="text-end font-medium">{schoolLabel(registration.school)}</dd>
                     </>
                   )}
                   <dt className="text-[#56654a]">Student Profile</dt>

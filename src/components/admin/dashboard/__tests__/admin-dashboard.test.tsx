@@ -60,10 +60,10 @@ function dashboard(overrides: Partial<Dashboard> = {}): Dashboard {
       },
     ],
     turnoutBySchool: [
-      { school: 'SCHOOL_A', label: 'School A', counted: 512, held: 3 },
-      { school: 'SCHOOL_B', label: 'School B', counted: 1200, held: 0 },
-      { school: 'SCHOOL_C', label: 'School C', counted: 0, held: 0 },
-      { school: null, label: 'Not recorded', counted: 41, held: 1 },
+      { school: 'SAFAD', label: 'SAFAD', counted: 512, heldPending: 2, heldRejected: 1 },
+      { school: 'SAS', label: 'SAS', counted: 1200, heldPending: 0, heldRejected: 0 },
+      { school: 'SBE', label: 'SBE', counted: 0, heldPending: 0, heldRejected: 0 },
+      { school: null, label: 'Not recorded', counted: 41, heldPending: 0, heldRejected: 1 },
     ],
     ...overrides,
   }
@@ -116,9 +116,9 @@ describe('AdminDashboard', () => {
       .slice(1)
       .map((row) => [...row.querySelectorAll('th, td')].map((cell) => cell.textContent))
     expect(rows).toEqual([
-      ['School A', '512', '3'],
-      ['School B', '1,200', '0'],
-      ['School C', '0', '0'],
+      ['SAFAD', '512', '3'],
+      ['SAS', '1,200', '0'],
+      ['SBE', '0', '0'],
       ['Not recorded', '41', '1'],
     ])
   })

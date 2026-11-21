@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import {
   SCHOOLS,
   SCHOOL_LABELS,
-  YEAR_LEVELS,
+  isSchool,
   type School,
-  type YearLevel,
-} from '@/server/trpc/api/v1/registration/schema'
+} from '@/server/trpc/api/v1/registration/core/school'
+import { YEAR_LEVELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { StudentProfileImage } from './student-profile-image'
 import { OcrFindings } from './ocr-findings'
 import { statusLabels, type Registration } from './types'
@@ -35,7 +35,7 @@ export function ApplicationReview({
 }) {
   const [year, setYear] = useState(registration.yearLevel as YearLevel)
   // Registrations made before School existed have none; approving leaves it empty unless set.
-  const [school, setSchool] = useState<School | ''>((registration.school as School | null) ?? '')
+  const [school, setSchool] = useState(registration.school ?? '')
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
   const reasonRef = useRef<HTMLTextAreaElement>(null)
@@ -136,7 +136,7 @@ export function ApplicationReview({
               <select
                 disabled={saving}
                 value={school}
-                onChange={(event) => setSchool(event.target.value as School | '')}
+                onChange={(event) => setSchool(event.target.value)}
               >
                 {school === '' && <option value="">Not given</option>}
                 {SCHOOLS.map((value) => (
@@ -154,7 +154,13 @@ export function ApplicationReview({
               className="col-span-full min-h-12 border border-review-ink bg-review-ink px-3.5 py-2.5 text-sm text-review-paper hover:bg-[#263e17] min-[761px]:min-h-11 min-[1301px]:col-span-1"
               disabled={saving}
               onClick={() => {
-                void onDecision(registration.id, 'APPROVED', year, school || undefined, '')
+                void onDecision(
+                  registration.id,
+                  'APPROVED',
+                  year,
+                  isSchool(school) ? school : undefined,
+                  '',
+                )
               }}
             >
               Approve registration

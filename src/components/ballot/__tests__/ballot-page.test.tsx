@@ -77,7 +77,7 @@ describe('BallotPage', () => {
     myStatus.mockReset().mockResolvedValue({ status: 'can_vote' })
     registration.mockReset().mockResolvedValue({
       account,
-      registration: { status: 'APPROVED', school: 'SCHOOL_A', rejectionReason: null },
+      registration: { status: 'APPROVED', school: 'SAFAD', rejectionReason: null },
       canSubmit: true,
     })
     cast.mockReset().mockResolvedValue({ ok: true, held: false })
@@ -89,7 +89,7 @@ describe('BallotPage', () => {
       registration: { status: 'APPROVED', school: null, rejectionReason: null },
       canSubmit: true,
     })
-    setSchool.mockResolvedValue({ school: 'SCHOOL_C' })
+    setSchool.mockResolvedValue({ school: 'SBE' })
     showBallot()
     await screen.findByRole('heading', { name: 'Which School are you in?' })
     expect(
@@ -97,10 +97,10 @@ describe('BallotPage', () => {
         name: /my ballot can be viewed by the election commission/i,
       }),
     ).toBeNull()
-    fireEvent.change(screen.getByLabelText('School'), { target: { value: 'SCHOOL_C' } })
+    fireEvent.change(screen.getByLabelText('School'), { target: { value: 'SBE' } })
     registration.mockResolvedValue({
       account,
-      registration: { status: 'APPROVED', school: 'SCHOOL_C', rejectionReason: null },
+      registration: { status: 'APPROVED', school: 'SBE', rejectionReason: null },
       canSubmit: true,
     })
     fireEvent.click(screen.getByRole('button', { name: 'Save School' }))
@@ -109,7 +109,7 @@ describe('BallotPage', () => {
         name: /my ballot can be viewed by the election commission/i,
       }),
     ).toBeDefined()
-    expect(setSchool).toHaveBeenCalledWith({ school: 'SCHOOL_C' }, expect.anything())
+    expect(setSchool).toHaveBeenCalledWith({ school: 'SBE' }, expect.anything())
   })
 
   it('asks a Voter who already voted without a School, alongside their receipt', async () => {
@@ -179,7 +179,7 @@ describe('BallotPage', () => {
   it('requires a separate acknowledgement before casting a held ballot', async () => {
     registration.mockResolvedValue({
       account,
-      registration: { status: 'PENDING', school: 'SCHOOL_A', rejectionReason: null },
+      registration: { status: 'PENDING', school: 'SAFAD', rejectionReason: null },
       canSubmit: true,
     })
     cast.mockResolvedValue({ ok: true, held: true })

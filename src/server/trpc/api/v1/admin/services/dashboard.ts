@@ -1,11 +1,7 @@
 import type { Db } from '@/server/trpc/init'
 import { dashboardPhase } from '../core/dashboardPhase'
-import { turnoutBySchool } from '../core/turnoutBySchool'
-
-const countedBallot = { person: { registration: { is: { status: 'APPROVED' as const } } } }
-const heldBallot = {
-  person: { registration: { is: { status: { in: ['PENDING' as const, 'REJECTED' as const] } } } },
-}
+import { totalsBySchool } from '../core/schoolBreakdown'
+import { countBallotsBySchool } from './schoolBallotCounts'
 
 const electionStatusAudit = (status: 'OPEN' | 'CLOSED') => ({
   action: 'SET_ELECTION_STATUS',
@@ -23,8 +19,7 @@ export async function getDashboard(db: Db) {
     recentActivity,
     firstOpened,
     lastClosed,
-    countedBySchool,
-    heldBySchool,
+    schoolCounts,
   ] = await db.$transaction([
     db.electionState.findUnique({
       where: { id: 'main' },
@@ -51,25 +46,8 @@ export async function getDashboard(db: Db) {
       orderBy: { at: 'desc' },
       select: { at: true },
     }),
-    db.ballot.groupBy({
-      by: ['school'],
-      where: countedBallot,
-      orderBy: { school: 'asc' },
-      _count: { _all: true },
-    }),
-    db.ballot.groupBy({
-      by: ['school'],
-      where: heldBallot,
-      orderBy: { school: 'asc' },
-      _count: { _all: true },
-    }),
+    countBallotsBySchool(db),
   ])
-
-  const schoolRows = (rows: typeof countedBySchool) =>
-    rows.map((row) => ({
-      school: row.school,
-      ballots: typeof row._count === 'object' ? (row._count._all ?? 0) : 0,
-    }))
 
   const electionStatus = state?.electionStatus ?? 'CLOSED'
   const resultsReleasedAt = state?.resultsReleasedAt ?? null
@@ -89,6 +67,6 @@ export async function getDashboard(db: Db) {
       email: person.email,
     })),
     recentActivity,
-    turnoutBySchool: turnoutBySchool(schoolRows(countedBySchool), schoolRows(heldBySchool)),
+    turnoutBySchool: totalsBySchool(schoolCounts),
   }
 }

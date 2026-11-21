@@ -7,12 +7,16 @@ import { useTRPC } from '@/lib/trpc/client'
 import {
   SCHOOLS,
   SCHOOL_LABELS,
+  isSchool,
+  type School,
+} from '@/server/trpc/api/v1/registration/core/school'
+import {
   YEAR_LEVELS,
   YEAR_LEVEL_LABELS,
-  type School,
   type YearLevel,
 } from '@/server/trpc/api/v1/registration/schema'
 import { registrationAction } from './registration-styles'
+import { SelectField } from './select-field'
 import { StudentProfileUpload } from './student-profile-upload'
 
 type RegistrationFormProps = {
@@ -46,8 +50,7 @@ export function RegistrationForm({
     },
   })
   const selectedYear = YEAR_LEVELS.find((level) => level === yearLevel)
-  const selectedSchool = SCHOOLS.find((value) => value === school)
-  const canSubmit = !!selectedYear && !!selectedSchool && !!studentProfilePath && !submit.isPending
+  const canSubmit = !!selectedYear && isSchool(school) && !!studentProfilePath && !submit.isPending
   const errorMessage =
     submit.error?.data?.code === 'BAD_REQUEST'
       ? 'Please check your Year Level and School, and upload your Student Profile again.'
@@ -59,8 +62,8 @@ export function RegistrationForm({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!canSubmit || !selectedYear || !selectedSchool) return
-    submit.mutate({ yearLevel: selectedYear, school: selectedSchool, studentProfilePath })
+    if (!canSubmit || !selectedYear || !isSchool(school)) return
+    submit.mutate({ yearLevel: selectedYear, school, studentProfilePath })
   }
 
   return (
@@ -97,32 +100,17 @@ export function RegistrationForm({
         </p>
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="school" className="block text-sm font-medium text-[#324e1f]">
-          School
-        </label>
-        <select
-          id="school"
-          value={school}
-          required
-          aria-describedby="school-hint"
-          disabled={submit.isPending}
-          onChange={(event) => setSchool(event.target.value)}
-          className="min-h-14 w-full border border-[#b6c89f] bg-transparent px-4 py-3 text-base text-[#324e1f] disabled:opacity-60"
-        >
-          <option value="" disabled>
-            Choose your School
-          </option>
-          {SCHOOLS.map((value) => (
-            <option key={value} value={value}>
-              {SCHOOL_LABELS[value]}
-            </option>
-          ))}
-        </select>
-        <p id="school-hint" className="text-sm leading-relaxed text-[#56654a]">
-          Used for turnout statistics only. Your School does not change your ballot.
-        </p>
-      </div>
+      <SelectField
+        id="school"
+        label="School"
+        placeholder="Choose your School"
+        options={SCHOOLS}
+        labels={SCHOOL_LABELS}
+        value={school}
+        disabled={submit.isPending}
+        hint="Used for turnout statistics only. Your School does not change your ballot."
+        onChange={setSchool}
+      />
 
       <StudentProfileUpload
         disabled={submit.isPending}
