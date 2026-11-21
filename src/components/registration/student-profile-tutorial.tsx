@@ -71,7 +71,7 @@ export function StudentProfileTutorial() {
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
         closedby="any"
-        className="student-profile-tutorial m-auto max-h-[calc(100dvh-2rem)] w-[min(calc(100%-2rem),45rem)] overflow-y-auto overscroll-contain border border-comelec-sage bg-comelec-cream p-5 text-comelec-forest shadow-[0_18px_44px_rgba(10,20,5,0.24)] sm:px-[31px]"
+        className="election-dialog student-profile-tutorial m-auto max-h-[calc(100dvh-2rem)] w-[min(calc(100%-2rem),45rem)] overflow-y-auto overscroll-contain border border-comelec-sage bg-comelec-cream p-5 text-comelec-forest shadow-[0_18px_44px_rgba(10,20,5,0.24)] sm:px-[31px]"
       >
         <header className="relative min-h-36 pr-12">
           <div aria-live="polite" aria-atomic="true">
