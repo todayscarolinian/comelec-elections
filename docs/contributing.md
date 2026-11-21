@@ -192,25 +192,18 @@ git push origin S1-03
   ```
 ## PostgreSQL integration tests
 
-Run the same server-side voting tests as CI against a disposable local Postgres:
+Run the same server-side voting tests as CI against a disposable local Postgres in Docker (works in PowerShell, Git Bash, macOS and Linux; Docker must be running):
 
 ```sh
-(
-  set -e
-  container=$(docker run --rm -d \
-    -e POSTGRES_USER=comelec_test -e POSTGRES_PASSWORD=comelec_test \
-    -e POSTGRES_DB=comelec_test -p 127.0.0.1::5432 postgres:16-alpine)
-  trap 'docker stop "$container" >/dev/null' EXIT
-  binding=$(docker port "$container" 5432/tcp)
-  for attempt in $(seq 1 30); do
-    if docker exec "$container" pg_isready -h 127.0.0.1 -U comelec_test -d comelec_test; then
-      COMELEC_TEST_DB_PORT="${binding##*:}" npm run test:integration
-      exit
-    fi
-    sleep 1
-  done
-  exit 1
-)
+npm run test:integration:docker
 ```
 
-Each run starts a fresh container on its own loopback port, waits for Postgres, applies Prisma migrations, and clears fixture tables between tests. Production `.env` settings are not used.
+This recreates the `postgres` container from `docker-compose.test.yml` on `127.0.0.1:55432`, waits for it to be healthy, applies Prisma migrations, and runs the suite. The database lives in tmpfs, so each run starts empty, and fixture tables are cleared between tests. Production `.env` settings are not used.
+
+The container keeps running so you can re-run `npm run test:integration` quickly. Stop it with:
+
+```sh
+npm run db:test:down
+```
+
+To use a different Postgres instance, set `COMELEC_TEST_DB_PORT` to its port; the host, user, password and database are fixed to `127.0.0.1` / `comelec_test`.
