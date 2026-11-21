@@ -2,6 +2,7 @@ import { action } from './landing-styles'
 import { ArrowUpRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { electionDay } from './landing-schedule'
 import { ElectionStatus } from './election-status'
 import { HeroShader } from './hero-shader'
 
@@ -17,8 +18,8 @@ export function ElectionHero() {
           <div className="relative z-10 grid w-full max-w-sm justify-items-start gap-4 self-end me-[clamp(0rem,6.2vw,5.5625rem)] max-[38rem]:me-0 max-[38rem]:self-start max-[38rem]:bg-(--landing-cream)/68 max-[38rem]:p-3.5">
             <ElectionStatus />
             <p>
-              Cast one Ballot online on November 20. Anyone can follow Turnout. The Commission
-              releases the Results after the audit.
+              Cast one Ballot online on November {electionDay}. Anyone can follow Turnout. The
+              Commission releases the Results after the audit.
             </p>
             <Link
               className={`${action} bg-(--landing-green) text-(--landing-cream) hover:bg-[#233b18] focus-visible:outline-(--landing-green)`}
