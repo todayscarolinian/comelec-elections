@@ -1,9 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { toast } from 'sonner'
 import { STUDENT_PROFILE_MAX_BYTES } from '@/lib/student-profile'
 import { StudentProfileUpload } from '../student-profile-upload'
 
 const { mutateAsync } = vi.hoisted(() => ({ mutateAsync: vi.fn() }))
+
+vi.mock('sonner', () => ({ toast: { success: vi.fn() } }))
 
 vi.mock('@tanstack/react-query', () => ({
   useMutation: () => ({ mutateAsync }),
@@ -31,6 +34,7 @@ function selectFile(file: File) {
 
 describe('StudentProfileUpload', () => {
   beforeEach(() => {
+    vi.mocked(toast.success).mockClear()
     mutateAsync.mockReset()
     mutateAsync.mockResolvedValue({ path: studentProfilePath, signedUrl })
     fetchMock.mockReset()
@@ -60,7 +64,10 @@ describe('StudentProfileUpload', () => {
       headers: { 'Content-Type': type },
       body: file,
     })
-    expect(screen.getByRole('status').textContent).toBe('Student Profile uploaded.')
+    expect(screen.getByText(name)).toBeTruthy()
+    expect(toast.success).toHaveBeenCalledExactlyOnceWith('Student Profile uploaded', {
+      description: name,
+    })
   })
 
   it('describes the upload and guides students through the ISMIS tutorial', () => {
@@ -188,7 +195,8 @@ describe('StudentProfileUpload', () => {
 
     selectFile(new File(['pdf'], 'replacement.pdf', { type: 'application/pdf' }))
     expect(events).toEqual(['started', 'uploaded', 'started'])
-    expect(screen.queryByText('Student Profile uploaded.')).toBeNull()
+    expect(screen.queryByText('profile.png')).toBeNull()
+    expect(toast.success).toHaveBeenCalledTimes(1)
   })
 
   it('can be disabled while the parent form is submitting', () => {
@@ -228,6 +236,7 @@ describe('StudentProfileUpload', () => {
     selectFile(new File(['replacement'], 'replacement.png', { type: 'image/png' }))
     await screen.findByRole('alert')
     expect(events).toEqual(['started', 'uploaded', 'started'])
-    expect(screen.queryByText('Student Profile uploaded.')).toBeNull()
+    expect(screen.queryByText('profile.png')).toBeNull()
+    expect(toast.success).toHaveBeenCalledTimes(1)
   })
 })

@@ -2,6 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query'
 import { useId, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { getStudentProfileValidationError, STUDENT_PROFILE_MIME_TYPES } from '@/lib/student-profile'
 import { useTRPC } from '@/lib/trpc/client'
 import { StudentProfileTutorial } from './student-profile-tutorial'
@@ -10,6 +11,25 @@ type StudentProfileUploadProps = {
   onUploaded: (path: string) => void
   onUploadStart?: () => void
   disabled?: boolean
+}
+
+function Spinner() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      className="size-6 animate-spin text-[#324e1f]"
+    >
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
+      <path
+        d="M22 12a10 10 0 0 0-10-10"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
 }
 
 export function StudentProfileUpload({
@@ -58,6 +78,7 @@ export function StudentProfileUpload({
 
       setUploadedFileName(file.name)
       onUploaded(path)
+      toast.success('Student Profile uploaded', { description: file.name })
     } catch {
       setError('Unable to upload the Student Profile. Please try again.')
     } finally {
@@ -93,33 +114,35 @@ export function StudentProfileUpload({
             if (file) void upload(file)
           }}
         />
-        <p className="max-w-full font-medium wrap-anywhere">
-          {uploadedFileName || (
-            <span className="underline underline-offset-4">Choose an image</span>
-          )}
-        </p>
-        <p className="text-sm text-[#56654a]">
-          {uploadedFileName ? 'Choose another image to replace it' : 'or drag and drop it here'}
-        </p>
-        <p className="text-xs text-[#56654a]">JPEG, PNG or WebP · Up to 5 MB</p>
+
+        {isUploading ? (
+          <output className="flex flex-col items-center gap-2 text-sm font-medium text-[#324e1f]">
+            <Spinner />
+            Uploading Student Profile...
+          </output>
+        ) : (
+          <>
+            <p className="max-w-full font-medium wrap-anywhere">
+              {uploadedFileName || (
+                <span className="underline underline-offset-4">Choose an image</span>
+              )}
+            </p>
+            <p className="text-sm text-[#56654a]">
+              {uploadedFileName ? 'Choose another image to replace it' : 'or drag and drop it here'}
+            </p>
+            <p className="text-xs text-[#56654a]">JPEG, PNG or WebP · Up to 5 MB</p>
+          </>
+        )}
       </div>
       <p id={hintId} className="text-sm leading-relaxed text-[#56654a]">
         Make sure your name and current enrollment are readable.
       </p>
       <StudentProfileTutorial />
 
-      {isUploading && (
-        <output className="block text-sm text-[#56654a]">Uploading Student Profile...</output>
-      )}
       {error && (
         <p role="alert" className="text-sm text-[#862f29]">
           {error}
         </p>
-      )}
-      {uploadedFileName && (
-        <output className="block text-sm font-medium text-[#324e1f]">
-          Student Profile uploaded.
-        </output>
       )}
     </div>
   )
