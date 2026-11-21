@@ -8,6 +8,7 @@ import { YEAR_LEVELS, type YearLevel } from '@/server/trpc/api/v1/registration/s
 import { RegistrationReviewSkeleton } from '../admin-skeletons'
 import { formatTime } from '../admin-ui'
 import { ApplicationReview } from './application-review'
+import { OcrIndicator } from './ocr-findings'
 import { statusLabels, type RegistrationStatus } from './types'
 
 const PAGE_SIZE = 5
@@ -274,7 +275,14 @@ export function RegistrationReview() {
                       setMobileDetail(true)
                     }}
                   >
-                    <span className="font-editorial text-lg leading-6">{item.name}</span>
+                    <span className="flex items-start justify-between gap-2">
+                      <span className="min-w-0 font-editorial text-lg leading-6 wrap-anywhere">
+                        {item.name}
+                      </span>
+                      <span className="pt-1">
+                        <OcrIndicator registration={item} />
+                      </span>
+                    </span>
                     <span>
                       {item.studentId} · Year {item.yearLevel}
                     </span>

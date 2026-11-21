@@ -168,6 +168,24 @@ describe('RegistrationReview live API wiring', () => {
     ).toBe('https://storage.example.org/signed-view')
     expect(screen.queryByText(/sample data/i)).toBeNull()
   })
+  it.each([
+    [{}, /OCR: 1 field doesn’t match/],
+    [
+      {
+        ocrResult: {
+          fields: { name: 'Juan Dela Cruz', studentId: '21012345', yearLevel: '3', term: 'x' },
+          matches: { name: true, studentId: true, yearLevel: true, term: true },
+        },
+      },
+      /OCR: all fields match/,
+    ],
+    [{ ocrStatus: 'PENDING' as const, ocrResult: null }, /OCR pending/],
+    [{ ocrStatus: 'FAILED' as const, ocrResult: null }, /OCR unavailable/],
+  ])('shows the OCR state on the queue row (%#)', (overrides, name) => {
+    state.query.data = [registration(overrides)]
+    render(<RegistrationReview />)
+    expect(screen.getByRole('button', { name })).toBeTruthy()
+  })
   it.each(['PENDING', 'FAILED'] as const)('keeps decisions available with OCR %s', (ocrStatus) => {
     state.query.data = [registration({ ocrStatus, ocrResult: null })]
     render(<RegistrationReview />)

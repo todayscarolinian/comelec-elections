@@ -1,5 +1,42 @@
+import { Check, CircleCheck, TriangleAlert, X } from 'lucide-react'
 import { CURRENT_TERM } from '@/election'
 import type { Registration } from './types'
+
+/** Compact OCR status for a queue row, so mismatches stand out before an application is opened. */
+export function OcrIndicator({ registration }: { registration: Registration }) {
+  const ocr = registration.ocrResult
+  const base =
+    'inline-flex shrink-0 items-center gap-1 px-1.5 py-0.5 text-[10px] leading-none font-medium'
+  if (registration.ocrStatus === 'PENDING') {
+    return (
+      <span className={`${base} border border-review-line text-review-muted`}>OCR pending</span>
+    )
+  }
+  if (registration.ocrStatus !== 'DONE' || !ocr) {
+    return (
+      <span className={`${base} border border-review-line text-review-muted`}>
+        <span aria-hidden="true">No OCR</span>
+        <span className="sr-only">OCR unavailable</span>
+      </span>
+    )
+  }
+  const mismatches = Object.values(ocr.matches).filter((matches) => !matches).length
+  return mismatches ? (
+    <span className={`${base} bg-[#f7e3dc] text-review-error`}>
+      <TriangleAlert aria-hidden="true" className="size-3" />
+      <span aria-hidden="true">OCR · {mismatches} off</span>
+      <span className="sr-only">
+        OCR: {mismatches} {mismatches === 1 ? 'field doesn’t' : 'fields don’t'} match
+      </span>
+    </span>
+  ) : (
+    <span className={`${base} border border-review-ink/30 text-review-ink`}>
+      <Check aria-hidden="true" className="size-3" strokeWidth={2.5} />
+      <span aria-hidden="true">OCR</span>
+      <span className="sr-only">OCR: all fields match</span>
+    </span>
+  )
+}
 
 export function OcrFindings({ registration }: { registration: Registration }) {
   const ocr = registration.ocrResult
@@ -28,38 +65,67 @@ export function OcrFindings({ registration }: { registration: Registration }) {
         { label: 'Term', expected: CURRENT_TERM, read: ocr.fields.term, matches: ocr.matches.term },
       ]
     : []
+  const mismatches = rows.filter((row) => !row.matches).length
   return (
     <section className="[&>p]:py-2" aria-label="OCR findings">
-      <div className="flex items-center justify-between gap-2 border-b border-review-line pb-2 text-review-muted [&_h3]:text-xs [&_h3]:font-medium min-[761px]:[&_h3]:text-[11px] [&_span]:text-xs">
-        <h3>OCR FINDINGS</h3>
-        <span>{available ? 'Findings available' : processing ? 'Processing' : 'Unavailable'}</span>
+      <div className="flex items-center justify-between gap-2 border-b border-review-line pb-2 text-review-muted">
+        <h3 className="text-xs font-medium min-[761px]:text-[11px]">OCR FINDINGS</h3>
+        {available ? (
+          <span
+            className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium ${mismatches ? 'bg-[#f7e3dc] text-review-error' : 'bg-review-selected text-review-ink'}`}
+          >
+            {mismatches ? (
+              <TriangleAlert aria-hidden="true" className="size-3.5" />
+            ) : (
+              <CircleCheck aria-hidden="true" className="size-3.5" />
+            )}
+            {mismatches
+              ? `${mismatches} of ${rows.length} need a closer look`
+              : `All ${rows.length} fields match`}
+          </span>
+        ) : (
+          <span className="text-xs">{processing ? 'Processing' : 'Unavailable'}</span>
+        )}
       </div>
       {available ? (
         <>
           <p className="text-xs text-review-muted">
             Check the readings against the screenshot before deciding.
           </p>
-          <div className="mb-1.5 grid grid-cols-2 gap-4 wrap-anywhere text-xs text-review-muted min-[761px]:text-[11px]">
+          <div className="grid grid-cols-2 gap-4 px-3 pb-1.5 text-[11px] tracking-[0.04em] text-review-muted uppercase">
             <span>Expected</span>
             <span>Read from screenshot</span>
           </div>
-          {rows.map((row) => (
-            <div
-              className="mt-2.5 border-b border-review-line pb-2 min-[761px]:mt-1.5 min-[761px]:pb-1"
-              key={row.label}
-            >
-              <div className="mb-[3px] flex justify-between gap-2 text-xs text-review-muted min-[761px]:text-[11px]">
-                <span>{row.label}</span>
-                <span className={!row.matches ? 'text-xs text-review-error' : undefined}>
-                  {row.matches ? 'Match' : 'Doesn’t match'}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-4 wrap-anywhere text-sm min-[761px]:text-[13px]">
-                <span>{row.expected}</span>
-                <span>{row.read || 'Not read'}</span>
-              </div>
-            </div>
-          ))}
+          <ul className="border-t border-review-line">
+            {rows.map((row) => (
+              <li
+                key={row.label}
+                className={`border-b border-l-2 border-b-review-line px-3 py-2.5 ${row.matches ? 'border-l-transparent' : 'border-l-review-error bg-[#f7e3dc]/45'}`}
+              >
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="text-xs text-review-muted min-[761px]:text-[11px]">
+                    {row.label}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 text-[11px] font-medium ${row.matches ? 'text-review-muted' : 'text-review-error'}`}
+                  >
+                    {row.matches ? (
+                      <Check aria-hidden="true" className="size-3" strokeWidth={2.5} />
+                    ) : (
+                      <X aria-hidden="true" className="size-3" strokeWidth={2.5} />
+                    )}
+                    {row.matches ? 'Match' : 'Doesn’t match'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm wrap-anywhere min-[761px]:text-[13px]">
+                  <span>{row.expected}</span>
+                  <span className={row.read ? 'font-medium' : 'text-review-muted italic'}>
+                    {row.read || 'Not read'}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
         </>
       ) : (
         <>
