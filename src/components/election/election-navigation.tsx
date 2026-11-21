@@ -21,6 +21,14 @@ type ElectionLinkProps = Omit<ComponentPropsWithoutRef<'a'>, 'href'> & {
 
 function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkProps) {
   const hash = `#${section}`
+  if (section === 'turnout') {
+    return (
+      <Link href="/results" {...props}>
+        {children}
+      </Link>
+    )
+  }
+
   if (isLanding) {
     return (
       <a href={hash} {...props}>
@@ -39,9 +47,11 @@ function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkPr
 function NavigationBar({
   isLanding,
   account,
+  activeSection,
 }: {
   isLanding: boolean
   account?: ElectionAccount | null
+  activeSection?: Section
 }) {
   return (
     <header className={`sticky top-0 z-20 ${isLanding ? 'h-0' : ''}`}>
@@ -71,7 +81,16 @@ function NavigationBar({
                 <ElectionLink
                   isLanding={isLanding}
                   section={section}
-                  aria-current={isLanding && section === 'home' ? 'page' : undefined}
+                  className={
+                    (isLanding && section === 'home') || section === activeSection
+                      ? 'underline underline-offset-4'
+                      : undefined
+                  }
+                  aria-current={
+                    (isLanding && section === 'home') || section === activeSection
+                      ? 'page'
+                      : undefined
+                  }
                 >
                   {label}
                 </ElectionLink>
@@ -97,9 +116,18 @@ function NavigationBar({
   )
 }
 
-async function SessionNavigation({ isLanding }: { isLanding: boolean }) {
+async function SessionNavigation({
+  isLanding,
+  activeSection,
+}: {
+  isLanding: boolean
+  activeSection?: Section
+}) {
   const session = await auth()
-  if (!session) return <NavigationBar isLanding={isLanding} account={null} />
+  if (!session)
+    return (
+      <NavigationBar isLanding={isLanding} account={null} activeSection={activeSection} />
+    )
 
   // A profile lookup failure should still leave sign-out available for a valid session.
   const person = await prisma.person
@@ -110,14 +138,23 @@ async function SessionNavigation({ isLanding }: { isLanding: boolean }) {
     <NavigationBar
       isLanding={isLanding}
       account={{ name: person?.name ?? null, email: session.user.email }}
+      activeSection={activeSection}
     />
   )
 }
 
-export function ElectionNavigation({ isLanding = false }: { isLanding?: boolean }) {
+export function ElectionNavigation({
+  isLanding = false,
+  activeSection,
+}: {
+  isLanding?: boolean
+  activeSection?: Section
+}) {
   return (
-    <Suspense fallback={<NavigationBar isLanding={isLanding} />}>
-      <SessionNavigation isLanding={isLanding} />
+    <Suspense
+      fallback={<NavigationBar isLanding={isLanding} activeSection={activeSection} />}
+    >
+      <SessionNavigation isLanding={isLanding} activeSection={activeSection} />
     </Suspense>
   )
 }
