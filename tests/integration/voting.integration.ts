@@ -5,7 +5,7 @@ import type { BallotInput } from '@/server/trpc/api/v1/ballot/schema'
 import { createCallerFactory } from '@/server/trpc/init'
 import { appRouter } from '@/server/trpc/root'
 import { GET } from '@/app/api/turnout/route'
-import { createAdmin, createVoter, db, resetDatabase } from './database'
+import { TEST_SCHOOL, createAdmin, createVoter, db, resetDatabase } from './database'
 
 vi.mock('@/server/auth', () => ({ auth: async () => null }))
 vi.mock('@/lib/prisma', async () => ({ default: (await import('./database')).db }))
@@ -48,6 +48,7 @@ async function expectStoredBallot(personId: string, held: boolean) {
   expect(stored).toHaveLength(1)
   expect(stored[0]).toMatchObject({
     yearLevel: '2',
+    school: TEST_SCHOOL,
     disclosureAcceptedAt: expect.any(Date),
     heldAcknowledgedAt: held ? expect.any(Date) : null,
   })

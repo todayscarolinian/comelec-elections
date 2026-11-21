@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient, type RegistrationStatus } from '@/generated/prisma/client'
+import { type School } from '@/server/trpc/api/v1/registration/core/school'
 import { testDatabaseUrl } from './database-url'
+
+export const TEST_SCHOOL: School = 'SBE'
 
 export const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: testDatabaseUrl, max: 10 }),
@@ -29,6 +32,7 @@ export async function createVoter(status: RegistrationStatus | null) {
         personId: person.id,
         status,
         yearLevel: '2',
+        school: TEST_SCHOOL,
         studentProfilePath: `${person.id}/profile.pdf`,
       },
     })
