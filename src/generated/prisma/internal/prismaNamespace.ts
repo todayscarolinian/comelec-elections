@@ -1169,14 +1169,14 @@ export type ListEnumRegistrationStatusFieldRefInput<$PrismaModel> = FieldRefInpu
  * Reference to a field of type 'OcrStatus'
  */
 export type EnumOcrStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OcrStatus'>
-
+    
 
 
 /**
  * Reference to a field of type 'OcrStatus[]'
  */
 export type ListEnumOcrStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OcrStatus[]'>
-
+    
 
 
 /**

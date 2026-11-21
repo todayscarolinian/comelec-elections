@@ -17,7 +17,7 @@ export default function Page() {
       >
         Skip to ballot
       </a>
-      <ElectionNavigation isBallot />
+      <ElectionNavigation activeSection="ballot" />
       <main
         id="ballot-content"
         tabIndex={-1}

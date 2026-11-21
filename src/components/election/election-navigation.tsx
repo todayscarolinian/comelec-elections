@@ -20,7 +20,11 @@ type ElectionLinkProps = Omit<ComponentPropsWithoutRef<'a'>, 'href'> & {
   section: Section
 }
 
-type NavigationProps = { isLanding: boolean; isBallot: boolean; hideSignIn: boolean }
+type NavigationProps = {
+  isLanding: boolean
+  hideSignIn: boolean
+  activeSection?: Section
+}
 
 function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkProps) {
   if (section === 'ballot')
@@ -31,6 +35,14 @@ function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkPr
     )
 
   const hash = `#${section}`
+  if (section === 'turnout') {
+    return (
+      <Link href="/results" {...props}>
+        {children}
+      </Link>
+    )
+  }
+
   if (isLanding) {
     return (
       <a href={hash} {...props}>
@@ -48,9 +60,9 @@ function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkPr
 
 function NavigationBar({
   isLanding,
-  isBallot,
   hideSignIn,
   account,
+  activeSection,
 }: NavigationProps & { account?: ElectionAccount | null }) {
   return (
     <header className={`sticky top-0 z-20 ${isLanding ? 'h-0' : ''}`}>
@@ -75,31 +87,31 @@ function NavigationBar({
             )}
           </div>
           <ul className="flex flex-wrap gap-x-[clamp(1rem,4.4vw,4rem)] gap-y-1 max-[38rem]:col-span-2 max-[38rem]:row-start-2 max-[38rem]:justify-between max-[38rem]:gap-x-2 max-[38rem]:text-sm">
-            {sections.map(({ section, label }) => (
-              <li key={section}>
-                {section === 'ballot' && isLanding && !account ? (
-                  <BallotEntryTrigger />
-                ) : (
-                  <ElectionLink
-                    isLanding={isLanding}
-                    section={section}
-                    aria-current={
-                      (isLanding && section === 'home') || (isBallot && section === 'ballot')
-                        ? 'page'
-                        : undefined
-                    }
-                  >
-                    {label}
-                  </ElectionLink>
-                )}
-              </li>
-            ))}
+            {sections.map(({ section, label }) => {
+              const isCurrent = (isLanding && section === 'home') || section === activeSection
+              return (
+                <li key={section}>
+                  {section === 'ballot' && isLanding && !account ? (
+                    <BallotEntryTrigger />
+                  ) : (
+                    <ElectionLink
+                      isLanding={isLanding}
+                      section={section}
+                      className={isCurrent ? 'underline underline-offset-4' : undefined}
+                      aria-current={isCurrent ? 'page' : undefined}
+                    >
+                      {label}
+                    </ElectionLink>
+                  )}
+                </li>
+              )
+            })}
           </ul>
           <div className="min-w-0 justify-self-end max-[38rem]:col-start-2 max-[38rem]:row-start-1">
             {account ? (
               <ElectionAccountMenu account={account} />
             ) : account === null && !hideSignIn ? (
-              isBallot ? (
+              activeSection === 'ballot' ? (
                 <BallotSignInTrigger className="inline-flex min-h-11 cursor-pointer items-center gap-2 px-1 text-sm font-medium hover:underline hover:underline-offset-4">
                   <LogIn aria-hidden="true" size={18} />
                   Sign in
@@ -137,10 +149,10 @@ async function SessionNavigation(props: NavigationProps) {
 
 export function ElectionNavigation({
   isLanding = false,
-  isBallot = false,
   hideSignIn = false,
+  activeSection,
 }: Partial<NavigationProps>) {
-  const props = { isLanding, isBallot, hideSignIn }
+  const props = { isLanding, hideSignIn, activeSection }
   return (
     <Suspense fallback={<NavigationBar {...props} />}>
       <SessionNavigation {...props} />
