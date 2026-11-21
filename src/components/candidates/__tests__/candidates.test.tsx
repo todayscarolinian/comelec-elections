@@ -47,7 +47,8 @@ describe('candidates directory', () => {
     expect(screen.getByRole('status').textContent).toBe('1 candidate')
     const card = screen.getByRole('listitem')
     expect(within(card).getByRole('heading').textContent).toBe('Candidate D')
-    const link = within(card).getAllByRole('link', { name: /View profile/ })[0]
+    const link = within(card).getByRole('link')
+    expect(link.textContent).toContain('View profile')
     expect(link.getAttribute('href')).toBe(
       `${candidateHref(CANDIDATES[3].id)}?party=Independent&q=candidate`,
     )
@@ -63,24 +64,53 @@ describe('candidates directory', () => {
 })
 
 describe('profile navigation', () => {
-  it('preserves directory filters on back and next links, discarding unrelated query parameters', () => {
+  it('preserves filters on previous and next links across offices, discarding unrelated query parameters', () => {
     window.history.replaceState(
       null,
       '',
-      `${candidateHref(CANDIDATES[0].id)}?party=STAND&q=Candidate&returnTo=https://example.org`,
+      `${candidateHref(CANDIDATES[2].id)}?party=STAND&q=Candidate&returnTo=https://example.org`,
     )
-    render(<CandidateProfileNavigation nextCandidate={CANDIDATES[1]} />)
-    expect(screen.getByRole('link', { name: 'Back to candidates' }).getAttribute('href')).toBe(
-      '/candidates?party=STAND&q=Candidate',
+    render(
+      <CandidateProfileNavigation
+        previousCandidate={CANDIDATES[1]}
+        nextCandidate={CANDIDATES[3]}
+      />,
+    )
+    expect(screen.getByRole('link', { name: /Previous candidate/ }).getAttribute('href')).toBe(
+      `${candidateHref(CANDIDATES[1].id)}?party=STAND&q=Candidate`,
     )
     expect(screen.getByRole('link', { name: /Next candidate/ }).getAttribute('href')).toBe(
-      `${candidateHref(CANDIDATES[1].id)}?party=STAND&q=Candidate`,
+      `${candidateHref(CANDIDATES[3].id)}?party=STAND&q=Candidate`,
     )
   })
 
   it('does not offer next-candidate navigation at the end of the ballot order', () => {
-    render(<CandidateProfileNavigation />)
+    render(<CandidateProfileNavigation previousCandidate={CANDIDATES[2]} />)
     expect(screen.queryByRole('link', { name: /Next candidate/ })).toBeNull()
-    expect(screen.getByRole('link', { name: 'Back to candidates' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Previous candidate/ }).getAttribute('href')).toBe(
+      candidateHref(CANDIDATES[2].id),
+    )
+    expect(screen.queryByRole('link', { name: 'Back to candidates' })).toBeNull()
+  })
+
+  it('offers only next-candidate navigation at the start of the ballot order', () => {
+    render(<CandidateProfileNavigation nextCandidate={CANDIDATES[1]} />)
+    expect(screen.queryByRole('link', { name: /Previous candidate/ })).toBeNull()
+    expect(screen.getByRole('link', { name: /Next candidate/ }).getAttribute('href')).toBe(
+      candidateHref(CANDIDATES[1].id),
+    )
+  })
+
+  it('keeps the top All candidates link pointing to the filtered directory', () => {
+    window.history.replaceState(
+      null,
+      '',
+      `${candidateHref(CANDIDATES[1].id)}?party=Tingog&q=Candidate`,
+    )
+    render(<CandidateProfileNavigation top />)
+    expect(screen.getByRole('link', { name: 'All candidates' }).getAttribute('href')).toBe(
+      '/candidates?party=Tingog&q=Candidate',
+    )
+    expect(screen.queryByRole('link', { name: /Previous candidate|Next candidate/ })).toBeNull()
   })
 })

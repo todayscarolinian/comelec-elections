@@ -6,6 +6,7 @@ import {
   CandidatesDirectory,
   CandidatesDirectoryFallback,
 } from '@/components/candidates/candidates-directory'
+import { electionContent } from '@/components/election/election-styles'
 
 export const metadata: Metadata = {
   title: 'Candidates',
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 export default function CandidatesPage() {
   return (
     <>
-      <div className="mx-auto w-full max-w-[1440px] px-[clamp(1rem,4.5vw,4rem)] pb-14 pt-10 sm:pt-14 lg:pb-16 lg:pt-16">
+      <div className={`${electionContent} pb-14 pt-10 sm:pt-14 lg:pb-16 lg:pt-16`}>
         <header className="flex flex-col justify-between gap-6 md:flex-row md:items-end md:gap-10">
           <h1 className="font-display text-[clamp(3.5rem,7.5vw,7rem)] leading-[1.05] tracking-[-0.025em] italic">
             The candidates
@@ -30,7 +31,9 @@ export default function CandidatesPage() {
         </Suspense>
       </div>
       <section aria-labelledby="choice-heading" className="bg-comelec-forest text-comelec-cream">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col justify-between gap-7 px-[clamp(1rem,4.5vw,4rem)] py-12 sm:flex-row sm:items-center sm:py-14 lg:py-16">
+        <div
+          className={`${electionContent} flex flex-col justify-between gap-7 py-12 sm:flex-row sm:items-center sm:py-14 lg:py-16`}
+        >
           <div>
             <h2 id="choice-heading" className="font-display text-4xl italic sm:text-5xl">
               Make your choice count.

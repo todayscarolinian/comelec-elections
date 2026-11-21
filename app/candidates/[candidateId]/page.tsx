@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { CandidateProfile } from '@/components/candidates/candidate-profile'
+import { electionContent } from '@/components/election/election-styles'
 import { CANDIDATES } from '@/lib/candidates'
 
 type CandidatePageProps = { params: Promise<{ candidateId: string }> }
@@ -25,8 +26,12 @@ export default async function CandidatePage({ params }: CandidatePageProps) {
   if (index === -1) notFound()
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] px-[clamp(1rem,4.5vw,4rem)] pb-12 pt-6 sm:pt-8">
-      <CandidateProfile candidate={CANDIDATES[index]} nextCandidate={CANDIDATES[index + 1]} />
+    <div className={`${electionContent} pb-12 pt-6 sm:pt-8`}>
+      <CandidateProfile
+        candidate={CANDIDATES[index]}
+        previousCandidate={CANDIDATES[index - 1]}
+        nextCandidate={CANDIDATES[index + 1]}
+      />
     </div>
   )
 }

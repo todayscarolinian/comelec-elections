@@ -1,20 +1,20 @@
-import { sectionInner } from './landing-styles'
+import { electionContent } from '@/components/election/election-styles'
 import Image from 'next/image'
 import Link from 'next/link'
 
 export function ElectionFooter() {
   return (
-    <footer>
+    <footer className="mt-auto">
       <div
-        className={`${sectionInner} flex min-h-[7.5rem] items-center justify-between gap-5 py-5 max-[38rem]:flex-col max-[38rem]:items-start`}
+        className={`${electionContent} flex min-h-[7.5rem] items-center justify-between gap-5 py-5 max-[38rem]:flex-col max-[38rem]:items-start`}
       >
         <div className="flex items-center gap-3">
           <Image src="/landing/mark.webp" alt="" width={56} height={56} />
           <div>
-            <p className="text-[clamp(1.35rem,2.15vw,2rem)] leading-tight [font-family:var(--landing-text),Georgia,serif]">
+            <p className="text-[clamp(1.35rem,2.15vw,2rem)] leading-tight [font-family:var(--landing-text,var(--font-antinomia-text)),Georgia,serif]">
               SSC COMELEC
             </p>
-            <small className="text-(--landing-muted)">Student council elections · 2026</small>
+            <small className="text-[#4f6041]">Student council elections · 2026</small>
           </div>
         </div>
         <nav
@@ -23,7 +23,7 @@ export function ElectionFooter() {
         >
           <Link href="/candidates">Candidates</Link>
           <Link href="/register">Registration</Link>
-          <a href="#voting">Ballot</a>
+          <Link href="/#voting">Ballot</Link>
         </nav>
       </div>
     </footer>

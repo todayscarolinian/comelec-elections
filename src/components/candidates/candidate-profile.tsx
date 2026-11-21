@@ -8,9 +8,11 @@ import { CandidateProfileNavigation } from './candidate-profile-navigation'
 
 export function CandidateProfile({
   candidate,
+  previousCandidate,
   nextCandidate,
 }: {
   candidate: DirectoryCandidate
+  previousCandidate?: DirectoryCandidate
   nextCandidate?: DirectoryCandidate
 }) {
   const profile = CANDIDATE_PROFILES[candidate.id]
@@ -32,7 +34,7 @@ export function CandidateProfile({
           alt={candidate.name}
           width={500}
           height={500}
-          sizes="(max-width: 767px) 90vw, (max-width: 1440px) 30vw, 400px"
+          sizes="(max-width: 767px) 100vw, 33vw"
           className="aspect-square h-auto w-full bg-comelec-sage/20 object-cover"
         />
         <div>
@@ -130,14 +132,11 @@ export function CandidateProfile({
       </div>
 
       <div className="mt-10 border-b border-comelec-sage pb-5 lg:mt-12">
-        <Suspense
-          fallback={
-            <Link href="/candidates" className="inline-flex min-h-11 items-center text-xs">
-              ← Back to candidates
-            </Link>
-          }
-        >
-          <CandidateProfileNavigation nextCandidate={nextCandidate} />
+        <Suspense fallback={<div aria-hidden="true" className="min-h-11" />}>
+          <CandidateProfileNavigation
+            previousCandidate={previousCandidate}
+            nextCandidate={nextCandidate}
+          />
         </Suspense>
       </div>
       <p className="mt-8 text-xs leading-relaxed text-comelec-olive">
