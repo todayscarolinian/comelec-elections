@@ -39,6 +39,27 @@ body {
   font-family: var(--font-sans);
 }
 
+.result-progress {
+  appearance: none;
+  border: 0;
+  background-color: #b6c89f;
+  color: #324e1f;
+}
+
+.result-progress::-webkit-progress-bar {
+  background-color: #b6c89f;
+}
+
+.result-progress::-webkit-progress-value,
+.result-progress::-moz-progress-bar {
+  background-color: #324e1f;
+}
+
+.result-progress--abstention::-webkit-progress-value,
+.result-progress--abstention::-moz-progress-bar {
+  background-color: #647357;
+}
+
 .comelec-poster-bg {
   background-color: #7ca869;
   background-image:

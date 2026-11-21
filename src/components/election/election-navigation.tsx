@@ -19,10 +19,22 @@ type ElectionLinkProps = Omit<ComponentPropsWithoutRef<'a'>, 'href'> & {
   section: Section
 }
 
-type NavigationProps = { isLanding: boolean; hideSignIn: boolean }
+type NavigationProps = {
+  isLanding: boolean
+  hideSignIn: boolean
+  activeSection?: Section
+}
 
 function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkProps) {
   const hash = `#${section}`
+  if (section === 'turnout') {
+    return (
+      <Link href="/results" {...props}>
+        {children}
+      </Link>
+    )
+  }
+
   if (isLanding) {
     return (
       <a href={hash} {...props}>
@@ -42,6 +54,7 @@ function NavigationBar({
   isLanding,
   hideSignIn,
   account,
+  activeSection,
 }: NavigationProps & { account?: ElectionAccount | null }) {
   return (
     <header className={`sticky top-0 z-20 ${isLanding ? 'h-0' : ''}`}>
@@ -71,7 +84,16 @@ function NavigationBar({
                 <ElectionLink
                   isLanding={isLanding}
                   section={section}
-                  aria-current={isLanding && section === 'home' ? 'page' : undefined}
+                  className={
+                    (isLanding && section === 'home') || section === activeSection
+                      ? 'underline underline-offset-4'
+                      : undefined
+                  }
+                  aria-current={
+                    (isLanding && section === 'home') || section === activeSection
+                      ? 'page'
+                      : undefined
+                  }
                 >
                   {label}
                 </ElectionLink>
@@ -107,15 +129,19 @@ async function SessionNavigation(props: NavigationProps) {
     .catch(() => null)
 
   return (
-    <NavigationBar {...props} account={{ name: person?.name ?? null, email: session.user.email }} />
+    <NavigationBar
+      {...props}
+      account={{ name: person?.name ?? null, email: session.user.email }}
+    />
   )
 }
 
 export function ElectionNavigation({
   isLanding = false,
   hideSignIn = false,
+  activeSection,
 }: Partial<NavigationProps>) {
-  const props = { isLanding, hideSignIn }
+  const props = { isLanding, hideSignIn, activeSection }
   return (
     <Suspense fallback={<NavigationBar {...props} />}>
       <SessionNavigation {...props} />
