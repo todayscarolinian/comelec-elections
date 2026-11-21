@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   --background: #ffffff;
@@ -6,10 +6,24 @@
 }
 
 @theme inline {
+  --color-review-paper: #faf3e0;
+  --color-review-ink: #324e1f;
+  --color-review-muted: #647357;
+  --color-review-line: #b6c89f;
+  --color-review-selected: #dff5c8;
+  --color-review-error: #9b2c1a;
+  --color-comelec-cream: #faf3e0;
+  --color-comelec-forest: #324e1f;
+  --color-comelec-forest-dark: #253b16;
+  --color-comelec-olive: #647357;
+  --color-comelec-sage: #b6c89f;
+  --color-comelec-sage-soft: #e2f5c0;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
+  --font-editorial: var(--font-antinomia-text), Georgia, serif;
+  --font-display: var(--font-antinomia-display), Georgia, serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +36,126 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+.result-progress {
+  appearance: none;
+  border: 0;
+  background-color: #b6c89f;
+  color: #324e1f;
+}
+
+.result-progress::-webkit-progress-bar {
+  background-color: #b6c89f;
+}
+
+.result-progress::-webkit-progress-value,
+.result-progress::-moz-progress-bar {
+  background-color: #324e1f;
+}
+
+.result-progress--abstention::-webkit-progress-value,
+.result-progress--abstention::-moz-progress-bar {
+  background-color: #647357;
+}
+
+.comelec-poster-bg {
+  background-color: #7ca869;
+  background-image:
+    radial-gradient(ellipse 95% 75% at 88% 36%, #e7f6cd 0%, rgba(231, 246, 205, 0.72) 34%, transparent 68%),
+    radial-gradient(ellipse 85% 70% at 58% 92%, #1d5d24 0%, #2d6f2d 35%, transparent 74%),
+    radial-gradient(ellipse 90% 60% at 15% 4%, #4f8545 0%, #76a662 42%, transparent 78%),
+    linear-gradient(155deg, #649553 0%, #c8e2a6 46%, #3f7c37 78%, #1d5c24 100%);
+}
+
+.comelec-poster-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+.comelec-outline-display {
+  color: transparent;
+  -webkit-text-stroke: 1.15px #324e1f;
+}
+
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-group(.election-page),
+::view-transition-old(.election-page),
+::view-transition-new(.election-page) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(.election-page) {
+    animation: election-page-out 150ms ease-in both;
+  }
+
+  ::view-transition-new(.election-page) {
+    animation: election-page-in 240ms cubic-bezier(0.2, 0.65, 0.3, 1) both;
+  }
+}
+
+@keyframes election-page-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes election-page-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+.election-dialog::backdrop {
+  background-color: transparent;
+}
+
+.election-dialog[open]::backdrop {
+  background-color: rgb(23 41 14 / 54%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .election-dialog {
+    opacity: 0;
+    translate: 0 8px;
+    transition-property: opacity, translate, display, overlay;
+    transition-duration: 160ms;
+    transition-timing-function: ease-in;
+    transition-behavior: allow-discrete;
+  }
+
+  .election-dialog[open] {
+    opacity: 1;
+    translate: 0 0;
+    transition-duration: 240ms;
+    transition-timing-function: cubic-bezier(0.2, 0.65, 0.3, 1);
+  }
+
+  .election-dialog::backdrop {
+    transition-property: background-color, display, overlay;
+    transition-duration: 160ms;
+    transition-timing-function: ease-in;
+    transition-behavior: allow-discrete;
+  }
+
+  .election-dialog[open]::backdrop {
+    transition-duration: 240ms;
+    transition-timing-function: ease-out;
+  }
+
+  @starting-style {
+    .election-dialog[open] {
+      opacity: 0;
+      translate: 0 8px;
+    }
+
+    .election-dialog[open]::backdrop {
+      background-color: transparent;
+    }
+  }
 }

@@ -1,6 +1,6 @@
 # Developer Kickoff: Meeting Guide
 
-A script for the kickoff meeting with the development team. Read-ahead for developers: [Product Spec](./product-spec.md), [Software Design](./software-design.md), [Sprint Plan](./sprint-plan.md), [Glossary](../GLOSSARY.md), [ADRs](./adr/).
+A script for the kickoff meeting with the development team. Read-ahead for developers: [Product Spec](./product-spec.md), [Software Design](./software-design.md), [Sprint Plan](./sprint-plan.md), [Glossary](./GLOSSARY.md), [ADRs](./adr/).
 
 **Goal of the meeting:** everyone understands what we're building and why, agrees on the plan to Nov 20, and leaves with Sprint 1 tasks assigned.
 
@@ -21,7 +21,7 @@ A script for the kickoff meeting with the development team. Read-ahead for devel
 
 Say this:
 
-> We're replacing the Google Form the election commission uses. Today, after voting closes, the Audit Commissioner checks every response by hand in Google Sheets, which takes 3–4 days. In our app, people register **before** election day by uploading their Study Load and declaring their Year Level. Admins approve them, and only approved Voters can vote on **Nov 20**. The public sees Turnout only; Admins audit every Ballot and release the Results in the app.
+> We're replacing the Google Form the election commission uses. Today, after voting closes, the Audit Commissioner checks every response by hand in Google Sheets, which takes 3–4 days. In our app, people register **before** election day by uploading a screenshot of their Student Profile and declaring their Year Level. Admins approve them, and only approved Voters can vote on **Nov 20**. The public sees Turnout only; Admins audit every Ballot and release the Results in the app.
 
 Two dates to repeat: **Registration opens Nov 15. Election is Nov 20, 8 AM–5 PM.**
 
@@ -32,24 +32,23 @@ If anyone read the earlier design, walk through these. Each is recorded in an AD
 | Before | Now | Why |
 |---|---|---|
 | Anonymous, unlinkable Ballots (ADR 0001) | Ballots stored under the Voter's name; Admins can view them (ADR 0002) | The commission must audit individual Ballots with names |
-| Any domain account could vote | Only people with an approved Registration | Eligibility (study load, year level) is checked before voting |
+| Any domain account could vote | Only people with an approved Registration | Eligibility (Student Profile) is checked before voting |
 | Public live per-Candidate tally | Public Turnout only; Results released by Admins (ADR 0005) | Standings must not be revealed during voting |
-| Same Ballot for everyone | Batch Rep is a Year-Level Question, shown only to that Year Level | Voters only pick their own batch rep |
 
-Use the [Glossary](../GLOSSARY.md) terms in code and conversation: **Registration, Applicant, Voter, Ballot, Turnout, Results, Year-Level Question**. Not "user", "vote", "tally".
+Use the [Glossary](./GLOSSARY.md) terms in code and conversation: **Registration, Applicant, Voter, Ballot, Turnout, Results, Party, Independent**. Not "user", "vote", "tally".
 
 ## 3. Rules we can't break
 
 Go through each one and check everyone agrees.
 
 1. **One Ballot per Voter is enforced by the database**, not the UI (`Ballot.personId @unique`, inside the transaction).
-2. **Every Admin action checks the database** with `requireAdmin()`. Never trust the cookie or hide a button as the guard.
+2. **Every Admin operation is an `adminProcedure`**, which checks the database on every call (ADR 0007). Never trust the cookie or hide a button as the guard.
 3. **No public route returns per-Candidate counts** until Results are released.
 4. **Never log Ballot contents** or `castBallot` inputs.
 5. **Every Admin view or export of Ballots writes to `AuditLog`**, and the app never edits or deletes audit rows.
 6. **Never rename or remove a Question or Candidate id** after the Election opens (ADR 0003).
 7. **Migrations are written in code but run manually by a developer.** Never auto-run on deploy.
-8. **Study Loads are personal documents.** Private bucket, short-lived signed URLs, never shared outside the Admin screens.
+8. **Student Profiles are personal documents.** Private bucket, short-lived signed URLs, never shared outside the Admin screens.
 9. **Production database access requires the client's waiver.**
 
 ## 4. Sprint plan walkthrough
@@ -60,7 +59,7 @@ Open the [Sprint Plan](./sprint-plan.md) and go sprint by sprint.
 |---|---|---|
 | 1. Foundation | Nov 4–7 | "Sign-in, schema, seed. Everything else builds on this." |
 | 2. Registration | Nov 8–14 | "**This is the hard deadline.** Registration must be live in production on Nov 15." |
-| 3. Voting | Nov 8–16 | "Built in parallel with Registration by different owners. The core: Ballot, Year-Level filtering, one-Ballot guarantee, Turnout." |
+| 3. Voting | Nov 8–16 | "Built in parallel with Registration by different owners. The core: Ballot, one-Ballot guarantee, Turnout." |
 | 4. Results and launch | Nov 17–19 | "Results, audit, hardening, and a dry run with the commission." |
 
 Points to stress:
@@ -107,7 +106,7 @@ Fill in during the meeting. Splitting along these lines keeps people from blocki
 Still waiting on the client (see the Sprint Plan for dates):
 - Google Workspace domain (**needed by Nov 5**)
 - First Admin's email (**Nov 6**)
-- List of Year Levels (**Nov 10**)
+- List of Year Levels, information only (**Nov 10**)
 - Registration Period closing date
 - Final Questions and Candidate profiles (**Nov 13**)
 - Disclosure wording approval
