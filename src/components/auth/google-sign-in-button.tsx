@@ -6,7 +6,7 @@ import { useState } from 'react'
 type GoogleSignInButtonProps = {
   label: string
   className: string
-  redirectTo?: '/' | '/register'
+  redirectTo?: '/auth/sign-in' | '/register'
 }
 
 export function GoogleSignInButton({

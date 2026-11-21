@@ -1,14 +1,19 @@
 'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
-import { GoogleSignInButton } from '@/components/auth/google-sign-in-button'
 import { useTRPC } from '@/lib/trpc/client'
 import { YEAR_LEVEL_LABELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationForm } from './registration-form'
-import { registrationAction, registrationHeading } from './registration-styles'
+import { RegistrationSignIn } from './registration-sign-in'
+import {
+  registrationAction,
+  registrationHeading,
+  registrationPanel,
+  registrationPanelEntrance,
+  registrationTextButton,
+} from './registration-styles'
 
 const statusCopy = {
   PENDING: {
@@ -31,10 +36,6 @@ const statusCopy = {
 const closedMessage =
   'New registrations and resubmissions are currently closed. You can submit during the registration period or while the election is open.'
 
-const textButton =
-  'inline-flex min-h-11 items-center text-sm font-medium hover:underline hover:underline-offset-4 disabled:opacity-60'
-const panelEntrance = 'motion-safe:animate-[election-page-in_220ms_ease-out_both]'
-
 export function RegisterPage() {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
@@ -47,9 +48,10 @@ export function RegisterPage() {
     refetchInterval: 30_000,
   })
   const needsSignIn = sessionExpired || query.error?.data?.code === 'UNAUTHORIZED'
+  if (needsSignIn) return <RegistrationSignIn />
+
   const { isPending: isLoading, isError, data } = query
-  const panel = needsSignIn ? 'sign-in' : isLoading ? 'loading' : 'live'
-  const registration = needsSignIn ? null : data?.registration
+  const registration = data?.registration
   const state = registration ? statusCopy[registration.status] : null
   const closed = data?.canSubmit === false
 
@@ -70,8 +72,8 @@ export function RegisterPage() {
 
   return (
     <div
-      key={panel}
-      className={`min-w-0 space-y-6 px-[clamp(1.375rem,4.25vw,2.75rem)] py-8 min-[56rem]:px-[clamp(2.5rem,7.23vw,6.5rem)] min-[56rem]:py-12 ${needsSignIn ? '[&>*]:max-w-[35rem]' : ''} ${isLoading ? '' : panelEntrance}`}
+      key={isLoading ? 'loading' : 'live'}
+      className={`${registrationPanel} ${isLoading ? '' : registrationPanelEntrance}`}
     >
       <header className="space-y-4" aria-live="polite">
         {state?.label && (
@@ -80,51 +82,21 @@ export function RegisterPage() {
           </p>
         )}
         <h1
-          className={`${registrationHeading} text-[clamp(2.75rem,3.9vw,3.5rem)] ${needsSignIn ? 'min-[56rem]:text-[clamp(3rem,4.45vw,4rem)]' : ''} ${registration?.status === 'PENDING' ? 'max-w-[13ch] text-balance' : ''}`}
+          className={`${registrationHeading} text-[clamp(2.75rem,3.9vw,3.5rem)] ${registration?.status === 'PENDING' ? 'max-w-[13ch] text-balance' : ''}`}
         >
-          {needsSignIn ? (
-            <>
-              Make your
-              <br />
-              voice count.
-            </>
-          ) : (
-            (state?.title ?? (closed ? 'Registration closed' : 'Register to vote.'))
-          )}
+          {state?.title ?? (closed ? 'Registration closed' : 'Register to vote.')}
         </h1>
-        {needsSignIn ? (
-          <p className="text-base leading-relaxed text-[#56654a] sm:text-lg">
-            Sign in with your USC email account through Google to register for the election.
+        {(state || data) && (
+          <p className="max-w-[36rem] text-base leading-relaxed text-[#56654a]">
+            {state?.description ??
+              (closed
+                ? closedMessage
+                : 'Submit your year level and Student Profile for COMELEC review.')}
           </p>
-        ) : (
-          (state || data) && (
-            <p className="max-w-[36rem] text-base leading-relaxed text-[#56654a]">
-              {state?.description ??
-                (closed
-                  ? closedMessage
-                  : 'Submit your year level and Student Profile for COMELEC review.')}
-            </p>
-          )
         )}
       </header>
 
-      {needsSignIn ? (
-        <>
-          <GoogleSignInButton
-            label="Continue with Google"
-            className={`${registrationAction} w-full cursor-pointer motion-safe:transition-[background-color,scale] motion-safe:duration-150 motion-safe:active:scale-[0.99]`}
-          />
-          <p className="text-sm leading-relaxed text-[#56654a]">
-            Have your year level and current Student Profile ready.
-          </p>
-          <div className="border-t border-[#b6c89f] pt-3">
-            <Link href="/" className={textButton}>
-              <ArrowLeft aria-hidden="true" className="me-2 size-4 shrink-0" />
-              Back to home
-            </Link>
-          </div>
-        </>
-      ) : isLoading ? (
+      {isLoading ? (
         <div className="space-y-4 border-t border-[#b6c89f] pt-6">
           <output className="block text-sm text-[#56654a]">Loading registration…</output>
           <div aria-hidden="true" className="h-12 border border-[#b6c89f] bg-[#f1edd8]" />
@@ -144,7 +116,7 @@ export function RegisterPage() {
                   type="button"
                   onClick={refresh}
                   disabled={query.isFetching}
-                  className={textButton}
+                  className={registrationTextButton}
                 >
                   Try again
                 </button>
