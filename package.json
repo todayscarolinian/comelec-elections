@@ -9,6 +9,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:integration": "prisma migrate deploy --config prisma.integration.config.ts && vitest run --config vitest.integration.config.mts",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "prettier --write .",

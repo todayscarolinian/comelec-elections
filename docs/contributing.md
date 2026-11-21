@@ -7,6 +7,7 @@
   - [Pull Request (PR) Process](#pull-request-pr-process)
   - [Version Tagging](#version-tagging)
 - [Git Hooks and CI](#git-hooks-and-ci)
+- [PostgreSQL integration tests](#postgresql-integration-tests)
 - [Step-by-Step Instructions for Developers](#step-by-step-instructions-for-developers)
   - [Setting Up Git](#setting-up-git)
   - [Cloning the Repository](#cloning-the-repository)
@@ -189,3 +190,27 @@ git push origin S1-03
   ```bash
   git branch -d S1-03
   ```
+## PostgreSQL integration tests
+
+Run the same server-side voting tests as CI against a disposable local Postgres:
+
+```sh
+(
+  set -e
+  container=$(docker run --rm -d \
+    -e POSTGRES_USER=comelec_test -e POSTGRES_PASSWORD=comelec_test \
+    -e POSTGRES_DB=comelec_test -p 127.0.0.1::5432 postgres:16-alpine)
+  trap 'docker stop "$container" >/dev/null' EXIT
+  binding=$(docker port "$container" 5432/tcp)
+  for attempt in $(seq 1 30); do
+    if docker exec "$container" pg_isready -h 127.0.0.1 -U comelec_test -d comelec_test; then
+      COMELEC_TEST_DB_PORT="${binding##*:}" npm run test:integration
+      exit
+    fi
+    sleep 1
+  done
+  exit 1
+)
+```
+
+Each run starts a fresh container on its own loopback port, waits for Postgres, applies Prisma migrations, and clears fixture tables between tests. Production `.env` settings are not used.
