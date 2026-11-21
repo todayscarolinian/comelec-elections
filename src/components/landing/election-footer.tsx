@@ -2,6 +2,7 @@ import { electionContent } from '@/components/election/election-styles'
 import Image from 'next/image'
 import Link from 'next/link'
 import { BallotEntry } from '@/components/ballot/ballot-entry'
+import { legalLinks } from '@/components/election/footer-links'
 
 export function ElectionFooter() {
   return (
@@ -25,6 +26,11 @@ export function ElectionFooter() {
           <Link href="/candidates">Candidates</Link>
           <Link href="/register">Registration</Link>
           <BallotEntry />
+          {legalLinks.map(({ href, label }) => (
+            <Link key={href} href={href}>
+              {label}
+            </Link>
+          ))}
         </nav>
       </div>
     </footer>

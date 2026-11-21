@@ -1,8 +1,17 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono, Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import { BallotSignInDialog } from '@/components/ballot/ballot-sign-in'
 import { LandingScroll } from '@/components/landing/landing-scroll'
+import {
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_THEME_COLOR,
+  SITE_TITLE,
+  TITLE_SUFFIX,
+  sharedOpenGraph,
+  siteUrl,
+} from '@/lib/site'
 import { TRPCReactProvider } from '@/lib/trpc/client'
 import './globals.css'
 
@@ -47,12 +56,21 @@ const antinomiaDisplay = localFont({
 })
 
 export const metadata: Metadata = {
+  metadataBase: siteUrl(),
   title: {
-    default: 'SSC Elections 2026 | COMELEC',
-    template: '%s | SSC Elections 2026',
+    template: `%s | ${TITLE_SUFFIX}`,
+    default: SITE_TITLE,
   },
-  description:
-    'Meet the candidates, check election dates, and get ready to vote in the SSC Elections.',
+  description: SITE_DESCRIPTION,
+  applicationName: `${SITE_NAME} Elections`,
+  // Only site-wide fields: a page's own title and URL must not leak into pages that set none.
+  openGraph: sharedOpenGraph,
+  twitter: { card: 'summary_large_image' },
+  formatDetection: { telephone: false, email: false, address: false },
+}
+
+export const viewport: Viewport = {
+  themeColor: SITE_THEME_COLOR,
 }
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

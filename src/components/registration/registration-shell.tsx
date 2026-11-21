@@ -1,24 +1,6 @@
 import Image from 'next/image'
-import Link from 'next/link'
-import { Inter } from 'next/font/google'
-import localFont from 'next/font/local'
 import type { ReactNode } from 'react'
-import { BallotEntry } from '@/components/ballot/ballot-entry'
-import { ElectionNavigation } from '@/components/election/election-navigation'
-
-const inter = Inter({ subsets: ['latin'], variable: '--registration-body' })
-const display = localFont({
-  src: '../../../public/fonts/antimonia/Antinomia-Display-Italic-TRIAL.ttf',
-  style: 'italic',
-  variable: '--registration-display',
-})
-const text = localFont({
-  src: '../../../public/fonts/antimonia/Antinomia-Text-Regular-TRIAL.ttf',
-  variable: '--registration-text',
-  preload: false,
-})
-
-const contentGutters = 'w-full px-(--registration-inset)'
+import { ElectionPageShell, contentGutters } from '@/components/election/election-page-shell'
 
 function ElectionPanel() {
   return (
@@ -68,48 +50,19 @@ export function RegistrationShell({
   signInPage?: boolean
 }) {
   return (
-    <div
-      className={`flex min-h-svh flex-1 flex-col bg-[#faf3e0] text-[#324e1f] [--registration-inset:clamp(1rem,1.67vw,1.5rem)] [font-family:var(--registration-body),Arial,sans-serif] [&_:is(a,button,select):focus-visible]:outline-2 [&_:is(a,button,select):focus-visible]:outline-offset-4 ${inter.variable} ${display.variable} ${text.variable}`}
+    <ElectionPageShell
+      contentId="registration-content"
+      skipLabel={signInPage ? 'Skip to sign-in' : 'Skip to registration'}
+      hideSignIn={signInPage}
     >
-      <a
-        href="#registration-content"
-        className="absolute start-4 top-4 z-30 -translate-y-[calc(100%+1rem)] bg-[#faf3e0] px-4 py-3 focus:translate-y-0"
+      <main
+        id="registration-content"
+        tabIndex={-1}
+        className={`${contentGutters} grid flex-1 scroll-mt-28 content-start items-center gap-(--registration-inset) py-(--registration-inset) min-[56rem]:grid-cols-2 min-[56rem]:content-stretch`}
       >
-        {signInPage ? 'Skip to sign-in' : 'Skip to registration'}
-      </a>
-      <div className="flex min-h-svh flex-col">
-        <ElectionNavigation hideSignIn={signInPage} />
-        <main
-          id="registration-content"
-          tabIndex={-1}
-          className={`${contentGutters} grid flex-1 scroll-mt-28 content-start items-center gap-(--registration-inset) py-(--registration-inset) min-[56rem]:grid-cols-2 min-[56rem]:content-stretch`}
-        >
-          <ElectionPanel />
-          {children}
-        </main>
-      </div>
-      <footer className={contentGutters}>
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#b6c89f] py-5">
-          <Link href="/" className="flex items-center gap-3" aria-label="SSC COMELEC home">
-            <Image src="/landing/mark.webp" alt="" width={56} height={56} />
-            <span>
-              <span className="block text-[clamp(1.5rem,2.5vw,2.25rem)] leading-tight [font-family:var(--registration-text),Georgia,serif]">
-                SSC COMELEC
-              </span>
-              <span className="block text-sm text-[#56654a]">Student council elections · 2026</span>
-            </span>
-          </Link>
-          <nav aria-label="Footer navigation" className="flex gap-6 text-sm">
-            <Link
-              className="inline-flex min-h-11 items-center hover:underline hover:underline-offset-4"
-              href="/candidates"
-            >
-              Candidates
-            </Link>
-            <BallotEntry className="inline-flex min-h-11 cursor-pointer items-center hover:underline hover:underline-offset-4" />
-          </nav>
-        </div>
-      </footer>
-    </div>
+        <ElectionPanel />
+        {children}
+      </main>
+    </ElectionPageShell>
   )
 }

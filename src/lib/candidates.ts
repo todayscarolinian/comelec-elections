@@ -1,34 +1,21 @@
-import { ELECTION, PARTIES, type ElectionDef } from '@/election'
+import { PARTIES } from '@/election'
+import { CANDIDATE_OFFICES } from './candidate-profiles'
 
-const election: ElectionDef = ELECTION
-const placeholderOfficeTitles: Record<string, string> = {
-  'placeholder-question-1': 'President',
-  'placeholder-question-2': 'Vice Presidents',
-}
-
-// Presentation labels only: persisted Question and Candidate IDs stay unchanged.
-export const CANDIDATE_OFFICES = election.questions.map((question) => ({
-  ...question,
-  title:
-    election.title === 'Placeholder Election'
-      ? (placeholderOfficeTitles[question.id] ?? question.title)
-      : question.title,
-}))
+export { CANDIDATE_OFFICES }
 
 export const CANDIDATES = CANDIDATE_OFFICES.flatMap((office) =>
-  office.candidates.map((candidate, index) => ({
+  office.candidates.map((candidate) => ({
     ...candidate,
     officeId: office.id,
     officeTitle: office.title,
-    number: index + 1,
   })),
 )
 
 export type DirectoryCandidate = (typeof CANDIDATES)[number]
 export type CandidateFilters = { office: string; party: string; q: string }
 
-export const CANDIDATE_PARTIES = [
-  ...PARTIES.filter((party) => CANDIDATES.some((candidate) => candidate.party === party)),
+export const CANDIDATE_PARTIES: readonly string[] = [
+  ...PARTIES,
   ...(CANDIDATES.some((candidate) => !candidate.party) ? ['Independent'] : []),
 ]
 

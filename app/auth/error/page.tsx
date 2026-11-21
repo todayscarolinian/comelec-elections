@@ -8,6 +8,7 @@ import { allowedHostedDomain } from '@/server/auth'
 export const metadata: Metadata = {
   title: 'Sign-in error',
   description: 'Get help signing in to SSC Elections with your university Google account.',
+  robots: { index: false, follow: false },
 }
 
 type ErrorPageProps = {

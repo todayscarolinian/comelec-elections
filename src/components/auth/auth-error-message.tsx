@@ -73,6 +73,17 @@ export function AuthErrorMessage({
         />
       )}
 
+      <p className="text-sm leading-relaxed text-[#56654a]">
+        Read how we handle your sign-in details in our{' '}
+        <Link
+          href="/privacy"
+          className="font-medium text-comelec-forest underline underline-offset-4"
+        >
+          Privacy Policy
+        </Link>
+        .
+      </p>
+
       <div className="border-t border-comelec-sage pt-3">
         <Link href="/" className={registrationTextButton}>
           <ArrowLeft aria-hidden="true" className="me-2 size-4 shrink-0" />
