@@ -19,7 +19,7 @@ const text = localFont({
 
 const footerLinks = [
   { href: '/#candidates', label: 'Candidates' },
-  { href: '/#voting', label: 'Ballot' },
+  { href: '/ballot', label: 'Ballot' },
 ]
 
 const contentGutters = 'w-full px-(--registration-inset)'

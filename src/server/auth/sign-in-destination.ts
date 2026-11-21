@@ -3,9 +3,9 @@ import prisma from '@/lib/prisma'
 
 export async function getSignInDestination(
   personId: string,
-  returnTo: '/' | '/register',
-): Promise<'/' | '/register'> {
-  if (returnTo === '/register') return '/register'
+  returnTo: '/' | '/register' | '/ballot',
+): Promise<'/' | '/register' | '/ballot'> {
+  if (returnTo !== '/') return returnTo
 
   // If the lookup fails, Registration can show the voter its retry state.
   const registration = await prisma.registration

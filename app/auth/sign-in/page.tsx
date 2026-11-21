@@ -18,14 +18,14 @@ type SignInPageProps = {
 
 async function SignInContent({ searchParams }: SignInPageProps) {
   const { next } = await searchParams
-  const returnTo = next === '/register' ? '/register' : '/'
+  const returnTo = next === '/register' || next === '/ballot' ? next : '/'
   const session = await auth()
   if (session) redirect(await getSignInDestination(session.user.personId, returnTo))
 
   return (
     <RegistrationSignIn
       returnTo={returnTo}
-      redirectTo={returnTo === '/register' ? '/register' : '/auth/sign-in'}
+      redirectTo={returnTo === '/' ? '/auth/sign-in' : returnTo}
     />
   )
 }
