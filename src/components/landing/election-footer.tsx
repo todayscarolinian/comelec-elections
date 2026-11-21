@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { BallotEntryTrigger } from '@/components/ballot/ballot-sign-in'
+import { legalLinks } from '@/components/election/footer-links'
 import { auth } from '@/server/auth'
 
 async function FooterBallotEntry() {
@@ -34,6 +35,11 @@ export function ElectionFooter() {
           <Suspense fallback={<BallotEntryTrigger />}>
             <FooterBallotEntry />
           </Suspense>
+          {legalLinks.map(({ href, label }) => (
+            <Link key={href} href={href}>
+              {label}
+            </Link>
+          ))}
         </nav>
       </div>
     </footer>

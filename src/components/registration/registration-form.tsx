@@ -1,6 +1,7 @@
 'use client'
 
 import { useMutation } from '@tanstack/react-query'
+import Link from 'next/link'
 import { useState, type FormEvent } from 'react'
 import { useTRPC } from '@/lib/trpc/client'
 import {
@@ -116,6 +117,17 @@ export function RegistrationForm({
               ? 'Resubmit registration'
               : 'Submit registration'}
         </button>
+        <p className="text-sm leading-relaxed text-[#56654a]">
+          By submitting, you agree to the{' '}
+          <Link href="/terms" className="font-medium text-[#324e1f] underline underline-offset-4">
+            Terms of Service
+          </Link>{' '}
+          and acknowledge the{' '}
+          <Link href="/privacy" className="font-medium text-[#324e1f] underline underline-offset-4">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </div>
     </form>
   )

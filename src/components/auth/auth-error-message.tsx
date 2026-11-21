@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { normalizeHostedDomain } from '@/server/auth/policy'
 import { GoogleSignInButton } from './google-sign-in-button'
 
@@ -29,6 +30,16 @@ export function AuthErrorMessage({
         label="Try again"
         className="mt-8 w-fit rounded-full bg-zinc-900 px-6 py-3 font-medium text-zinc-50 hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-300 dark:focus-visible:outline-zinc-100"
       />
+      <p className="mt-6 text-sm text-zinc-600 dark:text-zinc-400">
+        Read how we handle your sign-in details in our{' '}
+        <Link
+          href="/privacy"
+          className="font-medium text-zinc-900 underline underline-offset-4 dark:text-zinc-100"
+        >
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </main>
   )
 }

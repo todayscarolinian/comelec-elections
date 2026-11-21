@@ -12,6 +12,13 @@ describe('authentication error message', () => {
     expect(screen.getByText('Only @example.com organization accounts can sign in.')).toBeTruthy()
   })
 
+  it('links to the Privacy Policy', () => {
+    render(<AuthErrorMessage error="AccessDenied" allowedDomain="example.com" />)
+    expect(screen.getByRole('link', { name: 'Privacy Policy' }).getAttribute('href')).toBe(
+      '/privacy',
+    )
+  })
+
   it('uses the configured domain rather than a hardcoded placeholder', () => {
     render(<AuthErrorMessage error="AccessDenied" allowedDomain="organization.edu" />)
     expect(

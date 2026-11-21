@@ -129,6 +129,17 @@ describe('RegisterPage', () => {
     expect(button().disabled).toBe(false)
   })
 
+  it('links to the Terms of Service and Privacy Policy next to the submit button', async () => {
+    showPage()
+    await screen.findByLabelText('Year Level')
+    expect(screen.getByRole('link', { name: 'Terms of Service' }).getAttribute('href')).toBe(
+      '/terms',
+    )
+    expect(screen.getByRole('link', { name: 'Privacy Policy' }).getAttribute('href')).toBe(
+      '/privacy',
+    )
+  })
+
   it('submits the selected Year Level and uploaded path, then shows pending review', async () => {
     showPage()
     await fillForm()
