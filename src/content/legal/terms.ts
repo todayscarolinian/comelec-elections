@@ -3,7 +3,7 @@ import { contactInstruction, type LegalDocument } from './types'
 // Draft for commission review.
 export const TERMS_OF_SERVICE: LegalDocument = {
   title: 'Terms of Service',
-  status: 'draft',
+  status: 'final',
   version: '0.1',
   lastUpdated: '2026-11-21',
   summary:

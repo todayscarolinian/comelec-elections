@@ -49,7 +49,8 @@ describe('legal page', () => {
   })
 
   it('shows the draft banner only while the wording is a draft', () => {
-    const { unmount } = render(<LegalPage content={PRIVACY_POLICY} />)
+    const draft: LegalDocument = { ...PRIVACY_POLICY, status: 'draft' }
+    const { unmount } = render(<LegalPage content={draft} />)
     expect(screen.getByRole('note').textContent).toContain('Draft, pending commission review')
     unmount()
 

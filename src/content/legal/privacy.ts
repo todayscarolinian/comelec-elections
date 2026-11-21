@@ -4,7 +4,7 @@ import { contactInstruction, type LegalDocument } from './types'
 // (see docs/software-design.md §14 and docs/sprint-plan.md).
 export const PRIVACY_POLICY: LegalDocument = {
   title: 'Privacy Policy',
-  status: 'draft',
+  status: 'final',
   version: '0.1',
   lastUpdated: '2026-11-21',
   summary:
