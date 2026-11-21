@@ -77,7 +77,6 @@ The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 - **US-2**: As an Applicant, I register during the Registration Period so I can vote on election day.
   - FR-2.1: The Registration Period opens on **2026-11-15** and closes before the Election opens (see §10). Registrations are accepted again while the Election is open (ADR 0008).
   - FR-2.2: A Registration requires a Year Level and a School, each picked from a fixed list, and a Student Profile image upload. The Year Level and School are for information and statistics only and don't affect the Ballot.
-  - FR-2.7: A person whose Registration was made before School was collected is asked for their School once. Their answer is final; only an Admin can correct it, and it can't be added after Results are released. If they already voted, their Ballot takes the same School.
   - FR-2.3: The Applicant can see their Registration status: pending, approved or rejected.
   - FR-2.4: A rejected Registration shows the reason the Admin gave. The Applicant can fix it and resubmit while the Registration Period or the Election is open.
   - FR-2.5: An approved Registration can't be changed by the Voter.
@@ -123,7 +122,7 @@ The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 
 - **US-7**: As an Admin, I audit Ballots and release the Results.
   - FR-7.1: Admins can see the Results (picks per Candidate, per Question, and Abstentions) at any time. Results count only Ballots whose Registration is approved, and show how many Held Ballots are left out.
-  - FR-7.6: The Admin dashboard shows turnout per School: counted Ballots and Held Ballots for each School, plus Ballots whose Voter hasn't given a School yet.
+  - FR-7.6: The Admin dashboard shows turnout per School: counted Ballots and Held Ballots for each School.
   - FR-7.7: Admins can see the Results split by School. These stay Admin-only even after release, because a small School's tally can point to how individuals voted. Viewing them before release is recorded like viewing the Results.
   - FR-7.2: Admins can list every Ballot with the Voter's name, email, Year Level and whether it counts (Counted, Held, or Held and rejected), and export the list.
   - FR-7.3: Every time an Admin views or exports Ballots, the system records which Admin did it and when.

@@ -16,7 +16,7 @@ export class BallotCastError extends Error {
 type RegistrationRow = {
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   yearLevel: string
-  school: string | null
+  school: string
 }
 
 function isPersonIdTarget(target: unknown) {

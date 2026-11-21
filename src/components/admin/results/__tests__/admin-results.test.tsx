@@ -83,7 +83,7 @@ describe('AdminResults by School', () => {
     ).toEqual(['SAFAD (7 counted)', 'SAS (2 counted)'])
     expect(within(section).getByText('7 votes')).toBeDefined()
 
-    fireEvent.change(select, { target: { value: '1' } })
+    fireEvent.change(select, { target: { value: 'SAS' } })
     expect(within(section).getByText('2 votes')).toBeDefined()
   })
 })

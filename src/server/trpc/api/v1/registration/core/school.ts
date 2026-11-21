@@ -18,21 +18,16 @@ export function isSchool(value: string | null | undefined): value is School {
   return SCHOOLS.some((school) => school === value)
 }
 
-/**
- * Display name for a stored School code. A code since removed from SCHOOLS shows as stored,
- * and null (Registrations made before School was collected) shows as "Not recorded".
- */
-export function schoolLabel(code: string | null): string {
-  if (code === null) return 'Not recorded'
+/** Display name for a stored School code. A code since removed from SCHOOLS shows as stored. */
+export function schoolLabel(code: string): string {
   return isSchool(code) ? SCHOOL_LABELS[code] : code
 }
 
 /**
  * The Schools to report on, in display order: every listed School (so empty ones show as
- * zero), then stored codes no longer listed, then null if any record has no School yet.
+ * zero), then stored codes no longer listed.
  */
-export function schoolBuckets(present: Iterable<string | null>): (string | null)[] {
-  const seen = new Set(present)
-  const unlisted = [...seen].filter((code): code is string => code !== null && !isSchool(code))
-  return [...SCHOOLS, ...unlisted.sort(), ...(seen.has(null) ? [null] : [])]
+export function schoolBuckets(present: Iterable<string>): string[] {
+  const unlisted = [...new Set(present)].filter((code) => !isSchool(code))
+  return [...SCHOOLS, ...unlisted.sort()]
 }

@@ -69,7 +69,7 @@ type ReviewRow = {
   personId: string
   status: string
   yearLevel: string
-  school: string | null
+  school: string
   submittedAt: Date
 }
 

@@ -49,7 +49,7 @@ model Registration {
   personId           String             @unique
   person             Person             @relation(fields: [personId], references: [id])
   yearLevel          String // one of YEAR_LEVELS; may be corrected by an Admin on approval
-  school             String? // one of SCHOOLS; null until the person answers (added after Registration opened)
+  school             String // one of SCHOOLS; may be corrected by an Admin on approval
   studentProfilePath String // object path in the student-profiles bucket
   status             RegistrationStatus @default(PENDING)
   rejectionReason    String?
@@ -69,7 +69,7 @@ model Ballot {
   personId             String    @unique // one Ballot per Voter
   person               Person    @relation(fields: [personId], references: [id])
   yearLevel            String // snapshot of the approved Year Level at casting
-  school               String? // snapshot of the Registration's School at casting; null if not yet given
+  school               String // snapshot of the Registration's School at casting
   disclosureAcceptedAt DateTime
   heldAcknowledgedAt   DateTime?
   castAt               DateTime  @default(now())

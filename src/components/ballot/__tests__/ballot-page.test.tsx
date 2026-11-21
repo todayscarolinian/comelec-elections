@@ -5,12 +5,11 @@ import { ELECTION } from '@/election'
 import { BallotPage } from '../ballot-page'
 import { BallotSignInDialog } from '../ballot-sign-in'
 
-const { election, myStatus, registration, cast, setSchool, signIn } = vi.hoisted(() => ({
+const { election, myStatus, registration, cast, signIn } = vi.hoisted(() => ({
   election: vi.fn(),
   myStatus: vi.fn(),
   registration: vi.fn(),
   cast: vi.fn(),
-  setSchool: vi.fn(),
   signIn: vi.fn(),
 }))
 
@@ -29,7 +28,6 @@ vi.mock('@/lib/trpc/client', () => ({
       getMine: {
         queryOptions: () => ({ queryKey: ['registration', 'getMine'], queryFn: registration }),
       },
-      setSchool: { mutationOptions: () => ({ mutationFn: setSchool }) },
     },
   }),
 }))
@@ -81,46 +79,6 @@ describe('BallotPage', () => {
       canSubmit: true,
     })
     cast.mockReset().mockResolvedValue({ ok: true, held: false })
-  })
-
-  it('asks for a missing School before showing the Ballot', async () => {
-    registration.mockResolvedValue({
-      account,
-      registration: { status: 'APPROVED', school: null, rejectionReason: null },
-      canSubmit: true,
-    })
-    setSchool.mockResolvedValue({ school: 'SBE' })
-    showBallot()
-    await screen.findByRole('heading', { name: 'Which School are you in?' })
-    expect(
-      screen.queryByRole('checkbox', {
-        name: /my ballot can be viewed by the election commission/i,
-      }),
-    ).toBeNull()
-    fireEvent.change(screen.getByLabelText('School'), { target: { value: 'SBE' } })
-    registration.mockResolvedValue({
-      account,
-      registration: { status: 'APPROVED', school: 'SBE', rejectionReason: null },
-      canSubmit: true,
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Save School' }))
-    expect(
-      await screen.findByRole('checkbox', {
-        name: /my ballot can be viewed by the election commission/i,
-      }),
-    ).toBeDefined()
-    expect(setSchool).toHaveBeenCalledWith({ school: 'SBE' }, expect.anything())
-  })
-
-  it('asks a Voter who already voted without a School, alongside their receipt', async () => {
-    myStatus.mockResolvedValue({ status: 'already_voted' })
-    registration.mockResolvedValue({
-      account,
-      registration: { status: 'APPROVED', school: null, rejectionReason: null },
-      canSubmit: true,
-    })
-    showBallot()
-    await screen.findByRole('heading', { name: 'Which School are you in?' })
   })
 
   it('opens the sign-in dialog and returns to the ballot after Google sign-in', async () => {

@@ -7,7 +7,6 @@ import { useTRPC } from '@/lib/trpc/client'
 import { schoolLabel, type School } from '@/server/trpc/api/v1/registration/core/school'
 import { YEAR_LEVEL_LABELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationForm } from './registration-form'
-import { SchoolPrompt } from './school-prompt'
 import { RegistrationSignIn } from './registration-sign-in'
 import {
   registrationAction,
@@ -58,8 +57,6 @@ export function RegisterPage() {
   const closed = data?.canSubmit === false
   const showForm =
     !!data?.canSubmit && !isError && (!registration || registration.status === 'REJECTED')
-  // The form asks for School itself; otherwise ask once if this Registration predates School.
-  const askForSchool = !!registration && !registration.school && !showForm
 
   function refresh() {
     void query.refetch()
@@ -148,21 +145,13 @@ export function RegisterPage() {
                     {YEAR_LEVEL_LABELS[registration.yearLevel as YearLevel] ??
                       registration.yearLevel}
                   </dd>
-                  {registration.school && (
-                    <>
-                      <dt className="text-[#56654a]">School</dt>
-                      <dd className="text-end font-medium">{schoolLabel(registration.school)}</dd>
-                    </>
-                  )}
+                  <dt className="text-[#56654a]">School</dt>
+                  <dd className="text-end font-medium">{schoolLabel(registration.school)}</dd>
                   <dt className="text-[#56654a]">Student Profile</dt>
                   <dd className="text-end font-medium">Submitted</dd>
                 </dl>
               )}
             </section>
-          )}
-
-          {askForSchool && (
-            <SchoolPrompt actionClassName={`${registrationAction} w-full`} onSaved={refresh} />
           )}
 
           {registration?.status === 'REJECTED' && (

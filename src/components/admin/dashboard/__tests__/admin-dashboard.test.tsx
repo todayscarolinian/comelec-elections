@@ -63,7 +63,6 @@ function dashboard(overrides: Partial<Dashboard> = {}): Dashboard {
       { school: 'SAFAD', label: 'SAFAD', counted: 512, heldPending: 2, heldRejected: 1 },
       { school: 'SAS', label: 'SAS', counted: 1200, heldPending: 0, heldRejected: 0 },
       { school: 'SBE', label: 'SBE', counted: 0, heldPending: 0, heldRejected: 0 },
-      { school: null, label: 'Not recorded', counted: 41, heldPending: 0, heldRejected: 1 },
     ],
     ...overrides,
   }
@@ -107,7 +106,7 @@ describe('AdminDashboard', () => {
     expect((screen.getByRole('button', { name: action }) as HTMLButtonElement).disabled).toBe(false)
   })
 
-  it('shows turnout by School, including Schools with no ballots and unrecorded ones', () => {
+  it('shows turnout by School, including Schools with no ballots', () => {
     state.data = dashboard()
     render(<AdminDashboard />)
     const table = screen.getByRole('table')
@@ -119,7 +118,6 @@ describe('AdminDashboard', () => {
       ['SAFAD', '512', '3'],
       ['SAS', '1,200', '0'],
       ['SBE', '0', '0'],
-      ['Not recorded', '41', '1'],
     ])
   })
 

@@ -269,8 +269,7 @@ export function RegistrationReview() {
                   >
                     <span className="font-editorial text-lg leading-6">{item.name}</span>
                     <span>
-                      {item.studentId} · Year {item.yearLevel}
-                      {item.school ? ` · ${schoolLabel(item.school)}` : ''}
+                      {item.studentId} · Year {item.yearLevel} · {schoolLabel(item.school)}
                     </span>
                     <span className="text-xs min-[761px]:!text-[10px]">
                       {item.email} · {statusLabels[item.status]}

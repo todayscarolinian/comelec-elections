@@ -132,7 +132,7 @@ model Registration {
   personId        String             @unique
   person          Person             @relation(fields: [personId], references: [id])
   yearLevel       String             // one of YEAR_LEVELS; may be corrected by an Admin on approval
-  school          String?            // one of SCHOOLS; null for Registrations made before School was collected
+  school          String             // one of SCHOOLS; may be corrected by an Admin on approval
   studentProfilePath String          // object path in the student-profiles bucket
   ocrStatus       OcrStatus          @default(PENDING)
   ocrResult       Json?              // the four extracted fields and their match results only, never the full OCR text (ADR 0006)
@@ -164,7 +164,7 @@ model Ballot {
   personId              String         @unique // one Ballot per Voter
   person                Person         @relation(fields: [personId], references: [id])
   yearLevel             String         // snapshot of the Registration's Year Level at casting; updated if an Admin corrects it when approving a Held Ballot's Registration
-  school                String?        // snapshot of the Registration's School at casting, kept in step the same way; filled by the one-time School prompt if the Voter voted first
+  school                String         // snapshot of the Registration's School at casting, kept in step the same way
   disclosureAcceptedAt  DateTime
   heldAcknowledgedAt    DateTime?      // set when cast without an approved Registration (FR-5.10)
   castAt                DateTime       @default(now())
@@ -205,7 +205,7 @@ model AuditLog {
 
 **Design notes**
 - `Ballot.personId @unique` replaces the old `Participation` table as the one-Ballot-per-Voter guard.
-- **School is for statistics only.** It works like Year Level: declared on the Registration (from `SCHOOLS` in `v1/registration/core/school.ts`: SAFAD, SAS, SBE, SED, SHCP, SLG and SOE, in alphabetical order), correctable by an Admin on approval, and snapshotted on the Ballot. Both columns are nullable because School was added after Registration opened; see §5.5.
+- **School is for statistics only.** It works like Year Level: declared on the Registration (from `SCHOOLS` in `v1/registration/core/school.ts`: SAFAD, SAS, SBE, SED, SHCP, SLG and SOE, in alphabetical order), correctable by an Admin on approval, and snapshotted on the Ballot.
 - **Year Level is information only.** It doesn't affect which Questions a Voter sees. `Registration.yearLevel` is declared by the Applicant and can be corrected by an Admin; `Ballot.yearLevel` is a snapshot at casting, so the audit and export show the Year Level as it was, even if the Registration is edited later.
 - A Person with no Registration is just someone who signed in. Being an Applicant or Voter is derived from `Registration.status`.
 - **Whether a Ballot counts is derived, not stored** (ADR 0008). A Ballot counts when its person's `Registration.status` is `APPROVED`; otherwise it's a Held Ballot. There's no status column on `Ballot` to keep in sync.
@@ -336,14 +336,6 @@ OCR is advisory: it never changes a Registration's `status`, and a failure never
 - `after()` runs within the route's `maxDuration`, so `/api/trpc` sets `maxDuration = 300`. A job waiting for the one-job-per-instance lock counts against the same limit, so the limit leaves room for a queue. On Vercel (1 vCPU, 2,048 MB), OCR takes 2–12 s per image and peaks at about 1.5 GB (task 2.10a, #28).
 - Run at most one OCR job per function instance at a time. Two concurrent jobs would exceed 2 GB of memory.
 
-### 5.5 One-time School prompt
-
-School was added after Registration opened, so earlier Registrations (and their Ballots) have none.
-
-- `registration.getMine` returns `school`. When it is null, the register page and the ballot page ask "Which School are you in?". On the ballot page the question comes before the Ballot, so new Ballots are counted under a School; a Voter who already voted sees it beside their receipt.
-- `registration.setSchool({ school })`: `protectedProcedure`, acts only on the caller's own Registration. In one transaction: rejected once `resultsReleasedAt` is set; a conditional update sets `Registration.school` only where it is null (the same pattern as `submitRegistration`), and if nothing matched, returns `NOT_FOUND` or `CONFLICT`; then fills `Ballot.school` where it is null. The update's row lock means a concurrent cast (`FOR SHARE` on the Registration) either reads the new School or is updated by it.
-- Answers are self-declared. Only an Admin can change a recorded School, on approval, so a person can't change their answer to shift the statistics.
-
 ## 6. Casting a Ballot
 
 ### 6.1 Validation (pure function, unit tested)
@@ -408,7 +400,7 @@ No per-Candidate data, ever. `ballotsCast` includes Held Ballots. Caching keeps 
 - Admins see Results at any time on the Admin panel. Viewing them writes `AuditLog` (`VIEW_RESULTS`).
 - `releaseResults()`: `adminProcedure`; the Election must be `CLOSED` and not already released, and no Ballot's Registration may be `PENDING`. All three are checked in one transaction with `FOR UPDATE` on `ElectionState`. Sets `resultsReleasedAt`. Writes `AuditLog`. There is no un-release. Since resubmitting needs the Election open, and the Election can't reopen after release, released Results can't change.
 - The public `/results` page renders only when `resultsReleasedAt` is set.
-- Per-School counts come from one SQL query, `countBallotsBySchool`, grouping Ballots by School and Registration status. `totalsBySchool` turns it into one row per School (counted, held pending, held rejected): every School in `SCHOOLS` order (zeros included), any stored code no longer in the list, and a "Not recorded" row when some Ballots have no School.
+- Per-School counts come from one SQL query, `countBallotsBySchool`, grouping Ballots by School and Registration status. `totalsBySchool` turns it into one row per School (counted, held pending, held rejected): every School in `SCHOOLS` order (zeros included), then any stored code no longer in the list.
 - `admin.getDashboard` includes those rows as turnout per School.
 - `admin.getResultsBySchool()`: `adminProcedure`, Admin-only even after release, because in a small School the tally can point to how individuals voted. Same counting rule as `results.get`, split by `Ballot.school`, with the same per-School rows as the dashboard; Prisma's `groupBy` can't group answers by a Ballot column, so the tally is one SQL query joining `BallotAnswer`, `Ballot` and `Registration`. Before release, each view writes `AuditLog` (`VIEW_RESULTS`, detail `{ bySchool: true }`), so the Admin page loads it only when asked.
 

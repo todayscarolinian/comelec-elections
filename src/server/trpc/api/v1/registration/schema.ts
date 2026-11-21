@@ -49,12 +49,9 @@ export const ownRegistrationOutputSchema = z.object({
     .object({
       status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
       yearLevel: z.string(),
-      school: z.string().nullable(),
+      school: z.string(),
       rejectionReason: z.string().nullable(),
     })
     .nullable(),
   canSubmit: z.boolean(),
 })
-
-export const setSchoolInputSchema = z.object({ school: z.enum(SCHOOLS) })
-export const setSchoolOutputSchema = z.object({ school: z.enum(SCHOOLS) })

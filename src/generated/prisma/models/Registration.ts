@@ -195,7 +195,7 @@ export type RegistrationGroupByOutputType = {
   id: string
   personId: string
   yearLevel: string
-  school: string | null
+  school: string
   studentProfilePath: string
   status: $Enums.RegistrationStatus
   rejectionReason: string | null
@@ -232,7 +232,7 @@ export type RegistrationWhereInput = {
   id?: Prisma.StringFilter<"Registration"> | string
   personId?: Prisma.StringFilter<"Registration"> | string
   yearLevel?: Prisma.StringFilter<"Registration"> | string
-  school?: Prisma.StringNullableFilter<"Registration"> | string | null
+  school?: Prisma.StringFilter<"Registration"> | string
   studentProfilePath?: Prisma.StringFilter<"Registration"> | string
   status?: Prisma.EnumRegistrationStatusFilter<"Registration"> | $Enums.RegistrationStatus
   rejectionReason?: Prisma.StringNullableFilter<"Registration"> | string | null
@@ -249,7 +249,7 @@ export type RegistrationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   personId?: Prisma.SortOrder
   yearLevel?: Prisma.SortOrder
-  school?: Prisma.SortOrderInput | Prisma.SortOrder
+  school?: Prisma.SortOrder
   studentProfilePath?: Prisma.SortOrder
   status?: Prisma.SortOrder
   rejectionReason?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -269,7 +269,7 @@ export type RegistrationWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.RegistrationWhereInput[]
   NOT?: Prisma.RegistrationWhereInput | Prisma.RegistrationWhereInput[]
   yearLevel?: Prisma.StringFilter<"Registration"> | string
-  school?: Prisma.StringNullableFilter<"Registration"> | string | null
+  school?: Prisma.StringFilter<"Registration"> | string
   studentProfilePath?: Prisma.StringFilter<"Registration"> | string
   status?: Prisma.EnumRegistrationStatusFilter<"Registration"> | $Enums.RegistrationStatus
   rejectionReason?: Prisma.StringNullableFilter<"Registration"> | string | null
@@ -286,7 +286,7 @@ export type RegistrationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   personId?: Prisma.SortOrder
   yearLevel?: Prisma.SortOrder
-  school?: Prisma.SortOrderInput | Prisma.SortOrder
+  school?: Prisma.SortOrder
   studentProfilePath?: Prisma.SortOrder
   status?: Prisma.SortOrder
   rejectionReason?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -308,7 +308,7 @@ export type RegistrationScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Registration"> | string
   personId?: Prisma.StringWithAggregatesFilter<"Registration"> | string
   yearLevel?: Prisma.StringWithAggregatesFilter<"Registration"> | string
-  school?: Prisma.StringNullableWithAggregatesFilter<"Registration"> | string | null
+  school?: Prisma.StringWithAggregatesFilter<"Registration"> | string
   studentProfilePath?: Prisma.StringWithAggregatesFilter<"Registration"> | string
   status?: Prisma.EnumRegistrationStatusWithAggregatesFilter<"Registration"> | $Enums.RegistrationStatus
   rejectionReason?: Prisma.StringNullableWithAggregatesFilter<"Registration"> | string | null
@@ -323,7 +323,7 @@ export type RegistrationScalarWhereWithAggregatesInput = {
 export type RegistrationCreateInput = {
   id?: string
   yearLevel: string
-  school?: string | null
+  school: string
   studentProfilePath: string
   status?: $Enums.RegistrationStatus
   rejectionReason?: string | null
@@ -340,7 +340,7 @@ export type RegistrationUncheckedCreateInput = {
   id?: string
   personId: string
   yearLevel: string
-  school?: string | null
+  school: string
   studentProfilePath: string
   status?: $Enums.RegistrationStatus
   rejectionReason?: string | null
@@ -355,7 +355,7 @@ export type RegistrationUncheckedCreateInput = {
 export type RegistrationUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   studentProfilePath?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRegistrationStatusFieldUpdateOperationsInput | $Enums.RegistrationStatus
   rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -372,7 +372,7 @@ export type RegistrationUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personId?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   studentProfilePath?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRegistrationStatusFieldUpdateOperationsInput | $Enums.RegistrationStatus
   rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -388,7 +388,7 @@ export type RegistrationCreateManyInput = {
   id?: string
   personId: string
   yearLevel: string
-  school?: string | null
+  school: string
   studentProfilePath: string
   status?: $Enums.RegistrationStatus
   rejectionReason?: string | null
@@ -403,7 +403,7 @@ export type RegistrationCreateManyInput = {
 export type RegistrationUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   studentProfilePath?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRegistrationStatusFieldUpdateOperationsInput | $Enums.RegistrationStatus
   rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -419,7 +419,7 @@ export type RegistrationUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personId?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   studentProfilePath?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRegistrationStatusFieldUpdateOperationsInput | $Enums.RegistrationStatus
   rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -514,12 +514,12 @@ export type RegistrationUncheckedUpdateOneWithoutPersonNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.RegistrationUpdateToOneWithWhereWithoutPersonInput, Prisma.RegistrationUpdateWithoutPersonInput>, Prisma.RegistrationUncheckedUpdateWithoutPersonInput>
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type EnumRegistrationStatusFieldUpdateOperationsInput = {
   set?: $Enums.RegistrationStatus
+}
+
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
 }
 
 export type EnumOcrStatusFieldUpdateOperationsInput = {
@@ -529,7 +529,7 @@ export type EnumOcrStatusFieldUpdateOperationsInput = {
 export type RegistrationCreateWithoutPersonInput = {
   id?: string
   yearLevel: string
-  school?: string | null
+  school: string
   studentProfilePath: string
   status?: $Enums.RegistrationStatus
   rejectionReason?: string | null
@@ -544,7 +544,7 @@ export type RegistrationCreateWithoutPersonInput = {
 export type RegistrationUncheckedCreateWithoutPersonInput = {
   id?: string
   yearLevel: string
-  school?: string | null
+  school: string
   studentProfilePath: string
   status?: $Enums.RegistrationStatus
   rejectionReason?: string | null
@@ -575,7 +575,7 @@ export type RegistrationUpdateToOneWithWhereWithoutPersonInput = {
 export type RegistrationUpdateWithoutPersonInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   studentProfilePath?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRegistrationStatusFieldUpdateOperationsInput | $Enums.RegistrationStatus
   rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -590,7 +590,7 @@ export type RegistrationUpdateWithoutPersonInput = {
 export type RegistrationUncheckedUpdateWithoutPersonInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   studentProfilePath?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRegistrationStatusFieldUpdateOperationsInput | $Enums.RegistrationStatus
   rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -691,7 +691,7 @@ export type $RegistrationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     id: string
     personId: string
     yearLevel: string
-    school: string | null
+    school: string
     studentProfilePath: string
     status: $Enums.RegistrationStatus
     rejectionReason: string | null

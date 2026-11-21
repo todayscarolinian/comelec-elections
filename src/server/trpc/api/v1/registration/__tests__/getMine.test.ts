@@ -109,7 +109,7 @@ describe('registration.getMine', () => {
   it('does not read another Applicant’s registration', async () => {
     const { caller } = setup({
       currentSession: { user: { personId: 'person-2', email: 'other@example.org' } },
-      registration: { status: 'APPROVED', yearLevel: '4', school: null, rejectionReason: null },
+      registration: { status: 'APPROVED', yearLevel: '4', school: 'SAS', rejectionReason: null },
     })
     await expect(caller.getMine()).resolves.toEqual({
       account: { ...account, email: 'other@example.org' },

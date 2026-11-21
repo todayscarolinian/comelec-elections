@@ -38,7 +38,7 @@ export function setup({
   registration = { status: 'APPROVED', yearLevel: '2', school: 'SAFAD' } as {
     status: 'APPROVED' | 'PENDING' | 'REJECTED'
     yearLevel: string
-    school?: string | null
+    school?: string
   } | null,
 } = {}) {
   const events: string[] = []

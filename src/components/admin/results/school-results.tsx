@@ -13,7 +13,7 @@ import { AdminLoadError, adminButton, adminField, isAccessError } from '../admin
 export function SchoolResults() {
   const trpc = useTRPC()
   const [requested, setRequested] = useState(false)
-  const [selected, setSelected] = useState(0)
+  const [selected, setSelected] = useState('')
   const bySchool = useQuery({
     ...trpc.admin.getResultsBySchool.queryOptions(),
     enabled: requested,
@@ -41,19 +41,20 @@ export function SchoolResults() {
     )
   } else {
     const rows = bySchool.data
+    const shown = rows.find((row) => row.school === selected) ?? rows[0]
     body = (
       <div className="mt-4 grid gap-4">
         <label className={`${adminField} max-w-xs`}>
           School
-          <select value={selected} onChange={(event) => setSelected(Number(event.target.value))}>
-            {rows.map((row, index) => (
-              <option key={row.school ?? 'not-recorded'} value={index}>
+          <select value={shown?.school} onChange={(event) => setSelected(event.target.value)}>
+            {rows.map((row) => (
+              <option key={row.school} value={row.school}>
                 {row.label} ({row.results.countedBallots.toLocaleString('en-US')} counted)
               </option>
             ))}
           </select>
         </label>
-        {rows[selected] && <ResultsTally results={rows[selected].results} />}
+        {shown && <ResultsTally results={shown.results} />}
       </div>
     )
   }

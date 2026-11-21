@@ -21,7 +21,7 @@ import { StudentProfileUpload } from './student-profile-upload'
 
 type RegistrationFormProps = {
   initialYearLevel?: string
-  initialSchool?: string | null
+  initialSchool?: string
   resubmitting: boolean
   onSubmitted: (yearLevel: YearLevel, school: School) => void
   onSessionExpired: () => void

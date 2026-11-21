@@ -34,8 +34,7 @@ export function ApplicationReview({
   onRefresh: () => void
 }) {
   const [year, setYear] = useState(registration.yearLevel as YearLevel)
-  // Registrations made before School existed have none; approving leaves it empty unless set.
-  const [school, setSchool] = useState(registration.school ?? '')
+  const [school, setSchool] = useState(registration.school)
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
   const reasonRef = useRef<HTMLTextAreaElement>(null)
@@ -138,7 +137,6 @@ export function ApplicationReview({
                 value={school}
                 onChange={(event) => setSchool(event.target.value)}
               >
-                {school === '' && <option value="">Not given</option>}
                 {SCHOOLS.map((value) => (
                   <option key={value} value={value}>
                     {SCHOOL_LABELS[value]}

@@ -13,7 +13,7 @@ const [candidate] = question.candidates
 const ADMIN = 'chair@example.com'
 
 type TallyRow = {
-  school: string | null
+  school: string
   questionId: string
   candidateId: string | null
   votes: number
@@ -45,11 +45,11 @@ describe('getResultsBySchool', () => {
         { school: 'SAFAD', status: 'APPROVED', ballots: 2 },
         { school: 'SAFAD', status: 'PENDING', ballots: 1 },
         { school: 'SAS', status: 'REJECTED', ballots: 3 },
-        { school: null, status: 'APPROVED', ballots: 1 },
+        { school: 'SOE', status: 'APPROVED', ballots: 1 },
       ],
       tally: [
         { school: 'SAFAD', questionId: question.id, candidateId: candidate.id, votes: 2 },
-        { school: null, questionId: question.id, candidateId: null, votes: 1 },
+        { school: 'SOE', questionId: question.id, candidateId: null, votes: 1 },
       ],
     })
 
@@ -63,7 +63,6 @@ describe('getResultsBySchool', () => {
       ['SHCP', 'SHCP'],
       ['SLG', 'SLG'],
       ['SOE', 'SOE'],
-      [null, 'Not recorded'],
     ])
     const schoolA = rows[0].results
     expect(schoolA).toMatchObject({ countedBallots: 2, heldPending: 1, heldRejected: 0 })

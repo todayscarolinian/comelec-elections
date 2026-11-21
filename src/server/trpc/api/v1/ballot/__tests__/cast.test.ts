@@ -92,16 +92,6 @@ describe('ballot.cast', () => {
     },
   )
 
-  it('stores a null School when the Registration predates the School field', async () => {
-    const { caller, tx } = setup({
-      registration: { status: 'APPROVED', yearLevel: '2', school: null },
-    })
-    await caller.ballot.cast(validBallot())
-    expect(tx.ballot.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ school: null }) }),
-    )
-  })
-
   it('locks main ElectionState FOR SHARE and uses only transaction-scoped reads and writes', async () => {
     const { caller, tx, events, db } = setup()
     await expect(caller.ballot.cast(validBallot())).resolves.toEqual({ ok: true, held: false })

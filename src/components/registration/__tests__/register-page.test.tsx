@@ -3,10 +3,9 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { RegisterPage } from '../register-page'
 
-const { getMine, submit, setSchool, createUpload, signIn } = vi.hoisted(() => ({
+const { getMine, submit, createUpload, signIn } = vi.hoisted(() => ({
   getMine: vi.fn(),
   submit: vi.fn(),
-  setSchool: vi.fn(),
   createUpload: vi.fn(),
   signIn: vi.fn(),
 }))
@@ -20,7 +19,6 @@ vi.mock('@/lib/trpc/client', () => ({
         queryOptions: () => ({ queryKey: ['registration', 'getMine'], queryFn: getMine }),
       },
       submit: { mutationOptions: () => ({ mutationFn: submit }) },
-      setSchool: { mutationOptions: () => ({ mutationFn: setSchool }) },
       createStudentProfileUpload: { mutationOptions: () => ({ mutationFn: createUpload }) },
     },
   }),
@@ -240,44 +238,15 @@ describe('RegisterPage', () => {
     expect(screen.queryByText('Please include the current term.')).toBeNull()
   })
 
-  it('asks once for the School of a Registration made before School was collected', async () => {
+  it('shows the recorded School with the Registration details', async () => {
     getMine.mockResolvedValue({
       account,
       canSubmit: false,
-      registration: { status: 'APPROVED', yearLevel: '2', school: null, rejectionReason: null },
-    })
-    setSchool.mockResolvedValue({ school: 'SAS' })
-    showPage()
-    await screen.findByRole('heading', { name: 'Which School are you in?' })
-    const save = screen.getByRole<HTMLButtonElement>('button', { name: 'Save School' })
-    expect(save.disabled).toBe(true)
-    fireEvent.change(screen.getByLabelText('School'), { target: { value: 'SAS' } })
-    getMine.mockResolvedValue({
-      account,
-      canSubmit: false,
-      registration: {
-        status: 'APPROVED',
-        yearLevel: '2',
-        school: 'SAS',
-        rejectionReason: null,
-      },
-    })
-    fireEvent.click(save)
-    await waitFor(() =>
-      expect(setSchool).toHaveBeenCalledWith({ school: 'SAS' }, expect.anything()),
-    )
-    await screen.findByText('SAS')
-    expect(screen.queryByRole('heading', { name: 'Which School are you in?' })).toBeNull()
-  })
-
-  it('does not ask separately while the form itself asks for School', async () => {
-    getMine.mockResolvedValue({
-      ...rejected(),
-      registration: { ...rejected().registration, school: null },
+      registration: { status: 'APPROVED', yearLevel: '2', school: 'SAS', rejectionReason: null },
     })
     showPage()
-    await screen.findByText('Please include the current term.')
-    expect(screen.queryByRole('heading', { name: 'Which School are you in?' })).toBeNull()
+    const details = await screen.findByRole('region', { name: 'Registration details' })
+    expect(within(details).getByText('School').nextElementSibling?.textContent).toBe('SAS')
   })
 
   it.each([null, rejected(false).registration])(

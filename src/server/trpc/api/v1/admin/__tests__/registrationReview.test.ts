@@ -326,7 +326,7 @@ describe('registration decisions', () => {
       })
     },
   )
-  it('keeps a missing School empty when approving without a correction', async () => {
+  it('keeps the Applicant’s School when approving without a correction', async () => {
     const { caller, tx } = setup()
     tx.$queryRaw.mockResolvedValue([
       {
@@ -334,12 +334,12 @@ describe('registration decisions', () => {
         personId: 'student-person',
         status: 'PENDING',
         yearLevel: '3',
-        school: null,
+        school: 'SAS',
         submittedAt: new Date(submittedAt),
       },
     ])
     await caller.approveRegistration(reviewInput)
-    expect(tx.registration.update.mock.calls[0][0]).toMatchObject({ data: { school: null } })
+    expect(tx.registration.update.mock.calls[0][0]).toMatchObject({ data: { school: 'SAS' } })
   })
   it('rejects a School outside the list', async () => {
     const { caller, db } = setup()
@@ -394,7 +394,7 @@ describe('registration decisions', () => {
     async (status) => {
       const { caller, tx } = setup()
       tx.$queryRaw.mockResolvedValue([
-        { ...reviewInput, personId: 'student-person', status, yearLevel: '3', school: null },
+        { ...reviewInput, personId: 'student-person', status, yearLevel: '3', school: 'SAS' },
       ])
       await expect(caller.approveRegistration(reviewInput)).rejects.toMatchObject({
         code: 'CONFLICT',

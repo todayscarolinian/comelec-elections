@@ -163,7 +163,7 @@ export type BallotGroupByOutputType = {
   id: string
   personId: string
   yearLevel: string
-  school: string | null
+  school: string
   disclosureAcceptedAt: Date
   heldAcknowledgedAt: Date | null
   castAt: Date
@@ -194,7 +194,7 @@ export type BallotWhereInput = {
   id?: Prisma.StringFilter<"Ballot"> | string
   personId?: Prisma.StringFilter<"Ballot"> | string
   yearLevel?: Prisma.StringFilter<"Ballot"> | string
-  school?: Prisma.StringNullableFilter<"Ballot"> | string | null
+  school?: Prisma.StringFilter<"Ballot"> | string
   disclosureAcceptedAt?: Prisma.DateTimeFilter<"Ballot"> | Date | string
   heldAcknowledgedAt?: Prisma.DateTimeNullableFilter<"Ballot"> | Date | string | null
   castAt?: Prisma.DateTimeFilter<"Ballot"> | Date | string
@@ -206,7 +206,7 @@ export type BallotOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   personId?: Prisma.SortOrder
   yearLevel?: Prisma.SortOrder
-  school?: Prisma.SortOrderInput | Prisma.SortOrder
+  school?: Prisma.SortOrder
   disclosureAcceptedAt?: Prisma.SortOrder
   heldAcknowledgedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   castAt?: Prisma.SortOrder
@@ -221,7 +221,7 @@ export type BallotWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.BallotWhereInput[]
   NOT?: Prisma.BallotWhereInput | Prisma.BallotWhereInput[]
   yearLevel?: Prisma.StringFilter<"Ballot"> | string
-  school?: Prisma.StringNullableFilter<"Ballot"> | string | null
+  school?: Prisma.StringFilter<"Ballot"> | string
   disclosureAcceptedAt?: Prisma.DateTimeFilter<"Ballot"> | Date | string
   heldAcknowledgedAt?: Prisma.DateTimeNullableFilter<"Ballot"> | Date | string | null
   castAt?: Prisma.DateTimeFilter<"Ballot"> | Date | string
@@ -233,7 +233,7 @@ export type BallotOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   personId?: Prisma.SortOrder
   yearLevel?: Prisma.SortOrder
-  school?: Prisma.SortOrderInput | Prisma.SortOrder
+  school?: Prisma.SortOrder
   disclosureAcceptedAt?: Prisma.SortOrder
   heldAcknowledgedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   castAt?: Prisma.SortOrder
@@ -249,7 +249,7 @@ export type BallotScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Ballot"> | string
   personId?: Prisma.StringWithAggregatesFilter<"Ballot"> | string
   yearLevel?: Prisma.StringWithAggregatesFilter<"Ballot"> | string
-  school?: Prisma.StringNullableWithAggregatesFilter<"Ballot"> | string | null
+  school?: Prisma.StringWithAggregatesFilter<"Ballot"> | string
   disclosureAcceptedAt?: Prisma.DateTimeWithAggregatesFilter<"Ballot"> | Date | string
   heldAcknowledgedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Ballot"> | Date | string | null
   castAt?: Prisma.DateTimeWithAggregatesFilter<"Ballot"> | Date | string
@@ -258,7 +258,7 @@ export type BallotScalarWhereWithAggregatesInput = {
 export type BallotCreateInput = {
   id?: string
   yearLevel: string
-  school?: string | null
+  school: string
   disclosureAcceptedAt: Date | string
   heldAcknowledgedAt?: Date | string | null
   castAt?: Date | string
@@ -270,7 +270,7 @@ export type BallotUncheckedCreateInput = {
   id?: string
   personId: string
   yearLevel: string
-  school?: string | null
+  school: string
   disclosureAcceptedAt: Date | string
   heldAcknowledgedAt?: Date | string | null
   castAt?: Date | string
@@ -280,7 +280,7 @@ export type BallotUncheckedCreateInput = {
 export type BallotUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   disclosureAcceptedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   heldAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   castAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -292,7 +292,7 @@ export type BallotUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personId?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   disclosureAcceptedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   heldAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   castAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -303,7 +303,7 @@ export type BallotCreateManyInput = {
   id?: string
   personId: string
   yearLevel: string
-  school?: string | null
+  school: string
   disclosureAcceptedAt: Date | string
   heldAcknowledgedAt?: Date | string | null
   castAt?: Date | string
@@ -312,7 +312,7 @@ export type BallotCreateManyInput = {
 export type BallotUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   disclosureAcceptedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   heldAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   castAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -322,7 +322,7 @@ export type BallotUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personId?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   disclosureAcceptedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   heldAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   castAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -417,7 +417,7 @@ export type BallotUpdateOneRequiredWithoutAnswersNestedInput = {
 export type BallotCreateWithoutPersonInput = {
   id?: string
   yearLevel: string
-  school?: string | null
+  school: string
   disclosureAcceptedAt: Date | string
   heldAcknowledgedAt?: Date | string | null
   castAt?: Date | string
@@ -427,7 +427,7 @@ export type BallotCreateWithoutPersonInput = {
 export type BallotUncheckedCreateWithoutPersonInput = {
   id?: string
   yearLevel: string
-  school?: string | null
+  school: string
   disclosureAcceptedAt: Date | string
   heldAcknowledgedAt?: Date | string | null
   castAt?: Date | string
@@ -453,7 +453,7 @@ export type BallotUpdateToOneWithWhereWithoutPersonInput = {
 export type BallotUpdateWithoutPersonInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   disclosureAcceptedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   heldAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   castAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -463,7 +463,7 @@ export type BallotUpdateWithoutPersonInput = {
 export type BallotUncheckedUpdateWithoutPersonInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   disclosureAcceptedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   heldAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   castAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -473,7 +473,7 @@ export type BallotUncheckedUpdateWithoutPersonInput = {
 export type BallotCreateWithoutAnswersInput = {
   id?: string
   yearLevel: string
-  school?: string | null
+  school: string
   disclosureAcceptedAt: Date | string
   heldAcknowledgedAt?: Date | string | null
   castAt?: Date | string
@@ -484,7 +484,7 @@ export type BallotUncheckedCreateWithoutAnswersInput = {
   id?: string
   personId: string
   yearLevel: string
-  school?: string | null
+  school: string
   disclosureAcceptedAt: Date | string
   heldAcknowledgedAt?: Date | string | null
   castAt?: Date | string
@@ -509,7 +509,7 @@ export type BallotUpdateToOneWithWhereWithoutAnswersInput = {
 export type BallotUpdateWithoutAnswersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   disclosureAcceptedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   heldAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   castAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -520,7 +520,7 @@ export type BallotUncheckedUpdateWithoutAnswersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personId?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
-  school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   disclosureAcceptedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   heldAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   castAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -625,7 +625,7 @@ export type $BallotPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     id: string
     personId: string
     yearLevel: string
-    school: string | null
+    school: string
     disclosureAcceptedAt: Date
     heldAcknowledgedAt: Date | null
     castAt: Date

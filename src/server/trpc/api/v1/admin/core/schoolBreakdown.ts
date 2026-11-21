@@ -4,7 +4,7 @@ import type { SchoolTotals } from '../schema'
 
 /** One row of countBallotsBySchool: Ballots per School snapshot and Registration status. */
 export type SchoolBallotCount = {
-  school: string | null
+  school: string
   status: RegistrationStatus
   ballots: number
 }

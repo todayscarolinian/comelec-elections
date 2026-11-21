@@ -30,7 +30,7 @@ export function SchoolTurnoutTable({ rows }: { rows: readonly SchoolTotals[] }) 
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.school ?? 'not-recorded'} className="border-b border-review-line">
+            <tr key={row.school} className="border-b border-review-line">
               <th scope="row" className="py-3 font-normal">
                 {row.label}
               </th>

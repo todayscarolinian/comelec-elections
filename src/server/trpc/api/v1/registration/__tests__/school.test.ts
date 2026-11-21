@@ -13,19 +13,17 @@ describe('School', () => {
     expect(isSchool(value)).toBe(expected)
   })
 
-  it('labels listed codes, keeps unlisted codes as stored and names a missing School', () => {
+  it('labels listed codes and keeps unlisted codes as stored', () => {
     expect(schoolLabel('SAS')).toBe('SAS')
     expect(schoolLabel('OLD_SCHOOL')).toBe('OLD_SCHOOL')
-    expect(schoolLabel(null)).toBe('Not recorded')
   })
 
-  it('orders buckets: listed Schools, then unlisted codes sorted, then a missing School', () => {
+  it('orders buckets: listed Schools, then unlisted codes sorted', () => {
     const schools = ['SAFAD', 'SAS', 'SBE', 'SED', 'SHCP', 'SLG', 'SOE']
-    expect(schoolBuckets(['Z_OLD', null, 'SBE', 'A_OLD', 'Z_OLD'])).toEqual([
+    expect(schoolBuckets(['Z_OLD', 'SBE', 'A_OLD', 'Z_OLD'])).toEqual([
       ...schools,
       'A_OLD',
       'Z_OLD',
-      null,
     ])
     expect(schoolBuckets([])).toEqual(schools)
   })

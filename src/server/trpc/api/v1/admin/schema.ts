@@ -61,7 +61,7 @@ export const registrationReviewOutputSchema = z.object({
   email: z.string(),
   studentId: z.string(),
   yearLevel: z.string(),
-  school: z.string().nullable(),
+  school: z.string(),
   status: registrationStatusSchema,
   submittedAt: z.date(),
   reviewedBy: z.string().nullable(),
@@ -88,9 +88,9 @@ export const reviewDecisionOutputSchema = z.object({ ok: z.literal(true) })
 
 const count = z.number().int().nonnegative()
 
-/** Ballot totals for one School; `school` is null for Ballots whose Voter hasn't given one. */
+/** Ballot totals for one School. */
 export const schoolTotalsSchema = z.object({
-  school: z.string().nullable(),
+  school: z.string(),
   label: z.string(),
   counted: count,
   heldPending: count,
@@ -183,7 +183,7 @@ export const listAuditLogOutputSchema = z.object({
 
 export const resultsBySchoolOutputSchema = z.array(
   z.object({
-    school: z.string().nullable(),
+    school: z.string(),
     label: z.string(),
     results: resultsOutputSchema,
   }),

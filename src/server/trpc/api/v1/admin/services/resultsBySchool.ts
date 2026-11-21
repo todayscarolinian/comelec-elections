@@ -5,7 +5,7 @@ import { buildResults, type TallyRow } from '@/server/trpc/api/v1/results/core/b
 import { totalsBySchool } from '../core/schoolBreakdown'
 import { countBallotsBySchool } from './schoolBallotCounts'
 
-type SchoolTallyRow = TallyRow & { school: string | null }
+type SchoolTallyRow = TallyRow & { school: string }
 
 /**
  * Results split by the School snapshot on each Ballot, with the same counting rule as the

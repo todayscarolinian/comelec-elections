@@ -20,15 +20,4 @@ describe('totalsBySchool', () => {
       { school: 'SOE', label: 'SOE', counted: 0, heldPending: 0, heldRejected: 0 },
     ])
   })
-
-  it('adds a Not recorded row only when some Ballots have no School', () => {
-    expect(totalsBySchool([{ school: null, status: 'APPROVED', ballots: 4 }]).at(-1)).toEqual({
-      school: null,
-      label: 'Not recorded',
-      counted: 4,
-      heldPending: 0,
-      heldRejected: 0,
-    })
-    expect(totalsBySchool([]).some((row) => row.school === null)).toBe(false)
-  })
 })
