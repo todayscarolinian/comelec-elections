@@ -1,4 +1,5 @@
 import { displayHeading, sectionAnchor, sectionInner } from './landing-styles'
+import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 
 export function VotingGuide() {
@@ -18,9 +19,10 @@ export function VotingGuide() {
           </h2>
           <Link
             href="/register"
-            className="py-2.5 text-sm font-semibold hover:underline hover:underline-offset-4"
+            className="inline-flex items-center gap-1.5 py-2.5 text-sm font-semibold hover:underline hover:underline-offset-4"
           >
-            Check registration status <span aria-hidden="true">↗</span>
+            Check registration status{' '}
+            <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
           </Link>
         </div>
         <ol className="grid gap-x-[clamp(1.25rem,3vw,3rem)] gap-y-9 border-y border-(--landing-green)/35 py-[clamp(2rem,4.25svh,3rem)] [counter-reset:steps] min-[38.01rem]:grid-cols-3 [&>li]:relative [&>li]:ps-8 [&>li]:[counter-increment:steps] [&>li]:before:absolute [&>li]:before:top-1 [&>li]:before:start-0 [&>li]:before:text-xs [&>li]:before:content-[counter(steps,decimal-leading-zero)] [&_h3]:text-[clamp(1.4rem,2vw,2rem)] [&_h3]:leading-tight [&_h3]:[font-family:var(--landing-text),Georgia,serif] [&_p]:mt-3.5 [&_p]:max-w-[44ch] [&_p]:leading-relaxed [&_p]:text-(--landing-muted)">

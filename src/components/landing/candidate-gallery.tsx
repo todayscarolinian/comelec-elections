@@ -1,4 +1,5 @@
 import { displayHeading, sectionInner, sectionPadding } from './landing-styles'
+import { ArrowUpRight } from 'lucide-react'
 import Image from 'next/image'
 import { ELECTION, type CandidateDef, type ElectionDef } from '@/election'
 
@@ -36,8 +37,8 @@ function CandidateCard({ candidate }: { candidate: CandidateDef }) {
           >
             {candidate.party ?? 'Independent'}
           </span>
-          <span>
-            View profile <span aria-hidden="true">↗</span>
+          <span className="inline-flex items-center gap-1">
+            View profile <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
             <span className="sr-only"> for {candidate.name}</span>
           </span>
         </summary>
@@ -110,7 +111,7 @@ export function CandidateGallery() {
         </div>
         <details className="mt-10">
           <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-2 border border-(--landing-green)/45 px-4 text-2xl hover:underline hover:underline-offset-4 [font-family:var(--landing-text),Georgia,serif] [&::-webkit-details-marker]:hidden">
-            View all candidates <span aria-hidden="true">↗</span>
+            View all candidates <ArrowUpRight aria-hidden="true" className="size-5 shrink-0" />
           </summary>
           <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-6 [&_summary]:cursor-pointer [&_summary]:py-1.5">
             {offices.map((office) => (

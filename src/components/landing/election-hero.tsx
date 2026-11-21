@@ -1,4 +1,5 @@
 import { action } from './landing-styles'
+import { ArrowUpRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ElectionStatus } from './election-status'
@@ -23,7 +24,7 @@ export function ElectionHero() {
               className={`${action} bg-(--landing-green) text-(--landing-cream) hover:bg-[#233b18] focus-visible:outline-(--landing-green)`}
               href="/register"
             >
-              Check registration <span aria-hidden="true">↗</span>
+              Check registration <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
             </Link>
           </div>
           <div className="relative isolate mx-[calc(var(--landing-section-gutter)-var(--landing-nav-gutter))] [--hero-title-limit:29svh] [container-type:inline-size] [@media(max-height:50rem)]:[--hero-title-limit:27svh]">

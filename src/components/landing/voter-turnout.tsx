@@ -5,6 +5,7 @@ import {
   sectionInner,
   sectionPadding,
 } from './landing-styles'
+import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 
 export function VoterTurnout() {
@@ -36,7 +37,7 @@ export function VoterTurnout() {
             className={`${action} bg-(--landing-cream) text-(--landing-green) hover:bg-[#e7ebcd] focus-visible:outline-(--landing-cream)`}
             href="/register"
           >
-            Check registration <span aria-hidden="true">↗</span>
+            Check registration <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
           </Link>
         </div>
       </div>

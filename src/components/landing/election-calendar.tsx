@@ -1,5 +1,6 @@
 'use client'
 
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { displayHeading, sectionAnchor, sectionInner, sectionPadding } from './landing-styles'
 import { useState } from 'react'
 
@@ -19,6 +20,7 @@ export function ElectionCalendar() {
   const month = months[monthIndex]
   const weeks = Math.ceil((month.firstDay + month.days) / 7)
   const isNovember = monthIndex === 0
+  const MonthChevron = isNovember ? ChevronRight : ChevronLeft
 
   return (
     <section
@@ -54,11 +56,11 @@ export function ElectionCalendar() {
               </h3>
               <button
                 type="button"
-                className="min-h-11 min-w-11 cursor-pointer text-[1.6rem] hover:bg-(--landing-cream)/55"
+                className="inline-flex size-11 cursor-pointer items-center justify-center hover:bg-(--landing-cream)/55"
                 aria-label={isNovember ? 'Next month' : 'Previous month'}
                 onClick={() => setMonthIndex(isNovember ? 1 : 0)}
               >
-                {isNovember ? '›' : '‹'}
+                <MonthChevron aria-hidden="true" size={20} />
               </button>
             </div>
             <span className="text-[clamp(1.5rem,2.2vw,2rem)] italic [font-family:var(--landing-fraunces),Georgia,serif]">
