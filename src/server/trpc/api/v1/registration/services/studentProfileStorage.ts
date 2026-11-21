@@ -3,6 +3,31 @@ import { getSupabaseAdmin } from '@/server/storage'
 
 const STUDENT_PROFILE_BUCKET = 'student-profiles'
 
+export const STUDENT_PROFILE_VIEW_SECONDS = 10 * 60
+
+type ViewBucket = {
+  createSignedUrl(
+    path: string,
+    expiresIn: number,
+  ): Promise<{
+    data: { signedUrl: string } | null
+    error: unknown
+  }>
+}
+
+export async function createSignedStudentProfileView(
+  path: string,
+  bucket: ViewBucket = getSupabaseAdmin().storage.from(STUDENT_PROFILE_BUCKET),
+): Promise<string> {
+  try {
+    const { data, error } = await bucket.createSignedUrl(path, STUDENT_PROFILE_VIEW_SECONDS)
+    if (error || !data) throw new Error()
+    return data.signedUrl
+  } catch {
+    throw new Error('Unable to view Student Profile.')
+  }
+}
+
 type SignedUploadBucket = {
   createSignedUploadUrl(
     path: string,
