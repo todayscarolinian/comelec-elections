@@ -2,6 +2,7 @@ import { Bell, LogIn } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Suspense, type ComponentPropsWithoutRef } from 'react'
+import { BallotEntryTrigger, BallotSignInTrigger } from '@/components/ballot/ballot-sign-in'
 import prisma from '@/lib/prisma'
 import { auth } from '@/server/auth'
 import { ElectionAccountMenu, type ElectionAccount } from './election-account-menu'
@@ -76,17 +77,21 @@ function NavigationBar({
           <ul className="flex flex-wrap gap-x-[clamp(1rem,4.4vw,4rem)] gap-y-1 max-[38rem]:col-span-2 max-[38rem]:row-start-2 max-[38rem]:justify-between max-[38rem]:gap-x-2 max-[38rem]:text-sm">
             {sections.map(({ section, label }) => (
               <li key={section}>
-                <ElectionLink
-                  isLanding={isLanding}
-                  section={section}
-                  aria-current={
-                    (isLanding && section === 'home') || (isBallot && section === 'ballot')
-                      ? 'page'
-                      : undefined
-                  }
-                >
-                  {label}
-                </ElectionLink>
+                {section === 'ballot' && isLanding && !account ? (
+                  <BallotEntryTrigger />
+                ) : (
+                  <ElectionLink
+                    isLanding={isLanding}
+                    section={section}
+                    aria-current={
+                      (isLanding && section === 'home') || (isBallot && section === 'ballot')
+                        ? 'page'
+                        : undefined
+                    }
+                  >
+                    {label}
+                  </ElectionLink>
+                )}
               </li>
             ))}
           </ul>
@@ -94,19 +99,20 @@ function NavigationBar({
             {account ? (
               <ElectionAccountMenu account={account} />
             ) : account === null && !hideSignIn ? (
-              <Link
-                href={
-                  isBallot
-                    ? '/auth/sign-in?next=%2Fballot'
-                    : isLanding
-                      ? '/auth/sign-in'
-                      : '/auth/sign-in?next=%2Fregister'
-                }
-                className="gap-2 px-1 text-sm"
-              >
-                <LogIn aria-hidden="true" size={18} />
-                Sign in
-              </Link>
+              isBallot ? (
+                <BallotSignInTrigger className="inline-flex min-h-11 cursor-pointer items-center gap-2 px-1 text-sm font-medium hover:underline hover:underline-offset-4">
+                  <LogIn aria-hidden="true" size={18} />
+                  Sign in
+                </BallotSignInTrigger>
+              ) : (
+                <Link
+                  href={isLanding ? '/auth/sign-in' : '/auth/sign-in?next=%2Fregister'}
+                  className="gap-2 px-1 text-sm"
+                >
+                  <LogIn aria-hidden="true" size={18} />
+                  Sign in
+                </Link>
+              )
             ) : null}
           </div>
         </nav>

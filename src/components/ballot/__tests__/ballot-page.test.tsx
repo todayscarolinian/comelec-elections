@@ -4,12 +4,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ELECTION } from '@/election'
 import { BallotPage } from '../ballot-page'
 
-const { election, myStatus, registration, cast } = vi.hoisted(() => ({
+const { election, myStatus, registration, cast, signIn } = vi.hoisted(() => ({
   election: vi.fn(),
   myStatus: vi.fn(),
   registration: vi.fn(),
   cast: vi.fn(),
+  signIn: vi.fn(),
 }))
+
+vi.mock('next-auth/react', () => ({ signIn }))
 
 vi.mock('@/lib/trpc/client', () => ({
   useTRPC: () => ({
@@ -76,13 +79,27 @@ describe('BallotPage', () => {
     cast.mockReset().mockResolvedValue({ ok: true, held: false })
   })
 
-  it('shows a sign-in link that returns to the ballot', async () => {
+  it('opens the sign-in dialog and returns to the ballot after Google sign-in', async () => {
     myStatus.mockRejectedValue({ data: { code: 'UNAUTHORIZED' } })
-    showBallot()
+    signIn.mockReset().mockResolvedValue(undefined)
+    // jsdom does not implement showModal.
+    const prototype = HTMLDialogElement.prototype
+    Object.defineProperty(prototype, 'showModal', {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.open = true
+      },
+    })
 
-    const link = await screen.findByRole('link', { name: 'Sign in' })
-    expect(link.getAttribute('href')).toBe('/auth/sign-in?next=%2Fballot')
-    expect(registration).not.toHaveBeenCalled()
+    try {
+      showBallot()
+      const dialog = await screen.findByRole('dialog', { name: 'Sign in to vote' })
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Continue with Google' }))
+      expect(signIn).toHaveBeenCalledExactlyOnceWith('google', { redirectTo: '/ballot' })
+      expect(registration).not.toHaveBeenCalled()
+    } finally {
+      Reflect.deleteProperty(prototype, 'showModal')
+    }
   })
 
   it('directs voters without a registration to the registration page', async () => {

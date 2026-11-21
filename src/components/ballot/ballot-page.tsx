@@ -7,6 +7,7 @@ import { useRef, useState } from 'react'
 import { electionDay } from '@/components/landing/landing-schedule'
 import { useTRPC } from '@/lib/trpc/client'
 import { BallotFlow } from './ballot-flow'
+import { BallotSignIn, BallotSignInDialog } from './ballot-sign-in'
 import { BallotIntro, BallotProgress } from './ballot-steps'
 import { ballotAction, ballotEntrance, ballotHeading, ballotTextAction } from './ballot-styles'
 
@@ -157,14 +158,7 @@ export function BallotPage() {
 
   let content
   if (unauthorized) {
-    content = (
-      <Notice
-        heading="Sign in to vote."
-        description="Use your USC Google account to open your ballot."
-        href="/auth/sign-in?next=%2Fballot"
-        action="Sign in"
-      />
-    )
+    content = <BallotSignIn />
   } else if (receipt || status === 'already_voted' || status === 'held') {
     content = (
       <BallotReceipt
@@ -253,6 +247,7 @@ export function BallotPage() {
         )}
       </div>
       {content}
+      <BallotSignInDialog />
     </>
   )
 }
