@@ -12,6 +12,9 @@ vi.mock('next/font/local', () => ({ default: () => ({ variable: 'font-local' }) 
 vi.mock('@/components/election/election-navigation', () => ({
   ElectionNavigation: () => <header />,
 }))
+vi.mock('@/components/ballot/ballot-entry', () => ({
+  BallotEntry: () => <span>Ballot</span>,
+}))
 
 const documents = [
   ['privacy', PRIVACY_POLICY],

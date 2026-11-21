@@ -27,12 +27,13 @@ type NavigationProps = {
 }
 
 function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkProps) {
-  if (section === 'ballot')
+  if (section === 'candidates' || section === 'ballot') {
     return (
-      <Link href="/ballot" {...props}>
+      <Link href={`/${section}`} {...props}>
         {children}
       </Link>
     )
+  }
 
   const hash = `#${section}`
   if (section === 'turnout') {
@@ -61,8 +62,8 @@ function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkPr
 function NavigationBar({
   isLanding,
   hideSignIn,
-  account,
   activeSection,
+  account,
 }: NavigationProps & { account?: ElectionAccount | null }) {
   return (
     <header className={`sticky top-0 z-20 ${isLanding ? 'h-0' : ''}`}>
@@ -88,7 +89,7 @@ function NavigationBar({
           </div>
           <ul className="flex flex-wrap gap-x-[clamp(1rem,4.4vw,4rem)] gap-y-1 max-[38rem]:col-span-2 max-[38rem]:row-start-2 max-[38rem]:justify-between max-[38rem]:gap-x-2 max-[38rem]:text-sm">
             {sections.map(({ section, label }) => {
-              const isCurrent = (isLanding && section === 'home') || section === activeSection
+              const isCurrent = section === (activeSection ?? (isLanding ? 'home' : undefined))
               return (
                 <li key={section}>
                   {section === 'ballot' && !account ? (
