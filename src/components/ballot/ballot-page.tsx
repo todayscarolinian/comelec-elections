@@ -7,7 +7,7 @@ import { useRef, useState } from 'react'
 import { electionDay } from '@/components/landing/landing-schedule'
 import { useTRPC } from '@/lib/trpc/client'
 import { BallotFlow } from './ballot-flow'
-import { BallotSignIn, BallotSignInDialog } from './ballot-sign-in'
+import { BallotSignIn } from './ballot-sign-in'
 import { BallotIntro, BallotProgress } from './ballot-steps'
 import { ballotAction, ballotEntrance, ballotHeading, ballotTextAction } from './ballot-styles'
 
@@ -247,7 +247,6 @@ export function BallotPage() {
         )}
       </div>
       {content}
-      <BallotSignInDialog />
     </>
   )
 }

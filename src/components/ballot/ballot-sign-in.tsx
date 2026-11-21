@@ -20,10 +20,12 @@ export function BallotSignInTrigger({
   children,
   className,
   id,
+  isCurrent,
 }: {
   children: ReactNode
   className: string
   id?: string
+  isCurrent?: boolean
 }) {
   return (
     <button
@@ -31,6 +33,7 @@ export function BallotSignInTrigger({
       type="button"
       aria-haspopup="dialog"
       aria-controls={dialogId}
+      aria-current={isCurrent ? 'page' : undefined}
       onClick={(event) => openDialog(event.currentTarget)}
       className={className}
     >
@@ -39,9 +42,12 @@ export function BallotSignInTrigger({
   )
 }
 
-export function BallotEntryTrigger() {
+export function BallotEntryTrigger({ isCurrent = false }: { isCurrent?: boolean }) {
   return (
-    <BallotSignInTrigger className="inline-flex min-h-11 cursor-pointer items-center font-medium hover:underline hover:underline-offset-4">
+    <BallotSignInTrigger
+      isCurrent={isCurrent}
+      className="inline-flex min-h-11 cursor-pointer items-center font-medium underline-offset-4 hover:underline aria-[current=page]:underline"
+    >
       Ballot
     </BallotSignInTrigger>
   )
@@ -72,7 +78,7 @@ export function BallotSignInDialog() {
       aria-labelledby={`${dialogId}-title`}
       aria-describedby={`${dialogId}-description`}
       closedby="any"
-      className="election-dialog m-auto max-h-[calc(100dvh-2rem)] w-[min(calc(100%-2rem),30rem)] overflow-y-auto overscroll-contain border border-comelec-sage bg-comelec-cream p-6 text-comelec-forest shadow-[0_18px_44px_rgba(10,20,5,0.24)] sm:p-8"
+      className="election-dialog m-auto max-h-[calc(100dvh-2rem)] w-[min(calc(100%-2rem),30rem)] overflow-y-auto overscroll-contain border border-comelec-sage bg-comelec-cream p-6 text-comelec-forest shadow-[0_18px_44px_rgba(10,20,5,0.24)] sm:p-8 [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-4"
     >
       <h2 id={`${dialogId}-title`} className="pe-10 font-display text-4xl leading-tight italic">
         Sign in to vote

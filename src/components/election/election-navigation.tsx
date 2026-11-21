@@ -91,8 +91,8 @@ function NavigationBar({
               const isCurrent = (isLanding && section === 'home') || section === activeSection
               return (
                 <li key={section}>
-                  {section === 'ballot' && isLanding && !account ? (
-                    <BallotEntryTrigger />
+                  {section === 'ballot' && !account ? (
+                    <BallotEntryTrigger isCurrent={isCurrent} />
                   ) : (
                     <ElectionLink
                       isLanding={isLanding}

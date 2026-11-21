@@ -1,7 +1,6 @@
 import { sectionAnchor } from './landing-styles'
 import { Fraunces, Inter } from 'next/font/google'
 import localFont from 'next/font/local'
-import { BallotSignInDialog } from '@/components/ballot/ballot-sign-in'
 import { ElectionNavigation } from '@/components/election/election-navigation'
 import { CandidateGallery } from './candidate-gallery'
 import { ElectionCalendar } from './election-calendar'
@@ -60,8 +59,7 @@ export function LandingPage() {
         <VotingGuide />
         <VoterTurnout />
       </main>
-      <ElectionFooter isLanding />
-      <BallotSignInDialog />
+      <ElectionFooter />
     </div>
   )
 }
