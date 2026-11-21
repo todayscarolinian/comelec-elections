@@ -116,11 +116,7 @@ export function StudentProfileUpload({
           {error}
         </p>
       )}
-      {uploadedFileName && (
-        <output className="block text-sm font-medium text-[#324e1f]">
-          Student Profile uploaded.
-        </output>
-      )}
+      {uploadedFileName && <output className="block text-sm font-medium text-[#324e1f]"></output>}
     </div>
   )
 }

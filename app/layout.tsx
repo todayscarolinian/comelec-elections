@@ -14,6 +14,7 @@ import {
 } from '@/lib/site'
 import { TRPCReactProvider } from '@/lib/trpc/client'
 import './globals.css'
+import { Toaster } from 'sonner'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -81,6 +82,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${antinomiaText.variable} ${antinomiaDisplay.variable} h-full antialiased motion-safe:data-[landing-scroll=true]:scroll-smooth`}
     >
       <body className="min-h-full flex flex-col">
+        <Toaster position="bottom-right" richColors />
         <LandingScroll />
         <TRPCReactProvider>{children}</TRPCReactProvider>
         <BallotSignInDialog />
