@@ -74,6 +74,7 @@ function registration(overrides: Partial<Registration> = {}): Registration {
     email: '21012345@example.org',
     studentId: '21012345',
     yearLevel: '3',
+    school: 'SCHOOL_A',
     status: 'PENDING',
     submittedAt,
     reviewedBy: null,
@@ -182,13 +183,25 @@ describe('RegistrationReview live API wiring', () => {
       (screen.getByRole('button', { name: 'Approve registration' }) as HTMLButtonElement).disabled,
     ).toBe(false)
   })
+  it('submits a corrected School with the approval', async () => {
+    render(<RegistrationReview />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'School on approval' }), {
+      target: { value: 'SCHOOL_C' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Approve registration' }))
+    await waitFor(() =>
+      expect(approve).toHaveBeenCalledWith({ id, yearLevel: '3', school: 'SCHOOL_C', submittedAt }),
+    )
+  })
   it('submits corrected Year Level and submission version, then refreshes the queue', async () => {
     render(<RegistrationReview />)
     fireEvent.change(screen.getByRole('combobox', { name: 'Year level on approval' }), {
       target: { value: '2' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Approve registration' }))
-    await waitFor(() => expect(approve).toHaveBeenCalledWith({ id, yearLevel: '2', submittedAt }))
+    await waitFor(() =>
+      expect(approve).toHaveBeenCalledWith({ id, yearLevel: '2', school: 'SCHOOL_A', submittedAt }),
+    )
     await waitFor(() =>
       expect(screen.getByRole('status').textContent).toContain(
         'Juan Dela Cruz approved for Year 2',

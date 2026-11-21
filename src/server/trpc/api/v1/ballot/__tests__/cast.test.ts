@@ -92,6 +92,16 @@ describe('ballot.cast', () => {
     },
   )
 
+  it('stores a null School when the Registration predates the School field', async () => {
+    const { caller, tx } = setup({
+      registration: { status: 'APPROVED', yearLevel: '2', school: null },
+    })
+    await caller.ballot.cast(validBallot())
+    expect(tx.ballot.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ school: null }) }),
+    )
+  })
+
   it('locks main ElectionState FOR SHARE and uses only transaction-scoped reads and writes', async () => {
     const { caller, tx, events, db } = setup()
     await expect(caller.ballot.cast(validBallot())).resolves.toEqual({ ok: true, held: false })
@@ -108,21 +118,24 @@ describe('ballot.cast', () => {
       ...unknown[],
     ]
     expect(regStrings.join('?')).toMatch(
-      /SELECT\s+status,\s+"yearLevel"\s+FROM\s+"Registration"\s+WHERE\s+"personId"\s*=\s*\?\s+FOR SHARE/i,
+      /SELECT\s+status,\s+"yearLevel",\s+school\s+FROM\s+"Registration"\s+WHERE\s+"personId"\s*=\s*\?\s+FOR SHARE/i,
     )
     expect(regValues).toEqual([personId])
     expect(events).toEqual(['begin', 'lock', 'registration', 'ballot', 'answers', 'commit'])
   })
 
-  it('stores authenticated Person, Registration year snapshot and server timestamp', async () => {
+  it('stores authenticated Person, Registration year and School snapshots and server timestamp', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(now)
-    const { caller, tx } = setup({ registration: { status: 'APPROVED', yearLevel: '4' } })
+    const { caller, tx } = setup({
+      registration: { status: 'APPROVED', yearLevel: '4', school: 'SCHOOL_C' },
+    })
     await caller.ballot.cast(validBallot())
     expect(tx.ballot.create).toHaveBeenCalledWith({
       data: {
         personId: 'person-1',
         yearLevel: '4',
+        school: 'SCHOOL_C',
         disclosureAcceptedAt: now,
         heldAcknowledgedAt: null,
         castAt: now,

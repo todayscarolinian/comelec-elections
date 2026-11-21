@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, within, waitFor } from '@testing-library/react'
 import type { inferRouterOutputs } from '@trpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppRouter } from '@/server/trpc/root'
@@ -59,6 +59,12 @@ function dashboard(overrides: Partial<Dashboard> = {}): Dashboard {
         at: new Date('2026-11-24T06:12:00Z'),
       },
     ],
+    turnoutBySchool: [
+      { school: 'SCHOOL_A', label: 'School A', counted: 512, held: 3 },
+      { school: 'SCHOOL_B', label: 'School B', counted: 1200, held: 0 },
+      { school: 'SCHOOL_C', label: 'School C', counted: 0, held: 0 },
+      { school: null, label: 'Not recorded', counted: 41, held: 1 },
+    ],
     ...overrides,
   }
 }
@@ -99,6 +105,22 @@ describe('AdminDashboard', () => {
 
     expect(screen.getByRole('heading', { name: title })).toBeTruthy()
     expect((screen.getByRole('button', { name: action }) as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('shows turnout by School, including Schools with no ballots and unrecorded ones', () => {
+    state.data = dashboard()
+    render(<AdminDashboard />)
+    const table = screen.getByRole('table')
+    const rows = within(table)
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => [...row.querySelectorAll('th, td')].map((cell) => cell.textContent))
+    expect(rows).toEqual([
+      ['School A', '512', '3'],
+      ['School B', '1,200', '0'],
+      ['School C', '0', '0'],
+      ['Not recorded', '41', '1'],
+    ])
   })
 
   it('locks reopening once results are released', () => {

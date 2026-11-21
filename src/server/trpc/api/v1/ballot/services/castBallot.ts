@@ -16,6 +16,7 @@ export class BallotCastError extends Error {
 type RegistrationRow = {
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   yearLevel: string
+  school: string | null
 }
 
 function isPersonIdTarget(target: unknown) {
@@ -64,7 +65,7 @@ export async function castBallot(
       // finishes first (and this cast reads its result) or waits for this cast to
       // commit (and then sees, and updates, the new Ballot).
       const [registration] = await tx.$queryRaw<RegistrationRow[]>`
-        SELECT status, "yearLevel"
+        SELECT status, "yearLevel", school
         FROM "Registration"
         WHERE "personId" = ${personId}
         FOR SHARE
@@ -90,6 +91,7 @@ export async function castBallot(
         data: {
           personId,
           yearLevel: registration.yearLevel,
+          school: registration.school,
           disclosureAcceptedAt: castAt,
           heldAcknowledgedAt: held ? castAt : null,
           castAt,

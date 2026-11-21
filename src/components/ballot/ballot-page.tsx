@@ -1,6 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { SchoolPrompt } from '@/components/registration/school-prompt'
 import { ArrowUpRight, Check } from 'lucide-react'
 import Link from 'next/link'
 import { useRef, useState } from 'react'
@@ -151,6 +152,11 @@ export function BallotPage() {
   const open = election.data?.status === 'OPEN'
   const held = status === 'held' || (status !== 'already_voted' && Boolean(receipt?.held))
   const castError = cast.error
+  // Registrations made before School was collected are asked once; see SchoolPrompt.
+  const needsSchool = !!voter && !voter.school
+  const schoolPrompt = needsSchool ? (
+    <SchoolPrompt actionClassName={ballotAction} onSaved={() => void refresh()} />
+  ) : null
   const unauthorized =
     ballot.error?.data?.code === 'UNAUTHORIZED' ||
     registration.error?.data?.code === 'UNAUTHORIZED' ||
@@ -161,13 +167,16 @@ export function BallotPage() {
     content = <BallotSignIn />
   } else if (receipt || status === 'already_voted' || status === 'held') {
     content = (
-      <BallotReceipt
-        held={held}
-        justCast={Boolean(receipt)}
-        rejected={voter?.status === 'REJECTED'}
-        rejectionReason={voter?.rejectionReason}
-        canResubmit={open}
-      />
+      <>
+        {schoolPrompt}
+        <BallotReceipt
+          held={held}
+          justCast={Boolean(receipt)}
+          rejected={voter?.status === 'REJECTED'}
+          rejectionReason={voter?.rejectionReason}
+          canResubmit={open}
+        />
+      </>
     )
   } else if (
     (!ballot.data && ballot.isError) ||
@@ -213,6 +222,9 @@ export function BallotPage() {
         action="Back to home"
       />
     )
+  } else if (schoolPrompt) {
+    // Ask before the Ballot so this Ballot is counted under the right School.
+    content = <div className="grow border-t border-comelec-sage py-12">{schoolPrompt}</div>
   } else {
     content = (
       <BallotFlow

@@ -1,7 +1,8 @@
 import { z } from 'zod'
 import { normalizeHostedDomain } from '@/server/auth/policy'
 import { AUDIT_ACTIONS } from '@/server/trpc/api/v1/audit/schema'
-import { YEAR_LEVELS, ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
+import { SCHOOLS, YEAR_LEVELS, ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
+import { resultsOutputSchema } from '@/server/trpc/api/v1/results/schema'
 
 const organizationEmail = z
   .string()
@@ -59,6 +60,7 @@ export const registrationReviewOutputSchema = z.object({
   email: z.string(),
   studentId: z.string(),
   yearLevel: z.string(),
+  school: z.string().nullable(),
   status: registrationStatusSchema,
   submittedAt: z.date(),
   reviewedBy: z.string().nullable(),
@@ -74,6 +76,7 @@ export const approveRegistrationInputSchema = z.object({
   id: z.uuid(),
   submittedAt: z.date(),
   yearLevel: z.enum(YEAR_LEVELS).optional(),
+  school: z.enum(SCHOOLS).optional(),
 })
 export const rejectRegistrationInputSchema = z.object({
   id: z.uuid(),
@@ -115,6 +118,14 @@ export const dashboardOutputSchema = z.object({
     z.object({ id: z.string(), name: z.string(), email: z.string(), yearLevel: z.string() }),
   ),
   recentActivity: z.array(auditEntryOutputSchema),
+  turnoutBySchool: z.array(
+    z.object({
+      school: z.string().nullable(),
+      label: z.string(),
+      counted: z.number().int().nonnegative(),
+      held: z.number().int().nonnegative(),
+    }),
+  ),
 })
 
 export const releaseResultsOutputSchema = z.object({ resultsReleasedAt: z.date() })
@@ -162,3 +173,11 @@ export const listAuditLogOutputSchema = z.object({
   items: z.array(auditEntryOutputSchema),
   nextCursor: z.string().nullable(),
 })
+
+export const resultsBySchoolOutputSchema = z.array(
+  z.object({
+    school: z.string().nullable(),
+    label: z.string(),
+    results: resultsOutputSchema,
+  }),
+)

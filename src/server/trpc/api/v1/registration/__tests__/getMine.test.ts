@@ -23,6 +23,7 @@ type WindowStatus = 'OPEN' | 'CLOSED'
 type Registration = {
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   yearLevel: string
+  school: string | null
   rejectionReason: string | null
 }
 
@@ -84,6 +85,7 @@ describe('registration.getMine', () => {
         registration: {
           status,
           yearLevel: '3',
+          school: 'SCHOOL_B',
           rejectionReason: 'Please include the current term.',
         },
       })
@@ -92,13 +94,14 @@ describe('registration.getMine', () => {
         registration: {
           status,
           yearLevel: '3',
+          school: 'SCHOOL_B',
           rejectionReason: 'Please include the current term.',
         },
         canSubmit: true,
       })
       expect(db.registration.findUnique).toHaveBeenCalledWith({
         where: { personId: 'person-1' },
-        select: { status: true, yearLevel: true, rejectionReason: true },
+        select: { status: true, yearLevel: true, school: true, rejectionReason: true },
       })
     },
   )
@@ -106,7 +109,7 @@ describe('registration.getMine', () => {
   it('does not read another Applicant’s registration', async () => {
     const { caller } = setup({
       currentSession: { user: { personId: 'person-2', email: 'other@example.org' } },
-      registration: { status: 'APPROVED', yearLevel: '4', rejectionReason: null },
+      registration: { status: 'APPROVED', yearLevel: '4', school: null, rejectionReason: null },
     })
     await expect(caller.getMine()).resolves.toEqual({
       account: { ...account, email: 'other@example.org' },

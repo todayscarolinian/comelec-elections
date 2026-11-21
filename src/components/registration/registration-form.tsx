@@ -5,8 +5,11 @@ import Link from 'next/link'
 import { useState, type FormEvent } from 'react'
 import { useTRPC } from '@/lib/trpc/client'
 import {
+  SCHOOLS,
+  SCHOOL_LABELS,
   YEAR_LEVELS,
   YEAR_LEVEL_LABELS,
+  type School,
   type YearLevel,
 } from '@/server/trpc/api/v1/registration/schema'
 import { registrationAction } from './registration-styles'
@@ -14,14 +17,16 @@ import { StudentProfileUpload } from './student-profile-upload'
 
 type RegistrationFormProps = {
   initialYearLevel?: string
+  initialSchool?: string | null
   resubmitting: boolean
-  onSubmitted: (yearLevel: YearLevel) => void
+  onSubmitted: (yearLevel: YearLevel, school: School) => void
   onSessionExpired: () => void
   onRefresh: () => void
 }
 
 export function RegistrationForm({
   initialYearLevel,
+  initialSchool,
   resubmitting,
   onSubmitted,
   onSessionExpired,
@@ -29,10 +34,11 @@ export function RegistrationForm({
 }: Readonly<RegistrationFormProps>) {
   const trpc = useTRPC()
   const [yearLevel, setYearLevel] = useState(initialYearLevel ?? '')
+  const [school, setSchool] = useState(initialSchool ?? '')
   const [studentProfilePath, setStudentProfilePath] = useState('')
   const submit = useMutation({
     ...trpc.registration.submit.mutationOptions(),
-    onSuccess: (_data, input) => onSubmitted(input.yearLevel),
+    onSuccess: (_data, input) => onSubmitted(input.yearLevel, input.school),
     onError: (error) => {
       if (error.data?.code === 'UNAUTHORIZED') onSessionExpired()
       if (error.data?.code === 'FORBIDDEN' || error.data?.code === 'CONFLICT') onRefresh()
@@ -40,10 +46,11 @@ export function RegistrationForm({
     },
   })
   const selectedYear = YEAR_LEVELS.find((level) => level === yearLevel)
-  const canSubmit = !!selectedYear && !!studentProfilePath && !submit.isPending
+  const selectedSchool = SCHOOLS.find((value) => value === school)
+  const canSubmit = !!selectedYear && !!selectedSchool && !!studentProfilePath && !submit.isPending
   const errorMessage =
     submit.error?.data?.code === 'BAD_REQUEST'
-      ? 'Please check your Year Level and upload your Student Profile again.'
+      ? 'Please check your Year Level and School, and upload your Student Profile again.'
       : submit.error?.data?.code === 'FORBIDDEN'
         ? 'Registration is closed. Refresh your status before trying again.'
         : submit.error?.data?.code === 'CONFLICT'
@@ -52,8 +59,8 @@ export function RegistrationForm({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!canSubmit || !selectedYear) return
-    submit.mutate({ yearLevel: selectedYear, studentProfilePath })
+    if (!canSubmit || !selectedYear || !selectedSchool) return
+    submit.mutate({ yearLevel: selectedYear, school: selectedSchool, studentProfilePath })
   }
 
   return (
@@ -87,6 +94,33 @@ export function RegistrationForm({
         </select>
         <p id="year-level-hint" className="text-sm leading-relaxed text-[#56654a]">
           For information only. Your Year Level does not change your ballot.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="school" className="block text-sm font-medium text-[#324e1f]">
+          School
+        </label>
+        <select
+          id="school"
+          value={school}
+          required
+          aria-describedby="school-hint"
+          disabled={submit.isPending}
+          onChange={(event) => setSchool(event.target.value)}
+          className="min-h-14 w-full border border-[#b6c89f] bg-transparent px-4 py-3 text-base text-[#324e1f] disabled:opacity-60"
+        >
+          <option value="" disabled>
+            Choose your School
+          </option>
+          {SCHOOLS.map((value) => (
+            <option key={value} value={value}>
+              {SCHOOL_LABELS[value]}
+            </option>
+          ))}
+        </select>
+        <p id="school-hint" className="text-sm leading-relaxed text-[#56654a]">
+          Used for turnout statistics only. Your School does not change your ballot.
         </p>
       </div>
 

@@ -11,6 +11,18 @@ export const YEAR_LEVEL_LABELS: Record<YearLevel, string> = {
   '4': '4th Year',
 }
 
+// Placeholder Schools until the client confirms the official list. Codes are stored in the
+// database, so keep them stable; change only the labels when a School is renamed.
+export const SCHOOLS = ['SCHOOL_A', 'SCHOOL_B', 'SCHOOL_C'] as const
+
+export type School = (typeof SCHOOLS)[number]
+
+export const SCHOOL_LABELS: Record<School, string> = {
+  SCHOOL_A: 'School A',
+  SCHOOL_B: 'School B',
+  SCHOOL_C: 'School C',
+}
+
 export const createStudentProfileUploadOutputSchema = z.object({
   path: z.string().min(1),
   signedUrl: z.url(),
@@ -18,6 +30,7 @@ export const createStudentProfileUploadOutputSchema = z.object({
 
 export const submitRegistrationInputSchema = z.object({
   yearLevel: z.enum(YEAR_LEVELS),
+  school: z.enum(SCHOOLS),
   studentProfilePath: z.string().min(1),
 })
 
@@ -47,8 +60,12 @@ export const ownRegistrationOutputSchema = z.object({
     .object({
       status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
       yearLevel: z.string(),
+      school: z.string().nullable(),
       rejectionReason: z.string().nullable(),
     })
     .nullable(),
   canSubmit: z.boolean(),
 })
+
+export const setSchoolInputSchema = z.object({ school: z.enum(SCHOOLS) })
+export const setSchoolOutputSchema = z.object({ school: z.enum(SCHOOLS) })

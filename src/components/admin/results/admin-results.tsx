@@ -38,6 +38,18 @@ export function AdminResults() {
   const [confirming, setConfirming] = useState(false)
   const [phrase, setPhrase] = useState('')
   const [releaseError, setReleaseError] = useState('')
+  // Loaded only on request: before release, each view is audited like the overall Results.
+  const [showBySchool, setShowBySchool] = useState(false)
+  const [school, setSchool] = useState(0)
+  const bySchool = useQuery({
+    ...trpc.admin.getResultsBySchool.queryOptions(),
+    enabled: showBySchool,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: Infinity,
+    gcTime: 0,
+    retry: (failureCount, error) => failureCount < 1 && !isAccessError(error),
+  })
 
   if (results.isPending) return <ResultsSkeleton />
   if (results.isError)
@@ -144,6 +156,44 @@ export function AdminResults() {
       <div className="mt-6">
         <ResultsTally results={data} />
       </div>
+
+      <section aria-labelledby="school-results-heading" className="mt-8">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-review-line pb-2">
+          <h2 id="school-results-heading" className="font-display text-[28px] italic">
+            Results by School
+          </h2>
+          <span className="text-xs text-review-muted">Admins only, even after release</span>
+        </div>
+        {!showBySchool ? (
+          <button
+            type="button"
+            className={`${adminButton} mt-4`}
+            onClick={() => setShowBySchool(true)}
+          >
+            Show results by School
+          </button>
+        ) : bySchool.isPending ? (
+          <p className="mt-4 text-review-muted">Loading results by School…</p>
+        ) : bySchool.isError ? (
+          <div className="mt-4">
+            <AdminLoadError error={bySchool.error} onRetry={() => void bySchool.refetch()} />
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-4">
+            <label className={`${adminField} max-w-xs`}>
+              School
+              <select value={school} onChange={(event) => setSchool(Number(event.target.value))}>
+                {bySchool.data.map((row, index) => (
+                  <option key={row.school ?? 'not-recorded'} value={index}>
+                    {row.label} ({row.results.countedBallots.toLocaleString('en-US')} counted)
+                  </option>
+                ))}
+              </select>
+            </label>
+            {bySchool.data[school] && <ResultsTally results={bySchool.data[school].results} />}
+          </div>
+        )}
+      </section>
 
       <ConfirmDialog
         open={confirming}

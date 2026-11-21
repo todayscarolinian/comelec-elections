@@ -1005,6 +1005,7 @@ export const RegistrationScalarFieldEnum = {
   id: 'id',
   personId: 'personId',
   yearLevel: 'yearLevel',
+  school: 'school',
   studentProfilePath: 'studentProfilePath',
   status: 'status',
   rejectionReason: 'rejectionReason',
@@ -1023,6 +1024,7 @@ export const BallotScalarFieldEnum = {
   id: 'id',
   personId: 'personId',
   yearLevel: 'yearLevel',
+  school: 'school',
   disclosureAcceptedAt: 'disclosureAcceptedAt',
   heldAcknowledgedAt: 'heldAcknowledgedAt',
   castAt: 'castAt'
