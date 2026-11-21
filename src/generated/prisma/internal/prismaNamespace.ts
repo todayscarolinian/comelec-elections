@@ -1011,7 +1011,9 @@ export const RegistrationScalarFieldEnum = {
   reviewedBy: 'reviewedBy',
   reviewedAt: 'reviewedAt',
   submittedAt: 'submittedAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  ocrStatus: 'ocrStatus',
+  ocrResult: 'ocrResult'
 } as const
 
 export type RegistrationScalarFieldEnum = (typeof RegistrationScalarFieldEnum)[keyof typeof RegistrationScalarFieldEnum]
@@ -1022,6 +1024,7 @@ export const BallotScalarFieldEnum = {
   personId: 'personId',
   yearLevel: 'yearLevel',
   disclosureAcceptedAt: 'disclosureAcceptedAt',
+  heldAcknowledgedAt: 'heldAcknowledgedAt',
   castAt: 'castAt'
 } as const
 
@@ -1160,6 +1163,20 @@ export type EnumRegistrationStatusFieldRefInput<$PrismaModel> = FieldRefInputTyp
  */
 export type ListEnumRegistrationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RegistrationStatus[]'>
     
+
+
+/**
+ * Reference to a field of type 'OcrStatus'
+ */
+export type EnumOcrStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OcrStatus'>
+
+
+
+/**
+ * Reference to a field of type 'OcrStatus[]'
+ */
+export type ListEnumOcrStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OcrStatus[]'>
+
 
 
 /**

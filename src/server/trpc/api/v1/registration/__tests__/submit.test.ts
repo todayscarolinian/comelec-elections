@@ -46,6 +46,9 @@ function setup({
       create: vi.fn(async () => ({})),
       updateMany: vi.fn(async () => ({ count: existing?.status === 'APPROVED' ? 0 : 1 })),
     },
+    ballot: {
+      updateMany: vi.fn(async (_args: unknown) => ({ count: 0 })),
+    },
   }
   const db = {
     person: {
@@ -120,6 +123,22 @@ describe('registration.submit', () => {
     expect(after).not.toHaveBeenCalled()
   })
 
+  it.each(['PENDING', 'REJECTED'] as const)(
+    'rejects resubmission of a %s Registration after Election closure',
+    async (status) => {
+      const { caller, tx } = setup({
+        window: { registrationStatus: 'CLOSED', electionStatus: 'CLOSED' },
+        existing: { status },
+      })
+      await expect(caller.submit(input)).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+        message: 'Registration is closed.',
+      })
+      expect(tx.registration.updateMany).not.toHaveBeenCalled()
+      expect(after).not.toHaveBeenCalled()
+    },
+  )
+
   it('allows a late Registration while the Election is open (ADR 0008)', async () => {
     const { caller, tx } = setup({
       window: { registrationStatus: 'CLOSED', electionStatus: 'OPEN' },
@@ -166,12 +185,34 @@ describe('registration.submit', () => {
     },
   )
 
+  it.each(['PENDING', 'REJECTED'] as const)(
+    'updates a Held Ballot Year Level when resubmitting a %s Registration',
+    async (status) => {
+      const { caller, tx } = setup({ existing: { status } })
+      await caller.submit({ ...input, yearLevel: '4' })
+      expect(tx.ballot.updateMany).toHaveBeenCalledExactlyOnceWith({
+        where: { personId },
+        data: { yearLevel: '4' },
+      })
+      expect(tx.ballot.updateMany.mock.invocationCallOrder[0]).toBeGreaterThan(
+        tx.registration.updateMany.mock.invocationCallOrder[0],
+      )
+    },
+  )
+
+  it('does not touch Ballots on a first submit', async () => {
+    const { caller, tx } = setup()
+    await caller.submit(input)
+    expect(tx.ballot.updateMany).not.toHaveBeenCalled()
+  })
+
   it('rejects an APPROVED Registration', async () => {
-    const { caller } = setup({ existing: { status: 'APPROVED' } })
+    const { caller, tx } = setup({ existing: { status: 'APPROVED' } })
     await expect(caller.submit(input)).rejects.toMatchObject({
       code: 'CONFLICT',
       message: 'Your Registration is already approved',
     })
+    expect(tx.ballot.updateMany).not.toHaveBeenCalled()
     expect(after).not.toHaveBeenCalled()
   })
 

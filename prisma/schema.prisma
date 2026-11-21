@@ -69,6 +69,7 @@ model Ballot {
   person               Person   @relation(fields: [personId], references: [id])
   yearLevel            String // snapshot of the approved Year Level at casting
   disclosureAcceptedAt DateTime
+  heldAcknowledgedAt   DateTime?
   castAt               DateTime @default(now())
 
   answers BallotAnswer[]

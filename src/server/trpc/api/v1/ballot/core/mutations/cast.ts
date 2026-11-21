@@ -6,7 +6,7 @@ import { protectedProcedure } from '@/server/trpc/init'
 const failureCodes = {
   ElectionClosed: 'FORBIDDEN',
   NotRegistered: 'FORBIDDEN',
-  RegistrationNotApproved: 'FORBIDDEN',
+  HeldNotAcknowledged: 'FORBIDDEN',
   InvalidBallot: 'BAD_REQUEST',
   AlreadyVoted: 'CONFLICT',
 } as const
@@ -23,8 +23,9 @@ export const cast = protectedProcedure
   })
   .input(castBallotInputSchema)
   .mutation(async ({ ctx, input }) => {
+    let result: { held: boolean }
     try {
-      await castBallot(ctx.db, ctx.person.id, input)
+      result = await castBallot(ctx.db, ctx.person.id, input)
     } catch (error) {
       if (error instanceof BallotCastError) {
         throw new TRPCError({ code: failureCodes[error.reason], message: error.reason })
@@ -33,5 +34,5 @@ export const cast = protectedProcedure
       // tRPC's development error formatting would expose it to the caller.
       throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Unable to cast Ballot.' })
     }
-    return { ok: true as const }
+    return { ok: true as const, held: result.held }
   })

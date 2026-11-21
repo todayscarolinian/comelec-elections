@@ -35,6 +35,7 @@ export type RegistrationMinAggregateOutputType = {
   reviewedAt: Date | null
   submittedAt: Date | null
   updatedAt: Date | null
+  ocrStatus: $Enums.OcrStatus | null
 }
 
 export type RegistrationMaxAggregateOutputType = {
@@ -48,6 +49,7 @@ export type RegistrationMaxAggregateOutputType = {
   reviewedAt: Date | null
   submittedAt: Date | null
   updatedAt: Date | null
+  ocrStatus: $Enums.OcrStatus | null
 }
 
 export type RegistrationCountAggregateOutputType = {
@@ -61,6 +63,8 @@ export type RegistrationCountAggregateOutputType = {
   reviewedAt: number
   submittedAt: number
   updatedAt: number
+  ocrStatus: number
+  ocrResult: number
   _all: number
 }
 
@@ -76,6 +80,7 @@ export type RegistrationMinAggregateInputType = {
   reviewedAt?: true
   submittedAt?: true
   updatedAt?: true
+  ocrStatus?: true
 }
 
 export type RegistrationMaxAggregateInputType = {
@@ -89,6 +94,7 @@ export type RegistrationMaxAggregateInputType = {
   reviewedAt?: true
   submittedAt?: true
   updatedAt?: true
+  ocrStatus?: true
 }
 
 export type RegistrationCountAggregateInputType = {
@@ -102,6 +108,8 @@ export type RegistrationCountAggregateInputType = {
   reviewedAt?: true
   submittedAt?: true
   updatedAt?: true
+  ocrStatus?: true
+  ocrResult?: true
   _all?: true
 }
 
@@ -188,6 +196,8 @@ export type RegistrationGroupByOutputType = {
   reviewedAt: Date | null
   submittedAt: Date
   updatedAt: Date
+  ocrStatus: $Enums.OcrStatus
+  ocrResult: runtime.JsonValue | null
   _count: RegistrationCountAggregateOutputType | null
   _min: RegistrationMinAggregateOutputType | null
   _max: RegistrationMaxAggregateOutputType | null
@@ -222,6 +232,8 @@ export type RegistrationWhereInput = {
   reviewedAt?: Prisma.DateTimeNullableFilter<"Registration"> | Date | string | null
   submittedAt?: Prisma.DateTimeFilter<"Registration"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Registration"> | Date | string
+  ocrStatus?: Prisma.EnumOcrStatusFilter<"Registration"> | $Enums.OcrStatus
+  ocrResult?: Prisma.JsonNullableFilter<"Registration">
   person?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>
 }
 
@@ -236,6 +248,8 @@ export type RegistrationOrderByWithRelationInput = {
   reviewedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  ocrStatus?: Prisma.SortOrder
+  ocrResult?: Prisma.SortOrderInput | Prisma.SortOrder
   person?: Prisma.PersonOrderByWithRelationInput
 }
 
@@ -253,6 +267,8 @@ export type RegistrationWhereUniqueInput = Prisma.AtLeast<{
   reviewedAt?: Prisma.DateTimeNullableFilter<"Registration"> | Date | string | null
   submittedAt?: Prisma.DateTimeFilter<"Registration"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Registration"> | Date | string
+  ocrStatus?: Prisma.EnumOcrStatusFilter<"Registration"> | $Enums.OcrStatus
+  ocrResult?: Prisma.JsonNullableFilter<"Registration">
   person?: Prisma.XOR<Prisma.PersonScalarRelationFilter, Prisma.PersonWhereInput>
 }, "id" | "personId">
 
@@ -267,6 +283,8 @@ export type RegistrationOrderByWithAggregationInput = {
   reviewedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  ocrStatus?: Prisma.SortOrder
+  ocrResult?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.RegistrationCountOrderByAggregateInput
   _max?: Prisma.RegistrationMaxOrderByAggregateInput
   _min?: Prisma.RegistrationMinOrderByAggregateInput
@@ -286,6 +304,8 @@ export type RegistrationScalarWhereWithAggregatesInput = {
   reviewedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Registration"> | Date | string | null
   submittedAt?: Prisma.DateTimeWithAggregatesFilter<"Registration"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Registration"> | Date | string
+  ocrStatus?: Prisma.EnumOcrStatusWithAggregatesFilter<"Registration"> | $Enums.OcrStatus
+  ocrResult?: Prisma.JsonNullableWithAggregatesFilter<"Registration">
 }
 
 export type RegistrationCreateInput = {
@@ -298,6 +318,8 @@ export type RegistrationCreateInput = {
   reviewedAt?: Date | string | null
   submittedAt?: Date | string
   updatedAt?: Date | string
+  ocrStatus?: $Enums.OcrStatus
+  ocrResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   person: Prisma.PersonCreateNestedOneWithoutRegistrationInput
 }
 
@@ -312,6 +334,8 @@ export type RegistrationUncheckedCreateInput = {
   reviewedAt?: Date | string | null
   submittedAt?: Date | string
   updatedAt?: Date | string
+  ocrStatus?: $Enums.OcrStatus
+  ocrResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type RegistrationUpdateInput = {
@@ -324,6 +348,8 @@ export type RegistrationUpdateInput = {
   reviewedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ocrStatus?: Prisma.EnumOcrStatusFieldUpdateOperationsInput | $Enums.OcrStatus
+  ocrResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   person?: Prisma.PersonUpdateOneRequiredWithoutRegistrationNestedInput
 }
 
@@ -338,6 +364,8 @@ export type RegistrationUncheckedUpdateInput = {
   reviewedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ocrStatus?: Prisma.EnumOcrStatusFieldUpdateOperationsInput | $Enums.OcrStatus
+  ocrResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type RegistrationCreateManyInput = {
@@ -351,6 +379,8 @@ export type RegistrationCreateManyInput = {
   reviewedAt?: Date | string | null
   submittedAt?: Date | string
   updatedAt?: Date | string
+  ocrStatus?: $Enums.OcrStatus
+  ocrResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type RegistrationUpdateManyMutationInput = {
@@ -363,6 +393,8 @@ export type RegistrationUpdateManyMutationInput = {
   reviewedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ocrStatus?: Prisma.EnumOcrStatusFieldUpdateOperationsInput | $Enums.OcrStatus
+  ocrResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type RegistrationUncheckedUpdateManyInput = {
@@ -376,6 +408,8 @@ export type RegistrationUncheckedUpdateManyInput = {
   reviewedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ocrStatus?: Prisma.EnumOcrStatusFieldUpdateOperationsInput | $Enums.OcrStatus
+  ocrResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type RegistrationNullableScalarRelationFilter = {
@@ -394,6 +428,8 @@ export type RegistrationCountOrderByAggregateInput = {
   reviewedAt?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  ocrStatus?: Prisma.SortOrder
+  ocrResult?: Prisma.SortOrder
 }
 
 export type RegistrationMaxOrderByAggregateInput = {
@@ -407,6 +443,7 @@ export type RegistrationMaxOrderByAggregateInput = {
   reviewedAt?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  ocrStatus?: Prisma.SortOrder
 }
 
 export type RegistrationMinOrderByAggregateInput = {
@@ -420,6 +457,7 @@ export type RegistrationMinOrderByAggregateInput = {
   reviewedAt?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  ocrStatus?: Prisma.SortOrder
 }
 
 export type RegistrationCreateNestedOneWithoutPersonInput = {
@@ -462,6 +500,10 @@ export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
 }
 
+export type EnumOcrStatusFieldUpdateOperationsInput = {
+  set?: $Enums.OcrStatus
+}
+
 export type RegistrationCreateWithoutPersonInput = {
   id?: string
   yearLevel: string
@@ -472,6 +514,8 @@ export type RegistrationCreateWithoutPersonInput = {
   reviewedAt?: Date | string | null
   submittedAt?: Date | string
   updatedAt?: Date | string
+  ocrStatus?: $Enums.OcrStatus
+  ocrResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type RegistrationUncheckedCreateWithoutPersonInput = {
@@ -484,6 +528,8 @@ export type RegistrationUncheckedCreateWithoutPersonInput = {
   reviewedAt?: Date | string | null
   submittedAt?: Date | string
   updatedAt?: Date | string
+  ocrStatus?: $Enums.OcrStatus
+  ocrResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type RegistrationCreateOrConnectWithoutPersonInput = {
@@ -512,6 +558,8 @@ export type RegistrationUpdateWithoutPersonInput = {
   reviewedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ocrStatus?: Prisma.EnumOcrStatusFieldUpdateOperationsInput | $Enums.OcrStatus
+  ocrResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type RegistrationUncheckedUpdateWithoutPersonInput = {
@@ -524,6 +572,8 @@ export type RegistrationUncheckedUpdateWithoutPersonInput = {
   reviewedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ocrStatus?: Prisma.EnumOcrStatusFieldUpdateOperationsInput | $Enums.OcrStatus
+  ocrResult?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 
@@ -539,6 +589,8 @@ export type RegistrationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   reviewedAt?: boolean
   submittedAt?: boolean
   updatedAt?: boolean
+  ocrStatus?: boolean
+  ocrResult?: boolean
   person?: boolean | Prisma.PersonDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["registration"]>
 
@@ -553,6 +605,8 @@ export type RegistrationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   reviewedAt?: boolean
   submittedAt?: boolean
   updatedAt?: boolean
+  ocrStatus?: boolean
+  ocrResult?: boolean
   person?: boolean | Prisma.PersonDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["registration"]>
 
@@ -567,6 +621,8 @@ export type RegistrationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   reviewedAt?: boolean
   submittedAt?: boolean
   updatedAt?: boolean
+  ocrStatus?: boolean
+  ocrResult?: boolean
   person?: boolean | Prisma.PersonDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["registration"]>
 
@@ -581,9 +637,11 @@ export type RegistrationSelectScalar = {
   reviewedAt?: boolean
   submittedAt?: boolean
   updatedAt?: boolean
+  ocrStatus?: boolean
+  ocrResult?: boolean
 }
 
-export type RegistrationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "personId" | "yearLevel" | "studentProfilePath" | "status" | "rejectionReason" | "reviewedBy" | "reviewedAt" | "submittedAt" | "updatedAt", ExtArgs["result"]["registration"]>
+export type RegistrationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "personId" | "yearLevel" | "studentProfilePath" | "status" | "rejectionReason" | "reviewedBy" | "reviewedAt" | "submittedAt" | "updatedAt" | "ocrStatus" | "ocrResult", ExtArgs["result"]["registration"]>
 export type RegistrationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   person?: boolean | Prisma.PersonDefaultArgs<ExtArgs>
 }
@@ -610,6 +668,8 @@ export type $RegistrationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     reviewedAt: Date | null
     submittedAt: Date
     updatedAt: Date
+    ocrStatus: $Enums.OcrStatus
+    ocrResult: runtime.JsonValue | null
   }, ExtArgs["result"]["registration"]>
   composites: {}
 }
@@ -1044,6 +1104,8 @@ export interface RegistrationFieldRefs {
   readonly reviewedAt: Prisma.FieldRef<"Registration", 'DateTime'>
   readonly submittedAt: Prisma.FieldRef<"Registration", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Registration", 'DateTime'>
+  readonly ocrStatus: Prisma.FieldRef<"Registration", 'OcrStatus'>
+  readonly ocrResult: Prisma.FieldRef<"Registration", 'Json'>
 }
     
 

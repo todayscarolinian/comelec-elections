@@ -24,3 +24,12 @@ export const RegistrationStatus = {
 } as const
 
 export type RegistrationStatus = (typeof RegistrationStatus)[keyof typeof RegistrationStatus]
+
+
+export const OcrStatus = {
+  PENDING: 'PENDING',
+  DONE: 'DONE',
+  FAILED: 'FAILED'
+} as const
+
+export type OcrStatus = (typeof OcrStatus)[keyof typeof OcrStatus]
