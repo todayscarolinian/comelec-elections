@@ -7,8 +7,14 @@ export const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: testDatabaseUrl, max: 10 }),
 })
 
+// Every table except Prisma's migration history, so tables added by future migrations are reset too.
 export async function resetDatabase() {
-  await db.$executeRaw`TRUNCATE TABLE "BallotAnswer", "Ballot", "Registration", "Person", "Admin", "AuditLog", "ElectionState"`
+  const tables = await db.$queryRaw<{ name: string }[]>`
+    SELECT table_name AS name FROM information_schema.tables
+    WHERE table_schema = current_schema() AND table_type = 'BASE TABLE' AND table_name <> '_prisma_migrations'`
+  if (tables.length === 0) return
+  const list = tables.map(({ name }) => `"${name.replaceAll('"', '""')}"`).join(', ')
+  await db.$executeRawUnsafe(`TRUNCATE TABLE ${list} CASCADE`)
 }
 
 async function createPerson() {

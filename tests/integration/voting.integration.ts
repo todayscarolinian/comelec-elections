@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ELECTION } from '@/election'
+import { validateBallot } from '@/server/trpc/api/v1/ballot/core/validateBallot'
 import type { BallotInput } from '@/server/trpc/api/v1/ballot/schema'
 import { createCallerFactory } from '@/server/trpc/init'
 import { appRouter } from '@/server/trpc/root'
@@ -10,7 +11,8 @@ vi.mock('@/server/auth', () => ({ auth: async () => null }))
 vi.mock('@/lib/prisma', async () => ({ default: (await import('./database')).db }))
 vi.mock('server-only', () => ({}))
 // Next's request and cache scopes are unavailable when calling a handler directly.
-vi.mock('next/server', () => ({ connection: async () => undefined }))
+// `after` callbacks (e.g. registration OCR) are post-response work with external dependencies; record them instead of running them.
+vi.mock('next/server', () => ({ connection: async () => undefined, after: vi.fn() }))
 vi.mock('next/cache', () => ({ cacheLife: () => undefined }))
 
 const createCaller = createCallerFactory(appRouter)
@@ -25,15 +27,17 @@ const expectedAnswers = ELECTION.questions.map((question, index) => ({
   questionId: question.id,
   candidateId: index === 0 ? question.candidates[0].id : null,
 }))
-const ballot: BallotInput = {
+// Parsed up front so an ELECTION change the fixture no longer satisfies fails here with a ZodError,
+// instead of surfacing as InvalidBallot in every happy-path test.
+const ballot: BallotInput = validateBallot({
   disclosureAccepted: true,
   answers: Object.fromEntries(
     expectedAnswers.map(({ questionId, candidateId }) => [
       questionId,
       candidateId ? { candidateIds: [candidateId] } : { abstain: true },
     ]),
-  ) as BallotInput['answers'], // The fixture includes one entry for every configured question.
-}
+  ),
+})
 const alreadyVoted = { code: 'CONFLICT', message: 'AlreadyVoted' }
 
 async function expectStoredBallot(personId: string, held: boolean) {
