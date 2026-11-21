@@ -1,8 +1,16 @@
 import { sectionInner } from './landing-styles'
 import Image from 'next/image'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import { BallotEntryTrigger } from '@/components/ballot/ballot-sign-in'
+import { auth } from '@/server/auth'
 
-export function ElectionFooter() {
+async function LandingBallotEntry() {
+  const session = await auth()
+  return session ? <Link href="/ballot">Ballot</Link> : <BallotEntryTrigger />
+}
+
+export function ElectionFooter({ isLanding = false }: { isLanding?: boolean }) {
   return (
     <footer>
       <div
@@ -21,9 +29,15 @@ export function ElectionFooter() {
           className="flex flex-wrap gap-x-6 text-sm [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a]:font-medium [&_a:hover]:underline [&_a:hover]:underline-offset-4"
           aria-label="Footer navigation"
         >
-          <a href="#candidates">Candidates</a>
+          <Link href="/#candidates">Candidates</Link>
           <Link href="/register">Registration</Link>
-          <a href="#voting">Ballot</a>
+          {isLanding ? (
+            <Suspense fallback={<BallotEntryTrigger />}>
+              <LandingBallotEntry />
+            </Suspense>
+          ) : (
+            <Link href="/ballot">Ballot</Link>
+          )}
         </nav>
       </div>
     </footer>

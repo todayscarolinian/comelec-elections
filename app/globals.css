@@ -110,3 +110,52 @@ body {
     translate: 0 6px;
   }
 }
+
+.election-dialog::backdrop {
+  background-color: transparent;
+}
+
+.election-dialog[open]::backdrop {
+  background-color: rgb(23 41 14 / 54%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .election-dialog {
+    opacity: 0;
+    translate: 0 8px;
+    transition-property: opacity, translate, display, overlay;
+    transition-duration: 160ms;
+    transition-timing-function: ease-in;
+    transition-behavior: allow-discrete;
+  }
+
+  .election-dialog[open] {
+    opacity: 1;
+    translate: 0 0;
+    transition-duration: 240ms;
+    transition-timing-function: cubic-bezier(0.2, 0.65, 0.3, 1);
+  }
+
+  .election-dialog::backdrop {
+    transition-property: background-color, display, overlay;
+    transition-duration: 160ms;
+    transition-timing-function: ease-in;
+    transition-behavior: allow-discrete;
+  }
+
+  .election-dialog[open]::backdrop {
+    transition-duration: 240ms;
+    transition-timing-function: ease-out;
+  }
+
+  @starting-style {
+    .election-dialog[open] {
+      opacity: 0;
+      translate: 0 8px;
+    }
+
+    .election-dialog[open]::backdrop {
+      background-color: transparent;
+    }
+  }
+}

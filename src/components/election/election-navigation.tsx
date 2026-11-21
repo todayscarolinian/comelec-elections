@@ -2,6 +2,7 @@ import { Bell, LogIn } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Suspense, type ComponentPropsWithoutRef } from 'react'
+import { BallotEntryTrigger, BallotSignInTrigger } from '@/components/ballot/ballot-sign-in'
 import prisma from '@/lib/prisma'
 import { auth } from '@/server/auth'
 import { ElectionAccountMenu, type ElectionAccount } from './election-account-menu'
@@ -9,7 +10,7 @@ import { ElectionAccountMenu, type ElectionAccount } from './election-account-me
 const sections = [
   { section: 'home', label: 'Home' },
   { section: 'candidates', label: 'Candidates' },
-  { section: 'voting', label: 'Ballot' },
+  { section: 'ballot', label: 'Ballot' },
   { section: 'turnout', label: 'Results' },
 ] as const
 
@@ -26,6 +27,13 @@ type NavigationProps = {
 }
 
 function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkProps) {
+  if (section === 'ballot')
+    return (
+      <Link href="/ballot" {...props}>
+        {children}
+      </Link>
+    )
+
   const hash = `#${section}`
   if (section === 'turnout') {
     return (
@@ -79,38 +87,44 @@ function NavigationBar({
             )}
           </div>
           <ul className="flex flex-wrap gap-x-[clamp(1rem,4.4vw,4rem)] gap-y-1 max-[38rem]:col-span-2 max-[38rem]:row-start-2 max-[38rem]:justify-between max-[38rem]:gap-x-2 max-[38rem]:text-sm">
-            {sections.map(({ section, label }) => (
-              <li key={section}>
-                <ElectionLink
-                  isLanding={isLanding}
-                  section={section}
-                  className={
-                    (isLanding && section === 'home') || section === activeSection
-                      ? 'underline underline-offset-4'
-                      : undefined
-                  }
-                  aria-current={
-                    (isLanding && section === 'home') || section === activeSection
-                      ? 'page'
-                      : undefined
-                  }
-                >
-                  {label}
-                </ElectionLink>
-              </li>
-            ))}
+            {sections.map(({ section, label }) => {
+              const isCurrent = (isLanding && section === 'home') || section === activeSection
+              return (
+                <li key={section}>
+                  {section === 'ballot' && isLanding && !account ? (
+                    <BallotEntryTrigger />
+                  ) : (
+                    <ElectionLink
+                      isLanding={isLanding}
+                      section={section}
+                      className={isCurrent ? 'underline underline-offset-4' : undefined}
+                      aria-current={isCurrent ? 'page' : undefined}
+                    >
+                      {label}
+                    </ElectionLink>
+                  )}
+                </li>
+              )
+            })}
           </ul>
           <div className="min-w-0 justify-self-end max-[38rem]:col-start-2 max-[38rem]:row-start-1">
             {account ? (
               <ElectionAccountMenu account={account} />
             ) : account === null && !hideSignIn ? (
-              <Link
-                href={isLanding ? '/auth/sign-in' : '/auth/sign-in?next=%2Fregister'}
-                className="gap-2 px-1 text-sm"
-              >
-                <LogIn aria-hidden="true" size={18} />
-                Sign in
-              </Link>
+              activeSection === 'ballot' ? (
+                <BallotSignInTrigger className="inline-flex min-h-11 cursor-pointer items-center gap-2 px-1 text-sm font-medium hover:underline hover:underline-offset-4">
+                  <LogIn aria-hidden="true" size={18} />
+                  Sign in
+                </BallotSignInTrigger>
+              ) : (
+                <Link
+                  href={isLanding ? '/auth/sign-in' : '/auth/sign-in?next=%2Fregister'}
+                  className="gap-2 px-1 text-sm"
+                >
+                  <LogIn aria-hidden="true" size={18} />
+                  Sign in
+                </Link>
+              )
             ) : null}
           </div>
         </nav>
@@ -129,10 +143,7 @@ async function SessionNavigation(props: NavigationProps) {
     .catch(() => null)
 
   return (
-    <NavigationBar
-      {...props}
-      account={{ name: person?.name ?? null, email: session.user.email }}
-    />
+    <NavigationBar {...props} account={{ name: person?.name ?? null, email: session.user.email }} />
   )
 }
 

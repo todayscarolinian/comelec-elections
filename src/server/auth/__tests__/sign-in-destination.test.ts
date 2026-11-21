@@ -24,10 +24,13 @@ describe('getSignInDestination', () => {
     await expect(getSignInDestination('person-1', '/')).resolves.toBe('/')
   })
 
-  it('honors a return to registration without another lookup', async () => {
-    await expect(getSignInDestination('person-1', '/register')).resolves.toBe('/register')
-    expect(findUnique).not.toHaveBeenCalled()
-  })
+  it.each(['/register', '/ballot'] as const)(
+    'honors a return to %s without another lookup',
+    async (destination) => {
+      await expect(getSignInDestination('person-1', destination)).resolves.toBe(destination)
+      expect(findUnique).not.toHaveBeenCalled()
+    },
+  )
 
   it('uses registration’s retry state if the lookup fails', async () => {
     findUnique.mockRejectedValueOnce(new Error('Lookup failed'))

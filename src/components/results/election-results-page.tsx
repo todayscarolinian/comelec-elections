@@ -105,7 +105,9 @@ function ReleasedResults() {
             Published after voting closes and the commission completes its audit.
           </p>
           <div className="mt-7 flex flex-wrap items-end justify-between gap-3">
-            <p className="text-lg font-medium">{ballotCount.toLocaleString('en-US')} ballots cast</p>
+            <p className="text-lg font-medium">
+              {ballotCount.toLocaleString('en-US')} ballots cast
+            </p>
             <p className="text-[0.62rem] uppercase tracking-[0.08em] text-[#647357]">
               Sample data · released state
             </p>
