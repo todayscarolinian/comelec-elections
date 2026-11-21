@@ -1,6 +1,11 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { AuthErrorMessage } from '@/components/auth/auth-error-message'
 import { allowedHostedDomain } from '@/server/auth'
+
+export const metadata: Metadata = {
+  title: 'Sign-in error',
+}
 
 type ErrorPageProps = {
   searchParams: Promise<{ error?: string | string[] }>

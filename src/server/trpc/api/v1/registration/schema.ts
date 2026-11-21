@@ -39,6 +39,10 @@ export const ocrResultSchema = z.object({
 export type OcrResult = z.infer<typeof ocrResultSchema>
 
 export const ownRegistrationOutputSchema = z.object({
+  account: z.object({
+    name: z.string(),
+    email: z.string(),
+  }),
   registration: z
     .object({
       status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),

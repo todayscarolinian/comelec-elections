@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { STUDENT_PROFILE_MAX_BYTES } from '@/lib/student-profile'
 import { StudentProfileUpload } from '../student-profile-upload'
@@ -24,7 +24,7 @@ const signedUrl = 'https://storage.example.org/signed-upload'
 const studentProfilePath = 'person-1/11111111-1111-4111-8111-111111111111'
 
 function selectFile(file: File) {
-  fireEvent.change(screen.getByLabelText('Current student profile'), {
+  fireEvent.change(screen.getByLabelText('Student Profile'), {
     target: { files: [file] },
   })
 }
@@ -63,20 +63,54 @@ describe('StudentProfileUpload', () => {
     expect(screen.getByRole('status').textContent).toBe('Student Profile uploaded.')
   })
 
-  it('shows a short upload hint and lets students expand the ISMIS instructions', () => {
+  it('describes the upload and guides students through the ISMIS tutorial', () => {
     render(<StudentProfileUpload onUploaded={vi.fn()} />)
 
-    const input = screen.getByLabelText('Current student profile')
+    const input = screen.getByLabelText('Student Profile')
     const hint = document.getElementById(input.getAttribute('aria-describedby') ?? '')
-    const summary = screen.getByText('Where do I find my Student Profile?')
-    const details = summary.closest('details')
 
-    expect(hint?.textContent).toBe('Make sure your name and current enrollment are readable.')
-    expect(details?.open).toBe(false)
-    fireEvent.click(summary)
-    expect(details?.open).toBe(true)
-    expect(details?.textContent).toContain('click your avatar in the top right, then My Profile')
-    expect(details?.textContent).toContain('name, student ID, Year Level and current term')
+    const help = screen.getByRole('button', { name: 'Where do I find my Student Profile?' })
+    const dialog = screen.getByRole('dialog', { hidden: true }) as HTMLDialogElement
+    // jsdom does not implement the native dialog methods.
+    Object.assign(dialog, {
+      showModal: () => {
+        dialog.open = true
+      },
+      close: () => {
+        dialog.open = false
+      },
+    })
+
+    expect(hint?.textContent).toContain('Make sure your name and current enrollment are readable.')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.click(help)
+    expect(screen.getByRole('dialog', { name: 'Log in to ISMIS' })).toBe(dialog)
+    const tutorial = within(dialog)
+
+    fireEvent.click(tutorial.getByRole('button', { name: 'Next' }))
+    expect(tutorial.getByRole('heading', { name: 'Open My Profile' })).toBeTruthy()
+    fireEvent.click(tutorial.getByRole('button', { name: 'Back' }))
+    expect(tutorial.getByRole('heading', { name: 'Log in to ISMIS' })).toBeTruthy()
+    fireEvent.click(tutorial.getByRole('button', { name: 'Next' }))
+    fireEvent.click(tutorial.getByRole('button', { name: 'Next' }))
+    expect(tutorial.getByRole('heading', { name: 'Take a screenshot' })).toBeTruthy()
+    fireEvent.click(tutorial.getByRole('button', { name: 'Done' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(mutateAsync).not.toHaveBeenCalled()
+
+    fireEvent.click(help)
+    expect(screen.getByRole('dialog', { name: 'Log in to ISMIS' })).toBeTruthy()
+  })
+
+  it('uploads an image dropped on the file picker', async () => {
+    const onUploaded = vi.fn()
+    render(<StudentProfileUpload onUploaded={onUploaded} />)
+    const file = new File(['image'], 'profile.png', { type: 'image/png' })
+
+    fireEvent.drop(screen.getByLabelText('Student Profile'), { dataTransfer: { files: [file] } })
+
+    await waitFor(() => expect(onUploaded).toHaveBeenCalledWith(studentProfilePath))
+    expect(screen.getByText('profile.png')).toBeDefined()
   })
 
   it('rejects an unsupported file type before requesting an upload', () => {
@@ -159,9 +193,7 @@ describe('StudentProfileUpload', () => {
 
   it('can be disabled while the parent form is submitting', () => {
     render(<StudentProfileUpload disabled onUploaded={vi.fn()} />)
-    expect((screen.getByLabelText('Current student profile') as HTMLInputElement).disabled).toBe(
-      true,
-    )
+    expect((screen.getByLabelText('Student Profile') as HTMLInputElement).disabled).toBe(true)
   })
 
   it('locks file selection until an in-flight upload finishes', async () => {
@@ -175,14 +207,10 @@ describe('StudentProfileUpload', () => {
     render(<StudentProfileUpload onUploaded={vi.fn()} />)
     selectFile(new File(['image'], 'profile.png', { type: 'image/png' }))
     await waitFor(() => expect(screen.getByText('Uploading Student Profile...')).toBeDefined())
-    expect((screen.getByLabelText('Current student profile') as HTMLInputElement).disabled).toBe(
-      true,
-    )
+    expect((screen.getByLabelText('Student Profile') as HTMLInputElement).disabled).toBe(true)
     finish(new Response(null, { status: 200 }))
     await waitFor(() =>
-      expect((screen.getByLabelText('Current student profile') as HTMLInputElement).disabled).toBe(
-        false,
-      ),
+      expect((screen.getByLabelText('Student Profile') as HTMLInputElement).disabled).toBe(false),
     )
   })
 

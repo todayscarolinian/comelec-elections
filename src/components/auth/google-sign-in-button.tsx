@@ -6,9 +6,14 @@ import { useState } from 'react'
 type GoogleSignInButtonProps = {
   label: string
   className: string
+  redirectTo?: '/auth/sign-in' | '/register'
 }
 
-export function GoogleSignInButton({ label, className }: Readonly<GoogleSignInButtonProps>) {
+export function GoogleSignInButton({
+  label,
+  className,
+  redirectTo = '/register',
+}: Readonly<GoogleSignInButtonProps>) {
   const [isSigningIn, setIsSigningIn] = useState(false)
 
   return (
@@ -18,7 +23,7 @@ export function GoogleSignInButton({ label, className }: Readonly<GoogleSignInBu
       disabled={isSigningIn}
       onClick={() => {
         setIsSigningIn(true)
-        void signIn('google', { redirectTo: '/register' }).catch(() => setIsSigningIn(false))
+        void signIn('google', { redirectTo }).catch(() => setIsSigningIn(false))
       }}
     >
       {isSigningIn ? 'Redirecting to Google…' : label}

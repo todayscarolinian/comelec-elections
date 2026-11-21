@@ -57,3 +57,35 @@ body {
   color: transparent;
   -webkit-text-stroke: 1.15px #324e1f;
 }
+
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-group(.election-page),
+::view-transition-old(.election-page),
+::view-transition-new(.election-page) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(.election-page) {
+    animation: election-page-out 150ms ease-in both;
+  }
+
+  ::view-transition-new(.election-page) {
+    animation: election-page-in 240ms cubic-bezier(0.2, 0.65, 0.3, 1) both;
+  }
+}
+
+@keyframes election-page-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes election-page-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
