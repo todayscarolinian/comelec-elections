@@ -3,43 +3,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { BallotEntry } from '@/components/ballot/ballot-entry'
 import { ElectionNavigation } from '@/components/election/election-navigation'
-
-const ballotCount = 2000
-
-const positions = [
-  {
-    title: 'President',
-    detail: 'Choose 1 per ballot',
-    candidates: [
-      { name: 'Andrea Villanueva', votes: 1120 },
-      { name: 'Miguel Ramos', votes: 620 },
-      { name: 'Kristine Uy', votes: 180 },
-      { name: 'Abstain', votes: 80, abstention: true },
-    ],
-  },
-  {
-    title: 'Vice President',
-    detail: 'Choose 1 per ballot',
-    candidates: [
-      { name: 'Paolo Lim', votes: 1040 },
-      { name: 'Bea Navarro', votes: 860 },
-      { name: 'Abstain', votes: 100, abstention: true },
-    ],
-  },
-  {
-    title: 'Councilors',
-    detail: 'Up to 3 selections per ballot',
-    candidates: [
-      { name: 'Carla Tan', votes: 1200 },
-      { name: 'Jerome Abella', votes: 1060 },
-      { name: 'Nina Ocampo', votes: 980 },
-      { name: 'Rafael Go', votes: 820 },
-      { name: 'Sofia Reyes', votes: 760 },
-      { name: 'Luis Bautista', votes: 500 },
-      { name: 'Abstain', votes: 150, abstention: true },
-    ],
-  },
-]
+import type { ResultsOutput } from '@/server/trpc/api/v1/results/schema'
+import { ResultsTally } from './results-tally'
 
 function ResultsFooter() {
   return (
@@ -64,34 +29,7 @@ function ResultsFooter() {
   )
 }
 
-function CandidateResults({
-  name,
-  votes,
-  abstention = false,
-}: {
-  name: string
-  votes: number
-  abstention?: boolean
-}) {
-  return (
-    <li className="space-y-1.5">
-      <div className="flex items-center justify-between gap-4 text-sm">
-        <span className={abstention ? 'text-[#647357]' : ''}>{name}</span>
-        <span className="shrink-0 tabular-nums">
-          {votes.toLocaleString('en-US')} {abstention ? 'abstentions' : 'votes'}
-        </span>
-      </div>
-      <progress
-        className={`result-progress h-1.5 w-full ${abstention ? 'result-progress--abstention' : ''}`}
-        aria-label={`${name} ${abstention ? 'abstentions' : 'votes'}`}
-        value={votes}
-        max={ballotCount}
-      />
-    </li>
-  )
-}
-
-function ReleasedResults() {
+function ReleasedResults({ results, sample }: { results: ResultsOutput; sample: boolean }) {
   return (
     <>
       <main className="mx-auto w-full max-w-[82rem] flex-1 px-[clamp(1.25rem,4.5vw,4rem)] pb-12 pt-8 text-[#324e1f]">
@@ -107,48 +45,26 @@ function ReleasedResults() {
           </p>
           <div className="mt-7 flex flex-wrap items-end justify-between gap-3">
             <p className="text-lg font-medium">
-              {ballotCount.toLocaleString('en-US')} ballots cast
+              {results.countedBallots.toLocaleString('en-US')} ballots counted
             </p>
             <p className="text-[0.62rem] uppercase tracking-[0.08em] text-[#647357]">
-              Sample data · released state
+              {sample
+                ? 'Sample data · released state'
+                : results.releasedAt
+                  ? `Released ${results.releasedAt.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}`
+                  : null}
             </p>
           </div>
         </header>
 
-        <div className="grid grid-cols-2 gap-x-12 gap-y-8 border-b border-[#b6c89f] py-7 max-[42rem]:grid-cols-1">
-          {positions.slice(0, 2).map((position) => (
-            <section key={position.title} aria-labelledby={`position-${position.title}`}>
-              <h2
-                id={`position-${position.title}`}
-                className="font-editorial text-2xl leading-tight"
-              >
-                {position.title}
-              </h2>
-              <p className="mb-4 mt-2 text-xs text-[#647357]">{position.detail}</p>
-              <ul className="space-y-3">
-                {position.candidates.map((candidate) => (
-                  <CandidateResults key={candidate.name} {...candidate} />
-                ))}
-              </ul>
-            </section>
-          ))}
+        <div className="py-7">
+          <ResultsTally results={results} />
         </div>
-
-        <section className="pt-7" aria-labelledby="position-Councilors">
-          <h2 id="position-Councilors" className="font-editorial text-2xl leading-tight">
-            {positions[2].title}
-          </h2>
-          <p className="mb-4 mt-2 text-xs text-[#647357]">{positions[2].detail}</p>
-          <ul className="space-y-3">
-            {positions[2].candidates.map((candidate) => (
-              <CandidateResults key={candidate.name} {...candidate} />
-            ))}
-          </ul>
-        </section>
 
         <p className="mt-7 text-xs leading-5 text-[#647357]">
           Candidate order follows the ballot. Abstentions are shown separately from candidate
-          selections. This page uses sample data for layout preview.
+          selections. Only ballots from approved registrations are counted.
+          {sample ? ' This page uses sample data for layout preview.' : ''}
         </p>
       </main>
       <ResultsFooter />
@@ -198,11 +114,18 @@ function UnreleasedResults() {
   )
 }
 
-export function ElectionResultsPage({ released = false }: { released?: boolean }) {
+export function ElectionResultsPage({
+  results,
+  sample = false,
+}: {
+  /** Released Results, or null while they are still private. */
+  results: ResultsOutput | null
+  sample?: boolean
+}) {
   return (
     <div className="flex min-h-svh flex-col bg-[#faf3e0] [font-family:var(--font-inter),Arial,sans-serif] [&_:is(a,button):focus-visible]:outline-2 [&_:is(a,button):focus-visible]:outline-offset-4 [&_:is(a,button):focus-visible]:outline-[#324e1f]">
       <ElectionNavigation activeSection="turnout" />
-      {released ? <ReleasedResults /> : <UnreleasedResults />}
+      {results ? <ReleasedResults results={results} sample={sample} /> : <UnreleasedResults />}
     </div>
   )
 }

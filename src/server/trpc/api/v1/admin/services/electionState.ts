@@ -63,6 +63,56 @@ export async function setElectionStatus(db: Db, { status, adminEmail }: SetElect
   })
 }
 
+export async function releaseResults(db: Db, { adminEmail }: { adminEmail: string }) {
+  return db.$transaction(async (tx) => {
+    await tx.electionState.createMany({ data: { id: 'main' }, skipDuplicates: true })
+
+    // Same lock as setElectionStatus, so the Election cannot reopen mid-release.
+    const [state] = await tx.$queryRaw<ElectionWindowRow[]>`
+      SELECT "electionStatus", "resultsReleasedAt"
+      FROM "ElectionState"
+      WHERE id = 'main'
+      FOR UPDATE
+    `
+
+    if (!state) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Unable to load the Election state.',
+      })
+    }
+    if (state.resultsReleasedAt !== null) {
+      throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'Results are already released.' })
+    }
+    if (state.electionStatus !== 'CLOSED') {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'Close the Election before releasing Results.',
+      })
+    }
+
+    const heldPending = await tx.ballot.count({
+      where: { person: { registration: { is: { status: 'PENDING' } } } },
+    })
+    if (heldPending > 0) {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'Review every Held Ballot registration before releasing Results.',
+      })
+    }
+
+    const updated = await tx.electionState.update({
+      where: { id: 'main' },
+      data: { resultsReleasedAt: new Date() },
+      select: { resultsReleasedAt: true },
+    })
+
+    await writeAudit({ adminEmail, action: 'RELEASE_RESULTS', target: 'main' }, tx)
+
+    return { resultsReleasedAt: updated.resultsReleasedAt ?? new Date() }
+  })
+}
+
 type SetRegistrationStatusInput = {
   status: WindowStatus
   adminEmail: string

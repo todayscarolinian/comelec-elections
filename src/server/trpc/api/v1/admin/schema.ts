@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { normalizeHostedDomain } from '@/server/auth/policy'
+import { AUDIT_ACTIONS } from '@/server/trpc/api/v1/audit/schema'
 import { YEAR_LEVELS, ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
 
 const organizationEmail = z
@@ -80,3 +81,84 @@ export const rejectRegistrationInputSchema = z.object({
   reason: z.string().trim().min(1).max(2000),
 })
 export const reviewDecisionOutputSchema = z.object({ ok: z.literal(true) })
+
+export const DASHBOARD_PHASES = [
+  'BEFORE_VOTING',
+  'VOTING_OPEN',
+  'VOTING_CLOSED',
+  'RELEASED',
+] as const
+
+export const auditEntryOutputSchema = z.object({
+  id: z.string(),
+  adminEmail: z.string(),
+  action: z.string(),
+  target: z.string().nullable(),
+  detail: z.unknown(),
+  at: z.date(),
+})
+
+export const dashboardOutputSchema = z.object({
+  phase: z.enum(DASHBOARD_PHASES),
+  electionStatus: windowStatus,
+  registrationStatus: windowStatus,
+  resultsReleasedAt: z.date().nullable(),
+  votingClosedAt: z.date().nullable(),
+  ballotCount: z.number().int().nonnegative(),
+  registrations: z.object({
+    pending: z.number().int().nonnegative(),
+    approved: z.number().int().nonnegative(),
+    rejected: z.number().int().nonnegative(),
+    total: z.number().int().nonnegative(),
+  }),
+  pendingPreview: z.array(
+    z.object({ id: z.string(), name: z.string(), email: z.string(), yearLevel: z.string() }),
+  ),
+  recentActivity: z.array(auditEntryOutputSchema),
+})
+
+export const releaseResultsOutputSchema = z.object({ resultsReleasedAt: z.date() })
+
+export const BALLOT_AUDIT_STATUSES = ['COUNTED', 'HELD_PENDING', 'HELD_REJECTED'] as const
+const ballotAuditStatus = z.enum(BALLOT_AUDIT_STATUSES)
+
+export const listBallotsInputSchema = z.object({
+  yearLevel: z.enum(YEAR_LEVELS).optional(),
+  status: ballotAuditStatus.optional(),
+  search: z.string().trim().max(200).optional(),
+  cursor: z.uuid().optional(),
+})
+
+export const ballotAuditRowSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  yearLevel: z.string(),
+  castAt: z.date(),
+  status: ballotAuditStatus,
+  choices: z.array(
+    z.object({
+      questionId: z.string(),
+      questionTitle: z.string(),
+      abstained: z.boolean(),
+      candidates: z.array(z.string()),
+    }),
+  ),
+})
+
+export const listBallotsOutputSchema = z.object({
+  items: z.array(ballotAuditRowSchema),
+  nextCursor: z.string().nullable(),
+})
+
+export const exportBallotsOutputSchema = z.object({ filename: z.string(), csv: z.string() })
+
+export const listAuditLogInputSchema = z.object({
+  action: z.enum(AUDIT_ACTIONS).optional(),
+  cursor: z.uuid().optional(),
+})
+
+export const listAuditLogOutputSchema = z.object({
+  items: z.array(auditEntryOutputSchema),
+  nextCursor: z.string().nullable(),
+})
