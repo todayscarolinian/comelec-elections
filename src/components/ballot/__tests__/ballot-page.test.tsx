@@ -113,6 +113,55 @@ describe('BallotPage', () => {
     expect(cast).not.toHaveBeenCalled()
   })
 
+  it('shows each candidate’s portrait alongside their ballot option', async () => {
+    showBallot()
+    await acknowledgeDisclosure()
+    fireEvent.click(submitButton('Continue to ballot'))
+
+    for (const question of ELECTION.questions) {
+      const group = within(screen.getByRole('group', { name: question.title }))
+      for (const candidate of question.candidates) {
+        const option = group.getByRole(question.selectionLimit === 1 ? 'radio' : 'checkbox', {
+          name: candidate.name,
+        })
+        const portrait = option.closest('label')?.querySelector('img')
+        expect(portrait).toBeDefined()
+        const src = new URL(portrait!.src)
+        expect(src.searchParams.get('url') ?? src.pathname).toBe(candidate.photo)
+      }
+      expect(group.getByText('Abstain').closest('label')?.querySelector('img')).toBeNull()
+    }
+  })
+
+  it('opens another candidate’s preview without changing the selected candidate', async () => {
+    const prototype = HTMLDialogElement.prototype
+    Object.defineProperty(prototype, 'showModal', {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.open = true
+      },
+    })
+
+    try {
+      showBallot()
+      await acknowledgeDisclosure()
+      fireEvent.click(submitButton('Continue to ballot'))
+
+      const other = first.candidates[1]
+      const selection = screen.getByRole<HTMLInputElement>('radio', { name: candidate.name })
+      fireEvent.click(selection)
+      fireEvent.click(submitButton(`Details for ${other.name}`))
+
+      const preview = screen.getByRole('dialog', { name: other.name })
+      expect(within(preview).getByText(other.bio)).toBeTruthy()
+      expect(within(preview).queryByRole('link', { name: 'View full profile' })).toBeNull()
+      expect(selection.checked).toBe(true)
+      expect(cast).not.toHaveBeenCalled()
+    } finally {
+      Reflect.deleteProperty(prototype, 'showModal')
+    }
+  })
+
   it('requires disclosure, lets a voter edit and review, then casts once and clears choices', async () => {
     showBallot()
     await acknowledgeDisclosure()

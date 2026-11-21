@@ -4,6 +4,7 @@ export type PartyId = (typeof PARTIES)[number]
 
 export type CandidateDef = {
   readonly id: string // stable, never changes once the Election has opened
+  readonly profileId?: string // public candidate profile ID when it differs from the ballot ID
   readonly name: string
   readonly party?: PartyId // Omitted means that the Candidate is Independent
   readonly photo: string // path under /public/candidates

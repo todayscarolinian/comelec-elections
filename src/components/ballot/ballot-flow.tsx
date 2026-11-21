@@ -1,6 +1,8 @@
 import { ArrowRight, Check } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import type { CandidateDef } from '@/election'
 import { ballotInputSchema, type BallotInput } from '@/server/trpc/api/v1/ballot/schema'
+import { BallotCandidatePreview } from './ballot-candidate-preview'
 import {
   BallotDisclosure,
   BallotIntro,
@@ -29,6 +31,7 @@ export function BallotFlow({
   const [disclosure, setDisclosure] = useState(false)
   const [heldAcknowledgement, setHeldAcknowledgement] = useState(false)
   const [answers, setAnswers] = useState<DraftAnswers>({})
+  const [preview, setPreview] = useState<{ candidate: CandidateDef; office: string } | null>(null)
   const target = useRef<string>(null)
 
   useEffect(() => {
@@ -82,6 +85,7 @@ export function BallotFlow({
                   key={question.id}
                   question={question}
                   answer={answers[question.id]}
+                  onPreview={(candidate) => setPreview({ candidate, office: question.title })}
                   onAnswer={(answer) =>
                     setAnswers((current) => {
                       if (answer) return { ...current, [question.id]: answer }
@@ -176,6 +180,7 @@ export function BallotFlow({
           </div>
         )}
       </div>
+      {preview && <BallotCandidatePreview {...preview} onClose={() => setPreview(null)} />}
     </>
   )
 }
