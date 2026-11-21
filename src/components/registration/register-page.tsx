@@ -1,8 +1,10 @@
 'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import { GoogleSignInButton } from '@/components/auth/google-sign-in-button'
 import { useTRPC } from '@/lib/trpc/client'
 import { YEAR_LEVEL_LABELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationForm } from './registration-form'
@@ -31,6 +33,7 @@ const closedMessage =
 
 const textButton =
   'inline-flex min-h-11 items-center text-sm font-medium hover:underline hover:underline-offset-4 disabled:opacity-60'
+const panelEntrance = 'motion-safe:animate-[election-page-in_220ms_ease-out_both]'
 
 export function RegisterPage() {
   const trpc = useTRPC()
@@ -45,6 +48,7 @@ export function RegisterPage() {
   })
   const needsSignIn = sessionExpired || query.error?.data?.code === 'UNAUTHORIZED'
   const { isPending: isLoading, isError, data } = query
+  const panel = needsSignIn ? 'sign-in' : isLoading ? 'loading' : 'live'
   const registration = needsSignIn ? null : data?.registration
   const state = registration ? statusCopy[registration.status] : null
   const closed = data?.canSubmit === false
@@ -66,17 +70,13 @@ export function RegisterPage() {
 
   return (
     <div
-      className={`min-w-0 space-y-6 px-[clamp(1.375rem,4.25vw,2.75rem)] py-8 min-[56rem]:px-[clamp(2.5rem,7.23vw,6.5rem)] min-[56rem]:py-12 ${needsSignIn ? '[&>*]:max-w-[35rem]' : ''}`}
+      key={panel}
+      className={`min-w-0 space-y-6 px-[clamp(1.375rem,4.25vw,2.75rem)] py-8 min-[56rem]:px-[clamp(2.5rem,7.23vw,6.5rem)] min-[56rem]:py-12 ${needsSignIn ? '[&>*]:max-w-[35rem]' : ''} ${isLoading ? '' : panelEntrance}`}
     >
       <header className="space-y-4" aria-live="polite">
         {state?.label && (
           <p className="inline-block border border-[#819667] px-3 py-1.5 text-xs font-medium">
             {state.label}
-          </p>
-        )}
-        {!state && (
-          <p className="text-xs font-medium tracking-wide text-[#56654a] uppercase">
-            Voter registration
           </p>
         )}
         <h1
@@ -110,21 +110,16 @@ export function RegisterPage() {
 
       {needsSignIn ? (
         <>
-          {/* oxlint-disable-next-line nextjs/no-html-link-for-pages -- Auth.js serves this sign-in endpoint. */}
-          <a
-            href="/api/auth/signin?callbackUrl=%2Fregister"
-            className={`${registrationAction} w-full`}
-          >
-            Continue with Google
-          </a>
+          <GoogleSignInButton
+            label="Continue with Google"
+            className={`${registrationAction} w-full cursor-pointer motion-safe:transition-[background-color,scale] motion-safe:duration-150 motion-safe:active:scale-[0.99]`}
+          />
           <p className="text-sm leading-relaxed text-[#56654a]">
             Have your year level and current Student Profile ready.
           </p>
           <div className="border-t border-[#b6c89f] pt-3">
             <Link href="/" className={textButton}>
-              <span aria-hidden="true" className="me-2">
-                ←
-              </span>{' '}
+              <ArrowLeft aria-hidden="true" className="me-2 size-4 shrink-0" />
               Back to home
             </Link>
           </div>

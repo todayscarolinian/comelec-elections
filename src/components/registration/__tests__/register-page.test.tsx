@@ -3,11 +3,14 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { RegisterPage } from '../register-page'
 
-const { getMine, submit, createUpload } = vi.hoisted(() => ({
+const { getMine, submit, createUpload, signIn } = vi.hoisted(() => ({
   getMine: vi.fn(),
   submit: vi.fn(),
   createUpload: vi.fn(),
+  signIn: vi.fn(),
 }))
+
+vi.mock('next-auth/react', () => ({ signIn }))
 
 vi.mock('@/lib/trpc/client', () => ({
   useTRPC: () => ({
@@ -71,6 +74,7 @@ describe('RegisterPage', () => {
     getMine.mockReset().mockResolvedValue({ account, registration: null, canSubmit: true })
     submit.mockReset().mockResolvedValue({ status: 'PENDING' })
     createUpload.mockReset().mockResolvedValue({ path, signedUrl })
+    signIn.mockReset().mockResolvedValue(undefined)
     fetchMock.mockReset().mockResolvedValue(new Response(null, { status: 200 }))
     vi.stubGlobal('fetch', fetchMock)
   })
@@ -90,8 +94,8 @@ describe('RegisterPage', () => {
   it('offers sign-in returning to /register for signed-out visitors', async () => {
     getMine.mockRejectedValue({ data: { code: 'UNAUTHORIZED' }, message: 'private session detail' })
     showPage()
-    const link = await screen.findByRole('link', { name: 'Continue with Google' })
-    expect(link.getAttribute('href')).toBe('/api/auth/signin?callbackUrl=%2Fregister')
+    fireEvent.click(await screen.findByRole('button', { name: 'Continue with Google' }))
+    expect(signIn).toHaveBeenCalledWith('google', { redirectTo: '/register' })
     expect(screen.queryByLabelText('Year Level')).toBeNull()
     expect(document.body.textContent).not.toContain('private session detail')
   })
@@ -255,7 +259,7 @@ describe('RegisterPage', () => {
     showPage()
     await fillForm()
     fireEvent.click(button())
-    await screen.findByRole('link', { name: 'Continue with Google' })
+    await screen.findByRole('button', { name: 'Continue with Google' })
     expect(screen.queryByLabelText('Student Profile')).toBeNull()
   })
 
