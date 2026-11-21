@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Inter } from 'next/font/google'
 import localFont from 'next/font/local'
+import { BallotSignInDialog } from '@/components/ballot/ballot-sign-in'
 import { LandingScroll } from '@/components/landing/landing-scroll'
 import { TRPCReactProvider } from '@/lib/trpc/client'
 import './globals.css'
@@ -64,6 +65,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       <body className="min-h-full flex flex-col">
         <LandingScroll />
         <TRPCReactProvider>{children}</TRPCReactProvider>
+        <BallotSignInDialog />
       </body>
     </html>
   )

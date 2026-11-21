@@ -275,7 +275,7 @@ describe('registration decisions', () => {
         where: { personId: 'student-person' },
         data: { yearLevel: expectedYear },
       })
-      expect(tx.auditLog.create).toHaveBeenCalledWith({
+      expect(tx.auditLog.create).toHaveBeenCalledExactlyOnceWith({
         data: {
           adminEmail,
           action: 'APPROVE_REGISTRATION',
@@ -301,6 +301,7 @@ describe('registration decisions', () => {
       },
     })
     expect(tx.ballot.updateMany).not.toHaveBeenCalled()
+    expect(tx.auditLog.create).toHaveBeenCalledTimes(1)
     expect(tx.auditLog.create.mock.calls[0][0]).toMatchObject({
       data: {
         action: 'REJECT_REGISTRATION',

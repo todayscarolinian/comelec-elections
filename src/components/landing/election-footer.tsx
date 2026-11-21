@@ -1,6 +1,7 @@
 import { electionContent } from '@/components/election/election-styles'
 import Image from 'next/image'
 import Link from 'next/link'
+import { BallotEntry } from '@/components/ballot/ballot-entry'
 
 export function ElectionFooter() {
   return (
@@ -23,7 +24,7 @@ export function ElectionFooter() {
         >
           <Link href="/candidates">Candidates</Link>
           <Link href="/register">Registration</Link>
-          <Link href="/#voting">Ballot</Link>
+          <BallotEntry />
         </nav>
       </div>
     </footer>

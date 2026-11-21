@@ -13,8 +13,8 @@ export function RegistrationSignIn({
   returnTo = '/',
   redirectTo = '/register',
 }: {
-  returnTo?: '/' | '/register'
-  redirectTo?: '/auth/sign-in' | '/register'
+  returnTo?: '/' | '/register' | '/ballot'
+  redirectTo?: '/auth/sign-in' | '/register' | '/ballot'
 }) {
   return (
     <div className={`${registrationPanel} ${registrationPanelEntrance} [&>*]:max-w-[35rem]`}>
@@ -41,7 +41,11 @@ export function RegistrationSignIn({
       <div className="border-t border-[#b6c89f] pt-3">
         <Link href={returnTo} className={registrationTextButton}>
           <ArrowLeft aria-hidden="true" className="me-2 size-4 shrink-0" />
-          {returnTo === '/register' ? 'Back to registration' : 'Back to home'}
+          {returnTo === '/ballot'
+            ? 'Back to ballot'
+            : returnTo === '/register'
+              ? 'Back to registration'
+              : 'Back to home'}
         </Link>
       </div>
     </div>

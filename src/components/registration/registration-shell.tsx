@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import type { ReactNode } from 'react'
+import { BallotEntry } from '@/components/ballot/ballot-entry'
 import { ElectionNavigation } from '@/components/election/election-navigation'
 
 const inter = Inter({ subsets: ['latin'], variable: '--registration-body' })
@@ -16,11 +17,6 @@ const text = localFont({
   variable: '--registration-text',
   preload: false,
 })
-
-const footerLinks = [
-  { href: '/candidates', label: 'Candidates' },
-  { href: '/#voting', label: 'Ballot' },
-]
 
 const contentGutters = 'w-full px-(--registration-inset)'
 
@@ -104,15 +100,13 @@ export function RegistrationShell({
             </span>
           </Link>
           <nav aria-label="Footer navigation" className="flex gap-6 text-sm">
-            {footerLinks.map(({ href, label }) => (
-              <Link
-                key={href}
-                className="inline-flex min-h-11 items-center hover:underline hover:underline-offset-4"
-                href={href}
-              >
-                {label}
-              </Link>
-            ))}
+            <Link
+              className="inline-flex min-h-11 items-center hover:underline hover:underline-offset-4"
+              href="/candidates"
+            >
+              Candidates
+            </Link>
+            <BallotEntry className="inline-flex min-h-11 cursor-pointer items-center hover:underline hover:underline-offset-4" />
           </nav>
         </div>
       </footer>

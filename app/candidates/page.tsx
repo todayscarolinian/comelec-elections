@@ -1,7 +1,7 @@
 import { ArrowUpRight } from 'lucide-react'
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { Suspense } from 'react'
+import { BallotEntry } from '@/components/ballot/ballot-entry'
 import {
   CandidatesDirectory,
   CandidatesDirectoryFallback,
@@ -42,12 +42,9 @@ export default function CandidatesPage() {
               Explore their platforms before you vote.
             </p>
           </div>
-          <Link
-            href="/#voting"
-            className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 self-start border border-comelec-sage bg-comelec-cream px-10 py-3 text-sm font-medium text-comelec-forest hover:bg-comelec-sage-soft sm:self-auto focus-visible:outline-comelec-cream!"
-          >
+          <BallotEntry className="inline-flex min-h-12 shrink-0 cursor-pointer items-center justify-center gap-2 self-start border border-comelec-sage bg-comelec-cream px-10 py-3 text-sm font-medium text-comelec-forest hover:bg-comelec-sage-soft sm:self-auto focus-visible:outline-comelec-cream!">
             Go to ballot <ArrowUpRight aria-hidden="true" className="size-4" />
-          </Link>
+          </BallotEntry>
         </div>
       </section>
     </>
