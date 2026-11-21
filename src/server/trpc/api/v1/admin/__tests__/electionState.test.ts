@@ -12,13 +12,12 @@ import {
   setRegistrationStatus,
 } from '../services/electionState'
 
-const upsert = vi.fn()
 const findUnique = vi.fn()
 const count = vi.fn()
 const transaction = vi.fn(async (queries: Promise<unknown>[]) => Promise.all(queries))
 const db = {
   $transaction: transaction,
-  electionState: { upsert, findUnique },
+  electionState: { findUnique },
   registration: { count },
 } as unknown as Db
 
@@ -27,18 +26,106 @@ beforeEach(() => {
 })
 
 describe('setRegistrationStatus', () => {
-  it.each(['OPEN', 'CLOSED'] as const)('upserts the main row with %s', async (status) => {
-    upsert.mockResolvedValue({ registrationStatus: status })
+  const adminEmail = 'admin@example.com'
+  type Status = 'OPEN' | 'CLOSED'
 
-    await expect(setRegistrationStatus(db, status)).resolves.toEqual({
+  function setup(initial: Status | null = 'CLOSED') {
+    let status = initial
+    const createMany = vi.fn(async () => {
+      if (status) return { count: 0 }
+      status = 'CLOSED'
+      return { count: 1 }
+    })
+    const updateMany = vi.fn(
+      async ({
+        where,
+        data,
+      }: {
+        where: { registrationStatus: { not: Status } }
+        data: { registrationStatus: Status }
+      }) => {
+        if (status === where.registrationStatus.not) return { count: 0 }
+        status = data.registrationStatus
+        return { count: 1 }
+      },
+    )
+    const auditCreate = vi.fn().mockResolvedValue({ id: 'audit-1' })
+    const tx = { electionState: { createMany, updateMany }, auditLog: { create: auditCreate } }
+    const transaction = vi.fn(async (work: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
+      work(tx as unknown as Prisma.TransactionClient),
+    )
+    // Only the transaction client has write methods; accidental global writes fail the test.
+    const db = { $transaction: transaction } as unknown as Db
+
+    return { db, createMany, updateMany, auditCreate, transaction, status: () => status }
+  }
+
+  it.each([
+    ['CLOSED', 'OPEN'],
+    ['OPEN', 'CLOSED'],
+  ] as const)('changes %s to %s and writes exactly one audit row', async (from, to) => {
+    const s = setup(from)
+
+    await expect(setRegistrationStatus(s.db, { status: to, adminEmail })).resolves.toEqual({
+      registrationStatus: to,
+    })
+
+    expect(s.transaction).toHaveBeenCalledTimes(1)
+    expect(s.createMany).toHaveBeenCalledExactlyOnceWith({
+      data: { id: 'main' },
+      skipDuplicates: true,
+    })
+    expect(s.updateMany).toHaveBeenCalledExactlyOnceWith({
+      where: { id: 'main', registrationStatus: { not: to } },
+      data: { registrationStatus: to },
+    })
+    expect(s.auditCreate).toHaveBeenCalledExactlyOnceWith({
+      data: {
+        adminEmail,
+        action: 'SET_REGISTRATION_STATUS',
+        target: 'main',
+        detail: { previousStatus: from, status: to },
+      },
+    })
+    expect(s.auditCreate.mock.invocationCallOrder[0]).toBeGreaterThan(
+      s.updateMany.mock.invocationCallOrder[0],
+    )
+    expect(s.status()).toBe(to)
+  })
+
+  it('creates the missing main row and audits opening it', async () => {
+    const s = setup(null)
+
+    await setRegistrationStatus(s.db, { status: 'OPEN', adminEmail })
+
+    expect(s.status()).toBe('OPEN')
+    expect(s.auditCreate).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['OPEN', 'CLOSED'] as const)('writes no audit row when already %s', async (status) => {
+    const s = setup(status)
+
+    await expect(setRegistrationStatus(s.db, { status, adminEmail })).resolves.toEqual({
       registrationStatus: status,
     })
-    expect(upsert).toHaveBeenCalledWith({
-      where: { id: 'main' },
-      update: { registrationStatus: status },
-      create: { id: 'main', registrationStatus: status },
-      select: { registrationStatus: true },
-    })
+    expect(s.auditCreate).not.toHaveBeenCalled()
+  })
+
+  it('lowercases the Admin email in the audit row', async () => {
+    const s = setup('CLOSED')
+
+    await setRegistrationStatus(s.db, { status: 'OPEN', adminEmail: ' Admin@Example.COM ' })
+
+    expect(s.auditCreate.mock.calls[0][0].data.adminEmail).toBe('admin@example.com')
+  })
+
+  it('propagates an audit failure so the transaction rolls back', async () => {
+    const s = setup('CLOSED')
+    s.auditCreate.mockRejectedValueOnce(new Error('audit down'))
+
+    await expect(setRegistrationStatus(s.db, { status: 'OPEN', adminEmail })).rejects.toThrow(
+      'audit down',
+    )
   })
 })
 

@@ -9,11 +9,12 @@ import { grantAdmin, listAdmins, revokeAdmin } from '../services/adminPermission
 
 const tx = {
   admin: {
-    upsert: vi.fn(),
+    createMany: vi.fn(),
     findUnique: vi.fn(),
     count: vi.fn(),
     delete: vi.fn(),
   },
+  auditLog: { create: vi.fn() },
 }
 const transaction = vi.fn(async (callback: (client: typeof tx) => unknown) => callback(tx))
 const findMany = vi.fn()
@@ -22,21 +23,56 @@ const db = { $transaction: transaction, admin: { findMany } } as unknown as Db
 beforeEach(() => {
   vi.clearAllMocks()
   transaction.mockImplementation(async (callback) => callback(tx))
+  tx.auditLog.create.mockResolvedValue({ id: 'audit-1' })
 })
 
 describe('grantAdmin', () => {
   beforeEach(() => {
-    tx.admin.upsert.mockResolvedValue({ email: 'new@example.com' })
+    tx.admin.createMany.mockResolvedValue({ count: 1 })
   })
 
-  it('upserts a normalised email without overwriting an existing grant', async () => {
-    await grantAdmin(db, { email: '  New@Example.COM ', grantedBy: 'a@example.com' })
+  it('creates a normalised email without overwriting an existing grant', async () => {
+    await expect(
+      grantAdmin(db, { email: '  New@Example.COM ', grantedBy: 'a@example.com' }),
+    ).resolves.toEqual({ email: 'new@example.com' })
 
-    expect(tx.admin.upsert).toHaveBeenCalledWith({
-      where: { email: 'new@example.com' },
-      update: {},
-      create: { email: 'new@example.com', grantedBy: 'a@example.com' },
+    expect(tx.admin.createMany).toHaveBeenCalledWith({
+      data: { email: 'new@example.com', grantedBy: 'a@example.com' },
+      skipDuplicates: true,
     })
+  })
+
+  it('writes exactly one GRANT_ADMIN audit row after the grant', async () => {
+    await grantAdmin(db, { email: 'new@example.com', grantedBy: 'A@Example.com' })
+
+    expect(tx.auditLog.create).toHaveBeenCalledExactlyOnceWith({
+      data: {
+        adminEmail: 'a@example.com',
+        action: 'GRANT_ADMIN',
+        target: 'new@example.com',
+        detail: undefined,
+      },
+    })
+    expect(tx.auditLog.create.mock.invocationCallOrder[0]).toBeGreaterThan(
+      tx.admin.createMany.mock.invocationCallOrder[0],
+    )
+  })
+
+  it('writes no audit row when the email is already an Admin', async () => {
+    tx.admin.createMany.mockResolvedValue({ count: 0 })
+
+    await expect(
+      grantAdmin(db, { email: 'b@example.com', grantedBy: 'a@example.com' }),
+    ).resolves.toEqual({ email: 'b@example.com' })
+    expect(tx.auditLog.create).not.toHaveBeenCalled()
+  })
+
+  it('propagates an audit failure so the grant rolls back', async () => {
+    tx.auditLog.create.mockRejectedValueOnce(new Error('audit down'))
+
+    await expect(
+      grantAdmin(db, { email: 'new@example.com', grantedBy: 'a@example.com' }),
+    ).rejects.toThrow('audit down')
   })
 })
 
@@ -56,6 +92,30 @@ describe('revokeAdmin', () => {
     expect(tx.admin.delete).toHaveBeenCalledWith({ where: { email: 'b@example.com' } })
   })
 
+  it('writes exactly one REVOKE_ADMIN audit row after the delete', async () => {
+    await revokeAdmin(db, { email: 'b@example.com', revokedBy: 'a@example.com' })
+
+    expect(tx.auditLog.create).toHaveBeenCalledExactlyOnceWith({
+      data: {
+        adminEmail: 'a@example.com',
+        action: 'REVOKE_ADMIN',
+        target: 'b@example.com',
+        detail: undefined,
+      },
+    })
+    expect(tx.auditLog.create.mock.invocationCallOrder[0]).toBeGreaterThan(
+      tx.admin.delete.mock.invocationCallOrder[0],
+    )
+  })
+
+  it('propagates an audit failure so the revoke rolls back', async () => {
+    tx.auditLog.create.mockRejectedValueOnce(new Error('audit down'))
+
+    await expect(
+      revokeAdmin(db, { email: 'b@example.com', revokedBy: 'a@example.com' }),
+    ).rejects.toThrow('audit down')
+  })
+
   it('rejects revoking the last Admin', async () => {
     tx.admin.count.mockResolvedValue(1)
 
@@ -63,6 +123,7 @@ describe('revokeAdmin', () => {
       revokeAdmin(db, { email: 'b@example.com', revokedBy: 'b@example.com' }),
     ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' })
     expect(tx.admin.delete).not.toHaveBeenCalled()
+    expect(tx.auditLog.create).not.toHaveBeenCalled()
   })
 
   it('rejects revoking someone who is not an Admin', async () => {
@@ -72,6 +133,7 @@ describe('revokeAdmin', () => {
       revokeAdmin(db, { email: 'nobody@example.com', revokedBy: 'a@example.com' }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
     expect(tx.admin.delete).not.toHaveBeenCalled()
+    expect(tx.auditLog.create).not.toHaveBeenCalled()
   })
 })
 

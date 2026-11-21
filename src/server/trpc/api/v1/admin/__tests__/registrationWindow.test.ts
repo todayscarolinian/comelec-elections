@@ -52,9 +52,9 @@ describe('registration window procedures', () => {
   beforeEach(() => {
     setRegistrationStatusService.mockReset()
     getRegistrationWindowService.mockReset()
-    setRegistrationStatusService.mockImplementation(async (_db: Db, status: string) => ({
-      registrationStatus: status,
-    }))
+    setRegistrationStatusService.mockImplementation(
+      async (_db: Db, { status }: { status: string }) => ({ registrationStatus: status }),
+    )
     getRegistrationWindowService.mockResolvedValue({
       registrationStatus: 'CLOSED',
       pendingCount: 0,
@@ -108,7 +108,10 @@ describe('registration window procedures', () => {
       await expect(caller.setRegistrationStatus({ status })).resolves.toEqual({
         registrationStatus: status,
       })
-      expect(setRegistrationStatusService).toHaveBeenCalledWith(expect.anything(), status)
+      expect(setRegistrationStatusService).toHaveBeenCalledWith(expect.anything(), {
+        status,
+        adminEmail: ADMIN_A,
+      })
     })
 
     it.each(['open', 'PAUSED', ''])('rejects status %j', async (status) => {
