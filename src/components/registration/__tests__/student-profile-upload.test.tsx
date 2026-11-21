@@ -63,13 +63,20 @@ describe('StudentProfileUpload', () => {
     expect(screen.getByRole('status').textContent).toBe('Student Profile uploaded.')
   })
 
-  it('describes the input with where to find the Student Profile in ISMIS', () => {
+  it('describes the upload and lets students expand the ISMIS instructions', () => {
     render(<StudentProfileUpload onUploaded={vi.fn()} />)
 
     const input = screen.getByLabelText('Student Profile')
     const hint = document.getElementById(input.getAttribute('aria-describedby') ?? '')
 
-    expect(hint?.textContent).toContain('click your avatar in the top right, then My Profile')
+    const summary = screen.getByText('Where do I find my Student Profile?')
+    const details = summary.closest('details')
+
+    expect(hint?.textContent).toContain('Make sure your name and current enrollment are readable.')
+    expect(details?.open).toBe(false)
+    fireEvent.click(summary)
+    expect(details?.open).toBe(true)
+    expect(details?.textContent).toContain('click your avatar in the top right, then My Profile')
   })
 
   it('uploads an image dropped on the file picker', async () => {

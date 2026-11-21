@@ -5,10 +5,10 @@ export function VotingGuide() {
   return (
     <section
       id="voting"
-      className={`${sectionAnchor} flex min-h-[63svh] flex-col justify-center py-[clamp(4rem,8.5svh,6.5rem)]`}
+      className={`${sectionAnchor} flex min-h-[57svh] flex-col justify-center py-[clamp(3.75rem,7.5svh,5.75rem)]`}
       aria-labelledby="guide-heading"
     >
-      <div className={`${sectionInner} flex flex-col gap-[clamp(2.75rem,6svh,4.25rem)]`}>
+      <div className={`${sectionInner} flex flex-col gap-[clamp(2.5rem,5.5svh,4rem)]`}>
         <div className="flex items-center justify-between gap-5 max-[38rem]:flex-col max-[38rem]:items-start">
           <h2
             id="guide-heading"
