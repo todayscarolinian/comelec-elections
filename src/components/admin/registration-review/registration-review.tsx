@@ -87,12 +87,7 @@ export function RegistrationReview() {
     await queryClient.invalidateQueries({ queryKey: trpc.admin.listRegistrations.queryKey() })
     await queryClient.invalidateQueries({ queryKey: trpc.admin.getRegistrationWindow.queryKey() })
   }
-  async function decide(
-    id: string,
-    nextStatus: 'APPROVED' | 'REJECTED',
-    nextYear: YearLevel,
-    reason: string,
-  ) {
+  async function decide(id: string, nextStatus: 'APPROVED' | 'REJECTED', reason: string) {
     if (saving) return
     const applicant = registrations.find((item) => item.id === id)
     if (
@@ -105,12 +100,10 @@ export function RegistrationReview() {
     setSaveError('')
     try {
       if (nextStatus === 'APPROVED')
-        await approve.mutateAsync({ id, yearLevel: nextYear, submittedAt: applicant.submittedAt })
+        await approve.mutateAsync({ id, submittedAt: applicant.submittedAt })
       else await rejectMutation.mutateAsync({ id, reason, submittedAt: applicant.submittedAt })
       setSavedVersions((versions) => new Map(versions).set(id, applicant.submittedAt.getTime()))
-      setNotice(
-        `${applicant.name} ${nextStatus === 'APPROVED' ? `approved for Year ${nextYear}` : 'rejected'}.`,
-      )
+      setNotice(`${applicant.name} ${nextStatus === 'APPROVED' ? 'approved' : 'rejected'}.`)
       await refresh()
       backToQueue()
     } catch (error) {
