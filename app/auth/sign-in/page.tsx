@@ -8,7 +8,7 @@ import { auth } from '@/server/auth'
 import { getSignInDestination } from '@/server/auth/sign-in-destination'
 
 export const metadata: Metadata = {
-  title: 'Sign in | SSC COMELEC Elections',
+  title: 'Sign in',
   description: 'Sign in to SSC Elections using your USC Google account.',
 }
 
