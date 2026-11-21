@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronDown, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import {
   CANDIDATES,
@@ -11,10 +11,20 @@ import {
   readCandidateFilters,
   type CandidateFilters,
 } from '@/lib/candidates'
-import { CandidateCard } from './candidate-card'
+import { CandidateOfficeGrid } from './candidate-office-grid'
+import { CandidateFilter } from './candidate-filter'
 
 const fieldClass =
-  'min-h-12 w-full rounded-none border border-comelec-sage bg-comelec-cream px-3 text-sm text-comelec-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-comelec-forest'
+  'min-h-12 w-full rounded-md border border-comelec-olive/45 bg-comelec-cream px-4 text-sm text-comelec-forest hover:border-comelec-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-comelec-forest motion-safe:transition-colors motion-safe:duration-150'
+
+const officeOptions = [
+  { value: '', label: 'All offices' },
+  ...CANDIDATE_OFFICES.map(({ id, title }) => ({ value: id, label: title })),
+]
+const partyOptions = [
+  { value: '', label: 'All parties' },
+  ...CANDIDATE_PARTIES.map((party) => ({ value: party, label: party })),
+]
 
 export function CandidatesDirectory() {
   const searchParams = useSearchParams()
@@ -34,57 +44,23 @@ export function CandidatesDirectory() {
     <>
       <search
         aria-label="Find candidates"
-        className="mt-10 grid items-end gap-5 md:grid-cols-[1fr_1fr_0.65fr_1fr] lg:mt-12"
+        className="mt-10 grid items-end gap-5 md:grid-cols-3 lg:mt-12"
       >
+        <CandidateFilter
+          label="Browse by office"
+          options={officeOptions}
+          value={filters.office}
+          className={fieldClass}
+          onChange={(office) => updateFilters({ office })}
+        />
+        <CandidateFilter
+          label="Browse by party"
+          options={partyOptions}
+          value={filters.party}
+          className={fieldClass}
+          onChange={(party) => updateFilters({ party })}
+        />
         <div>
-          <label htmlFor="candidate-office" className="mb-2 block text-xs text-comelec-olive">
-            Browse by office
-          </label>
-          <div className="relative">
-            <select
-              id="candidate-office"
-              value={filters.office}
-              onChange={(event) => updateFilters({ office: event.target.value })}
-              className={`${fieldClass} appearance-none pr-10`}
-            >
-              <option value="">All offices</option>
-              {CANDIDATE_OFFICES.map((office) => (
-                <option key={office.id} value={office.id}>
-                  {office.title}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              aria-hidden="true"
-              className="pointer-events-none absolute end-3 top-4 size-4"
-            />
-          </div>
-        </div>
-        <div>
-          <label htmlFor="candidate-party" className="mb-2 block text-xs text-comelec-olive">
-            Browse by party
-          </label>
-          <div className="relative">
-            <select
-              id="candidate-party"
-              value={filters.party}
-              onChange={(event) => updateFilters({ party: event.target.value })}
-              className={`${fieldClass} appearance-none pr-10`}
-            >
-              <option value="">All parties</option>
-              {CANDIDATE_PARTIES.map((party) => (
-                <option key={party} value={party}>
-                  {party}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              aria-hidden="true"
-              className="pointer-events-none absolute end-3 top-4 size-4"
-            />
-          </div>
-        </div>
-        <div className="md:col-start-4">
           <label htmlFor="candidate-search" className="mb-2 block text-xs text-comelec-olive">
             Search candidates
           </label>
@@ -96,11 +72,11 @@ export function CandidatesDirectory() {
               autoComplete="off"
               value={filters.q}
               onChange={(event) => updateFilters({ q: event.target.value })}
-              className={`${fieldClass} border-x-0 pr-10 placeholder:text-comelec-olive`}
+              className={`${fieldClass} pe-11 placeholder:text-comelec-olive`}
             />
             <Search
               aria-hidden="true"
-              className="pointer-events-none absolute end-3 top-4 size-4 text-comelec-olive"
+              className="pointer-events-none absolute end-4 top-1/2 size-4 -translate-y-1/2 text-comelec-olive"
             />
           </div>
         </div>
@@ -110,7 +86,7 @@ export function CandidatesDirectory() {
         <output aria-live="polite" aria-atomic="true">
           {visible.length} {visible.length === 1 ? 'candidate' : 'candidates'}
         </output>
-        {hasFilters ? (
+        {hasFilters && (
           <button
             type="button"
             className="min-h-11 cursor-pointer underline underline-offset-4"
@@ -118,42 +94,12 @@ export function CandidatesDirectory() {
           >
             Clear filters
           </button>
-        ) : (
-          <p className="text-comelec-olive">Filter by office and party</p>
         )}
       </div>
 
       {visible.length ? (
-        <div className="mt-5 grid gap-x-8 gap-y-10 md:grid-cols-2 lg:gap-y-14">
-          {CANDIDATE_OFFICES.map((office) => {
-            const candidates = visible.filter((candidate) => candidate.officeId === office.id)
-            if (!candidates.length) return null
-            const wide = office.candidates.length > 2
-            return (
-              <section
-                key={office.id}
-                aria-labelledby={`office-${office.id}`}
-                className={wide ? 'md:col-span-2' : undefined}
-              >
-                <div className="mb-4 flex items-baseline justify-between gap-3">
-                  <h2 id={`office-${office.id}`} className="font-display text-2xl italic">
-                    {office.title}
-                  </h2>
-                  <p className="text-right text-[0.625rem] tracking-[0.04em] text-comelec-olive uppercase">
-                    {String(candidates.length).padStart(2, '0')}{' '}
-                    {candidates.length === 1 ? 'candidate' : 'candidates'}
-                  </p>
-                </div>
-                <ul
-                  className={`grid gap-5 min-[360px]:grid-cols-2 lg:gap-7 ${wide ? 'md:grid-cols-4' : ''}`}
-                >
-                  {candidates.map((candidate) => (
-                    <CandidateCard key={candidate.id} candidate={candidate} query={query} />
-                  ))}
-                </ul>
-              </section>
-            )
-          })}
+        <div className="mt-5">
+          <CandidateOfficeGrid candidates={visible} query={query} />
         </div>
       ) : (
         <div className="border-b border-comelec-sage py-20 text-center">

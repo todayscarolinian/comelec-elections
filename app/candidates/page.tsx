@@ -3,10 +3,17 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { BallotEntry } from '@/components/ballot/ballot-entry'
 import {
+  candidateGalleryBackdrop,
+  candidateGalleryDescription,
+  candidateGalleryIntro,
+} from '@/components/candidates/candidate-office-grid'
+import {
   CandidatesDirectory,
   CandidatesDirectoryFallback,
 } from '@/components/candidates/candidates-directory'
 import { electionContent } from '@/components/election/election-styles'
+import { fraunces } from '@/components/election/election-fonts'
+import { sectionPadding } from '@/components/landing/landing-styles'
 
 export const metadata: Metadata = {
   title: 'Candidates',
@@ -17,18 +24,20 @@ export const metadata: Metadata = {
 export default function CandidatesPage() {
   return (
     <>
-      <div className={`${electionContent} pb-14 pt-10 sm:pt-14 lg:pb-16 lg:pt-16`}>
-        <header className="flex flex-col justify-between gap-6 md:flex-row md:items-end md:gap-10">
-          <h1 className="font-display text-[clamp(3.5rem,7.5vw,7rem)] leading-[1.05] tracking-[-0.025em] italic">
-            The candidates
-          </h1>
-          <p className="max-w-xs text-sm leading-relaxed text-comelec-olive md:pb-1 lg:text-base">
-            Meet the people running for your next council. Open a profile to read their platform.
-          </p>
-        </header>
-        <Suspense fallback={<CandidatesDirectoryFallback />}>
-          <CandidatesDirectory />
-        </Suspense>
+      <div className={`${candidateGalleryBackdrop} ${sectionPadding} ${fraunces.variable}`}>
+        <div className={electionContent}>
+          <header className={candidateGalleryIntro}>
+            <h1 className="font-display text-[clamp(2.75rem,7.78vw,7rem)] leading-[1.02] tracking-[-0.045em] italic">
+              The candidates
+            </h1>
+            <p className={candidateGalleryDescription}>
+              Meet the people running for your next council. Open a profile to read their platform.
+            </p>
+          </header>
+          <Suspense fallback={<CandidatesDirectoryFallback />}>
+            <CandidatesDirectory />
+          </Suspense>
+        </div>
       </div>
       <section aria-labelledby="choice-heading" className="bg-comelec-forest text-comelec-cream">
         <div

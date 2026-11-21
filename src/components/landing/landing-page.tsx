@@ -1,6 +1,7 @@
 import { sectionAnchor } from './landing-styles'
-import { Fraunces, Inter } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
+import { fraunces } from '@/components/election/election-fonts'
 import { ElectionNavigation } from '@/components/election/election-navigation'
 import { electionPageSpacing } from '@/components/election/election-styles'
 import { CandidateGallery } from './candidate-gallery'
@@ -10,12 +11,6 @@ import { ElectionHero } from './election-hero'
 import { VoterTurnout } from './voter-turnout'
 import { VotingGuide } from './voting-guide'
 
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  style: 'italic',
-  axes: ['opsz', 'SOFT', 'WONK'],
-  variable: '--landing-fraunces',
-})
 const inter = Inter({ subsets: ['latin'], variable: '--landing-body' })
 const antinomiaDisplay = localFont({
   src: [

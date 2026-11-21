@@ -1,4 +1,4 @@
-export const PARTIES = ['STAND', 'Tingog', 'SPP'] as const
+export const PARTIES = ['STAND', 'TINGOG!', 'SPP'] as const
 
 export type PartyId = (typeof PARTIES)[number]
 
@@ -44,7 +44,7 @@ export const ELECTION = {
         {
           id: 'placeholder-question-1-candidate-b',
           name: 'Candidate B',
-          party: 'Tingog',
+          party: 'TINGOG!',
           photo: '/candidates/placeholder-candidate-b.svg',
           bio: 'Placeholder biography for Candidate B.',
         },

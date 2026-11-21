@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: CandidatePageProps): Promise<
   if (!candidate) return { title: 'Candidate not found' }
   return {
     title: candidate.name,
-    description: `Meet ${candidate.name}, candidate for ${candidate.officeTitle}. Explore their platform and commitments.`,
+    description: `Meet ${candidate.name}. Read their profile, advocacies, and projects.`,
   }
 }
 
