@@ -1,10 +1,13 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { AuthErrorMessage } from '@/components/auth/auth-error-message'
+import { RegistrationShell } from '@/components/registration/registration-shell'
+import { registrationPanel } from '@/components/registration/registration-styles'
 import { allowedHostedDomain } from '@/server/auth'
 
 export const metadata: Metadata = {
   title: 'Sign-in error',
+  description: 'Get help signing in to SSC Elections with your university Google account.',
 }
 
 type ErrorPageProps = {
@@ -23,8 +26,10 @@ async function ErrorContent({ searchParams }: ErrorPageProps) {
 
 export default function AuthErrorPage({ searchParams }: ErrorPageProps) {
   return (
-    <Suspense fallback={<output className="p-6">Loading sign-in details…</output>}>
-      <ErrorContent searchParams={searchParams} />
-    </Suspense>
+    <RegistrationShell signInPage>
+      <Suspense fallback={<output className={registrationPanel}>Loading sign-in details…</output>}>
+        <ErrorContent searchParams={searchParams} />
+      </Suspense>
+    </RegistrationShell>
   )
 }
