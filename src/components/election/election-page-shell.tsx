@@ -62,7 +62,9 @@ export function ElectionPageShell({
               <span className="block text-[clamp(1.5rem,2.5vw,2.25rem)] leading-tight [font-family:var(--registration-text),Georgia,serif]">
                 SSC COMELEC
               </span>
-              <span className="block text-sm text-[#56654a]">Supreme Student Council Elections · 2026</span>
+              <span className="block text-sm text-[#56654a]">
+                Supreme Student Council Elections · 2026
+              </span>
             </span>
           </Link>
           <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-6 text-sm">

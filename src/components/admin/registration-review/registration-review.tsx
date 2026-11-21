@@ -90,7 +90,6 @@ export function RegistrationReview() {
   async function decide(
     id: string,
     nextStatus: 'APPROVED' | 'REJECTED',
-    nextYear: YearLevel,
     nextSchool: School | undefined,
     reason: string,
   ) {
@@ -108,15 +107,12 @@ export function RegistrationReview() {
       if (nextStatus === 'APPROVED')
         await approve.mutateAsync({
           id,
-          yearLevel: nextYear,
           school: nextSchool,
           submittedAt: applicant.submittedAt,
         })
       else await rejectMutation.mutateAsync({ id, reason, submittedAt: applicant.submittedAt })
       setSavedVersions((versions) => new Map(versions).set(id, applicant.submittedAt.getTime()))
-      setNotice(
-        `${applicant.name} ${nextStatus === 'APPROVED' ? `approved for Year ${nextYear}` : 'rejected'}.`,
-      )
+      setNotice(`${applicant.name} ${nextStatus === 'APPROVED' ? 'approved' : 'rejected'}.`)
       await refresh()
       backToQueue()
     } catch (error) {

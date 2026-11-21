@@ -9,14 +9,18 @@ import { ResultsTally } from './results-tally'
 
 function ResultsFooter() {
   return (
-    <footer className={`mx-auto flex max-w-[82rem] items-center justify-between gap-6 border-t border-[#b6c89f] py-5 text-[#324e1f] max-[38rem]:flex-col max-[38rem]:items-start ${footerGutters}`}>
+    <footer
+      className={`mx-auto flex max-w-[82rem] items-center justify-between gap-6 border-t border-[#b6c89f] py-5 text-[#324e1f] max-[38rem]:flex-col max-[38rem]:items-start ${footerGutters}`}
+    >
       <Link href="/" className="flex items-center gap-3" aria-label="SSC COMELEC home">
         <Image src="/landing/mark.webp" alt="" width={48} height={48} />
         <span>
           <span className="block font-editorial text-[clamp(1.4rem,2.4vw,2rem)] leading-tight">
             SSC COMELEC
           </span>
-          <span className="block text-xs text-[#647357]">Supreme Student Council Elections · 2026</span>
+          <span className="block text-xs text-[#647357]">
+            Supreme Student Council Elections · 2026
+          </span>
         </span>
       </Link>
       <nav

@@ -40,8 +40,8 @@ export default function NotFound() {
             </h1>
             <p className="mt-8 max-w-[24rem] text-sm leading-6 text-comelec-forest max-[52rem]:max-w-[34rem] max-[38rem]:mt-5">
               The page you&apos;re looking for doesn&apos;t exist, was moved,
-              <br className="max-[52rem]:hidden" /> or the election link has expired.
-              Let&apos;s get you
+              <br className="max-[52rem]:hidden" /> or the election link has expired. Let&apos;s get
+              you
               <br className="max-[52rem]:hidden" /> back to the vote.
             </p>
             <div className="mt-6">
@@ -55,10 +55,11 @@ export default function NotFound() {
             </div>
           </div>
 
-          <div className="pointer-events-none relative min-h-[clamp(22rem,32vw,26rem)] w-full max-[52rem]:mt-7 max-[52rem]:min-h-[14rem]" aria-hidden="true">
-            <span
-              className="absolute left-[35%] top-[10%] flex -translate-x-1/2 scale-x-[1.05] items-center gap-[0.045em] whitespace-nowrap text-[clamp(12rem,29vw,22rem)] leading-[0.9] tracking-[-0.055em] text-comelec-forest [font-family:var(--landing-fraunces),Georgia,serif] [font-variation-settings:'opsz'_144,'SOFT'_0,'WONK'_1] max-[52rem]:left-1/2 max-[52rem]:top-0 max-[52rem]:scale-x-100 max-[52rem]:text-[clamp(6.5rem,18vw,9rem)]"
-            >
+          <div
+            className="pointer-events-none relative min-h-[clamp(22rem,32vw,26rem)] w-full max-[52rem]:mt-7 max-[52rem]:min-h-[14rem]"
+            aria-hidden="true"
+          >
+            <span className="absolute left-[35%] top-[10%] flex -translate-x-1/2 scale-x-[1.05] items-center gap-[0.045em] whitespace-nowrap text-[clamp(12rem,29vw,22rem)] leading-[0.9] tracking-[-0.055em] text-comelec-forest [font-family:var(--landing-fraunces),Georgia,serif] [font-variation-settings:'opsz'_144,'SOFT'_0,'WONK'_1] max-[52rem]:left-1/2 max-[52rem]:top-0 max-[52rem]:scale-x-100 max-[52rem]:text-[clamp(6.5rem,18vw,9rem)]">
               <span>4</span>
               <span className="comelec-outline-display inline-block font-light">0</span>
               <span>4</span>
