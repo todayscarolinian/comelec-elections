@@ -1,4 +1,4 @@
-import { electionContent } from '@/components/election/election-styles'
+import { footerGutters } from '@/components/election/election-styles'
 import Image from 'next/image'
 import Link from 'next/link'
 import { BallotEntry } from '@/components/ballot/ballot-entry'
@@ -8,7 +8,7 @@ export function ElectionFooter() {
   return (
     <footer className="mt-auto">
       <div
-        className={`${electionContent} flex min-h-[7.5rem] items-center justify-between gap-5 py-5 max-[38rem]:flex-col max-[38rem]:items-start`}
+        className={`${footerGutters} flex min-h-[7.5rem] items-center justify-between gap-5 py-5 max-[38rem]:flex-col max-[38rem]:items-start`}
       >
         <div className="flex items-center gap-3">
           <Image src="/landing/mark.webp" alt="" width={56} height={56} />
@@ -16,7 +16,7 @@ export function ElectionFooter() {
             <p className="text-[clamp(1.35rem,2.15vw,2rem)] leading-tight [font-family:var(--landing-text,var(--font-antinomia-text)),Georgia,serif]">
               SSC COMELEC
             </p>
-            <small className="text-[#4f6041]">Student council elections · 2026</small>
+            <small className="text-[#4f6041]">Supreme Student Council Elections · 2026</small>
           </div>
         </div>
         <nav

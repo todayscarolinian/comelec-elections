@@ -18,6 +18,7 @@ import {
   isAccessError,
 } from '../admin-ui'
 import { ResultsSkeleton } from '../admin-skeletons'
+import { SchoolResults } from './school-results'
 
 const CONFIRM_PHRASE = 'RELEASE'
 
@@ -144,6 +145,8 @@ export function AdminResults() {
       <div className="mt-6">
         <ResultsTally results={data} />
       </div>
+
+      <SchoolResults />
 
       <ConfirmDialog
         open={confirming}

@@ -2,14 +2,17 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
+import { Bone } from '@/components/skeleton'
 
 export function StudentProfileImage({
   url,
   name,
+  loading = false,
   onRefresh,
 }: {
   url: string | null
   name: string
+  loading?: boolean
   onRefresh: () => void
 }) {
   const [image, setImage] = useState({ src: url, failed: false })
@@ -17,6 +20,13 @@ export function StudentProfileImage({
   if (url && url !== image.src && (!image.src || image.failed)) {
     setImage({ src: url, failed: false })
   }
+  if (!image.src && loading)
+    return (
+      <div aria-busy="true" className="min-w-0">
+        <output className="sr-only">Loading student profile…</output>
+        <Bone className="aspect-[3/4] max-h-[70dvh] w-full" />
+      </div>
+    )
   if (!image.src || image.failed)
     return (
       <div className="grid min-h-[220px] place-content-center gap-3 border border-review-line p-6 text-center">

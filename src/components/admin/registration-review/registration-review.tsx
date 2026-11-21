@@ -2,13 +2,16 @@
 
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { RefreshCw } from 'lucide-react'
 import { useTRPC } from '@/lib/trpc/client'
+import { schoolLabel, type School } from '@/server/trpc/api/v1/registration/core/school'
 import { YEAR_LEVELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationReviewSkeleton } from '../admin-skeletons'
+import { formatTime } from '../admin-ui'
 import { ApplicationReview } from './application-review'
+import { OcrIndicator } from './ocr-findings'
+import { QueuePager, type PageSize } from './queue-pager'
 import { statusLabels, type RegistrationStatus } from './types'
-
-const PAGE_SIZE = 5
 
 function accessError(error: unknown) {
   const code = (error as { data?: { code?: string } } | null)?.data?.code
@@ -44,6 +47,7 @@ export function RegistrationReview() {
   const [saveError, setSaveError] = useState('')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState<PageSize>(10)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [lastFetchDenied, setLastFetchDenied] = useState(false)
   const [mobileDetail, setMobileDetail] = useState(false)
@@ -55,8 +59,9 @@ export function RegistrationReview() {
       .toLowerCase()
       .includes(query.trim().toLowerCase()),
   )
-  const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / PAGE_SIZE) - 1))
-  const visible = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
+  const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / pageSize) - 1))
+  const heldCount = filtered.filter((item) => item.hasHeldBallot).length
+  const visible = filtered.slice(currentPage * pageSize, (currentPage + 1) * pageSize)
   const selected = registrations.find((item) => item.id === selectedId)
   const deniedNow = registrationsQuery.isError && accessError(registrationsQuery.error)
   const loaded = !registrationsQuery.isError && !registrationsQuery.isPending
@@ -75,7 +80,7 @@ export function RegistrationReview() {
   }
   function goToPage(nextPage: number) {
     setPage(nextPage)
-    setSelectedId(filtered[nextPage * PAGE_SIZE]?.id ?? null)
+    setSelectedId(filtered[nextPage * pageSize]?.id ?? null)
     setMobileDetail(false)
   }
   function backToQueue() {
@@ -89,7 +94,7 @@ export function RegistrationReview() {
   async function decide(
     id: string,
     nextStatus: 'APPROVED' | 'REJECTED',
-    nextYear: YearLevel,
+    nextSchool: School | undefined,
     reason: string,
   ) {
     if (saving) return
@@ -104,12 +109,14 @@ export function RegistrationReview() {
     setSaveError('')
     try {
       if (nextStatus === 'APPROVED')
-        await approve.mutateAsync({ id, yearLevel: nextYear, submittedAt: applicant.submittedAt })
+        await approve.mutateAsync({
+          id,
+          school: nextSchool,
+          submittedAt: applicant.submittedAt,
+        })
       else await rejectMutation.mutateAsync({ id, reason, submittedAt: applicant.submittedAt })
       setSavedVersions((versions) => new Map(versions).set(id, applicant.submittedAt.getTime()))
-      setNotice(
-        `${applicant.name} ${nextStatus === 'APPROVED' ? `approved for Year ${nextYear}` : 'rejected'}.`,
-      )
+      setNotice(`${applicant.name} ${nextStatus === 'APPROVED' ? 'approved' : 'rejected'}.`)
       await refresh()
       backToQueue()
     } catch (error) {
@@ -212,17 +219,29 @@ export function RegistrationReview() {
           </select>
         </label>
       </div>
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+        <span className="text-[11px] text-review-muted">
+          {registrationsQuery.isFetching
+            ? 'Refreshing…'
+            : registrationsQuery.dataUpdatedAt
+              ? `Updated ${formatTime(new Date(registrationsQuery.dataUpdatedAt))}`
+              : null}
+        </span>
         <button
-          className="min-h-11 underline disabled:opacity-50"
+          type="button"
+          className="inline-flex min-h-11 items-center gap-2 border border-review-line bg-review-paper px-4 text-[13px] text-review-ink hover:bg-review-selected disabled:cursor-not-allowed disabled:text-review-muted disabled:hover:bg-review-paper min-[761px]:min-h-[42px]"
           disabled={saving || registrationsQuery.isFetching}
+          aria-busy={registrationsQuery.isFetching}
           onClick={() => {
             void refresh()
           }}
         >
+          <RefreshCw
+            aria-hidden="true"
+            className={`size-3.5 ${registrationsQuery.isFetching ? 'motion-safe:animate-spin' : ''}`}
+          />
           Refresh queue
         </button>
-        {registrationsQuery.isFetching && <span>Refreshing…</span>}
       </div>
       {registrationsQuery.isError && (
         <p role="alert" className="text-review-error">
@@ -246,6 +265,7 @@ export function RegistrationReview() {
             </h2>
             <p>
               {filtered.length} {status === 'PENDING' ? 'pending applications' : 'applications'}
+              {heldCount > 0 && ` · ${heldCount} with Held Ballots`}
             </p>
           </header>
           {visible.length ? (
@@ -260,13 +280,24 @@ export function RegistrationReview() {
                       setMobileDetail(true)
                     }}
                   >
-                    <span className="font-editorial text-lg leading-6">{item.name}</span>
+                    <span className="flex items-start justify-between gap-2">
+                      <span className="min-w-0 font-editorial text-lg leading-6 wrap-anywhere">
+                        {item.name}
+                      </span>
+                      <span className="flex shrink-0 flex-col items-end gap-1 pt-1">
+                        {item.hasHeldBallot && (
+                          <span className="bg-[#f7e3dc] px-1.5 py-0.5 text-[10px] leading-none font-medium whitespace-nowrap text-review-error">
+                            Held Ballot
+                          </span>
+                        )}
+                        <OcrIndicator registration={item} />
+                      </span>
+                    </span>
                     <span>
-                      {item.studentId} · Year {item.yearLevel}
+                      {item.studentId} · Year {item.yearLevel} · {schoolLabel(item.school)}
                     </span>
                     <span className="text-xs min-[761px]:!text-[10px]">
                       {item.email} · {statusLabels[item.status]}
-                      {item.hasHeldBallot ? ' · Held Ballot' : ''}
                     </span>
                   </button>
                 </li>
@@ -275,32 +306,16 @@ export function RegistrationReview() {
           ) : (
             <p className="p-6 text-review-muted">No applications match these filters.</p>
           )}
-          <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-review-line px-4 py-3 text-xs text-review-muted min-[761px]:px-3 [&>div]:flex [&>div]:flex-wrap [&>div]:gap-3">
-            <span>
-              {filtered.length
-                ? `${currentPage * PAGE_SIZE + 1}–${Math.min((currentPage + 1) * PAGE_SIZE, filtered.length)} of ${filtered.length}`
-                : '0 applications'}
-            </span>
-            <div>
-              {currentPage > 0 && (
-                <button
-                  className="min-h-11 border-0 bg-transparent p-0 text-review-ink underline underline-offset-3 min-[761px]:min-h-7"
-                  aria-label="Previous applicants"
-                  onClick={() => goToPage(currentPage - 1)}
-                >
-                  ← Previous
-                </button>
-              )}
-              {(currentPage + 1) * PAGE_SIZE < filtered.length && (
-                <button
-                  className="min-h-11 border-0 bg-transparent p-0 text-review-ink underline underline-offset-3 min-[761px]:min-h-7"
-                  onClick={() => goToPage(currentPage + 1)}
-                >
-                  Next applicants →
-                </button>
-              )}
-            </div>
-          </footer>
+          <QueuePager
+            page={currentPage}
+            pageSize={pageSize}
+            total={filtered.length}
+            onPage={goToPage}
+            onPageSize={(size) => {
+              setPageSize(size)
+              resetView()
+            }}
+          />
         </section>
         {selected ? (
           <ApplicationReview
@@ -310,9 +325,6 @@ export function RegistrationReview() {
             onBack={backToQueue}
             focusOnOpen={mobileDetail}
             saving={saving || selectedAlreadySaved}
-            onRefresh={() => {
-              void refresh()
-            }}
           />
         ) : selectedId ? (
           <output className="block p-6 text-review-muted">

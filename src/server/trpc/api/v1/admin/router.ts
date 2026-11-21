@@ -9,6 +9,8 @@ import { setElectionStatus } from './core/mutations/setElectionStatus'
 import { setRegistrationStatus } from './core/mutations/setRegistrationStatus'
 import { getDashboard } from './core/queries/getDashboard'
 import { getRegistrationWindow } from './core/queries/getRegistrationWindow'
+import { getStudentProfileView } from './core/queries/getStudentProfileView'
+import { getResultsBySchool } from './core/queries/getResultsBySchool'
 import { listAdmins } from './core/queries/listAdmins'
 import { listAuditLog } from './core/queries/listAuditLog'
 import { listBallots } from './core/queries/listBallots'
@@ -16,6 +18,7 @@ import { listRegistrations } from './core/queries/listRegistrations'
 
 export const adminRouter = createTRPCRouter({
   listRegistrations,
+  getStudentProfileView,
   approveRegistration,
   rejectRegistration,
   grantAdmin,
@@ -26,6 +29,7 @@ export const adminRouter = createTRPCRouter({
   getRegistrationWindow,
   getDashboard,
   releaseResults,
+  getResultsBySchool,
   listBallots,
   exportBallots,
   listAuditLog,

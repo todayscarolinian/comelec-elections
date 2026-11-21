@@ -1,4 +1,4 @@
-import { ArrowLeft, CircleAlert, UserRoundX } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import {
   registrationAction,
@@ -28,27 +28,17 @@ export function AuthErrorMessage({
   const message = configurationError
     ? 'Organization sign-in is not configured. Contact the election administrator.'
     : accessDenied
-      ? `Only @${domain} Google Workspace accounts can sign in.`
+      ? `Please choose your university account (@${domain}) in the Google account picker to continue.`
       : temporarilyUnavailable
         ? 'Sign-in is temporarily unavailable. Please try again in a moment.'
         : 'We could not complete your Google sign-in. Please try again.'
-  const ErrorIcon = accessDenied ? UserRoundX : CircleAlert
 
   return (
     <section
       aria-labelledby="auth-error-heading"
       className={`${registrationPanel} ${registrationPanelEntrance} [&>*]:max-w-[35rem]`}
     >
-      <div
-        aria-hidden="true"
-        className="grid size-14 place-items-center rounded-full border border-comelec-sage bg-comelec-sage/20 text-comelec-forest"
-      >
-        <ErrorIcon size={26} strokeWidth={1.5} />
-      </div>
       <header className="space-y-4">
-        <p className="text-xs font-medium tracking-[0.08em] text-comelec-olive uppercase">
-          Sign-in not completed
-        </p>
         <h1
           id="auth-error-heading"
           className={`${registrationHeading} text-[clamp(2.75rem,3.9vw,3.5rem)] min-[56rem]:text-[clamp(3rem,4.45vw,4rem)]`}
@@ -57,13 +47,6 @@ export function AuthErrorMessage({
         </h1>
         <p className="text-base leading-relaxed text-[#56654a] sm:text-lg">{message}</p>
       </header>
-
-      {accessDenied && (
-        <p className="text-sm leading-relaxed text-[#56654a]">
-          Please choose your university account in the Google account picker to continue. Personal
-          Google accounts cannot be used for this election.
-        </p>
-      )}
 
       {!configurationError && (
         <GoogleSignInButton
