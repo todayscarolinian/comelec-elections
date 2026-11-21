@@ -133,11 +133,8 @@ export function ElectionNavigation({
   isLanding = false,
   isBallot = false,
   hideSignIn = false,
-  showAccount = true,
-}: Partial<NavigationProps> & { showAccount?: boolean }) {
+}: Partial<NavigationProps>) {
   const props = { isLanding, isBallot, hideSignIn }
-  if (!showAccount) return <NavigationBar {...props} />
-
   return (
     <Suspense fallback={<NavigationBar {...props} />}>
       <SessionNavigation {...props} />

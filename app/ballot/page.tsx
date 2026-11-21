@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { BallotPage, BallotPreview } from '@/components/ballot/ballot-page'
+import { BallotPage } from '@/components/ballot/ballot-page'
 import { ElectionNavigation } from '@/components/election/election-navigation'
 import { ElectionFooter } from '@/components/landing/election-footer'
 
@@ -9,8 +9,6 @@ export const metadata: Metadata = {
 }
 
 export default function Page() {
-  const preview = process.env.NODE_ENV === 'development'
-
   return (
     <div className="flex min-h-svh flex-1 flex-col bg-comelec-cream text-comelec-forest [--landing-muted:#647357] [--landing-section-gutter:clamp(1rem,4.45vw,4rem)] [--landing-text:var(--font-antinomia-text)] [&_:is(a,button,input):focus-visible]:outline-2 [&_:is(a,button,input):focus-visible]:outline-offset-4">
       <a
@@ -19,13 +17,13 @@ export default function Page() {
       >
         Skip to ballot
       </a>
-      <ElectionNavigation isBallot showAccount={!preview} />
+      <ElectionNavigation isBallot />
       <main
         id="ballot-content"
         tabIndex={-1}
         className="flex flex-1 flex-col px-(--landing-section-gutter)"
       >
-        {preview ? <BallotPreview /> : <BallotPage />}
+        <BallotPage />
       </main>
       <ElectionFooter />
     </div>

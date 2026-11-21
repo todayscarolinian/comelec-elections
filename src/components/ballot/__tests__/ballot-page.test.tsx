@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ELECTION } from '@/election'
-import { BallotPage, BallotPreview } from '../ballot-page'
+import { BallotPage } from '../ballot-page'
 
 const { election, myStatus, registration, cast } = vi.hoisted(() => ({
   election: vi.fn(),
@@ -83,21 +83,6 @@ describe('BallotPage', () => {
     const link = await screen.findByRole('link', { name: 'Sign in' })
     expect(link.getAttribute('href')).toBe('/auth/sign-in?next=%2Fballot')
     expect(registration).not.toHaveBeenCalled()
-  })
-
-  it('completes and resets a preview without calling the ballot API', async () => {
-    render(<BallotPreview />)
-
-    await acknowledgeDisclosure()
-    answerBallot()
-    fireEvent.click(submitButton('Cast my ballot'))
-    await screen.findByRole('heading', { name: 'Test ballot complete.' })
-    expect(cast).not.toHaveBeenCalled()
-    expect(myStatus).not.toHaveBeenCalled()
-
-    fireEvent.click(submitButton('Start over'))
-    await screen.findByRole('checkbox', { name: /my ballot can be viewed/i })
-    expect(submitButton('Continue to ballot').disabled).toBe(true)
   })
 
   it('directs voters without a registration to the registration page', async () => {

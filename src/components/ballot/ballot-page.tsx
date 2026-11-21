@@ -104,36 +104,6 @@ const castErrors: Readonly<Record<string, string>> = {
   AlreadyVoted: 'A ballot has already been recorded for this account.',
 }
 
-export function BallotPreview() {
-  const [submitted, setSubmitted] = useState(false)
-
-  return (
-    <>
-      <p className="pt-4 pb-5 text-sm text-comelec-olive">
-        Ballot preview · Votes are simulated and never recorded.
-      </p>
-      {submitted ? (
-        <>
-          <BallotProgress step="complete" />
-          <div
-            className={`mx-auto w-full max-w-5xl grow space-y-7 py-12 sm:py-20 ${ballotEntrance}`}
-          >
-            <BallotIntro
-              heading="Test ballot complete."
-              description="You completed the ballot preview. No vote was recorded."
-            />
-            <button type="button" onClick={() => setSubmitted(false)} className={ballotAction}>
-              Start over
-            </button>
-          </div>
-        </>
-      ) : (
-        <BallotFlow held={false} pending={false} onCast={() => setSubmitted(true)} />
-      )}
-    </>
-  )
-}
-
 export function BallotPage() {
   const trpc = useTRPC()
   const client = useQueryClient()
