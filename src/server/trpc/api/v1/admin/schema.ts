@@ -68,10 +68,15 @@ export const registrationReviewOutputSchema = z.object({
   reviewedAt: z.date().nullable(),
   rejectionReason: z.string().nullable(),
   hasHeldBallot: z.boolean(),
-  studentProfileUrl: z.url().nullable(),
   ocrStatus: z.enum(['PENDING', 'DONE', 'FAILED']),
   ocrResult: ocrResultSchema.nullable(),
 })
+
+export const studentProfileViewInputSchema = z.object({
+  id: z.uuid(),
+  submittedAt: z.date(),
+})
+export const studentProfileViewOutputSchema = z.object({ url: z.url() })
 
 export const approveRegistrationInputSchema = z.object({
   id: z.uuid(),

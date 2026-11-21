@@ -6,7 +6,7 @@ import { ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
 import { ocrView } from '@/server/trpc/api/v1/registration/core/ocrView'
 import { createSignedStudentProfileView } from '@/server/trpc/api/v1/registration/services/studentProfileStorage'
 import type { z } from 'zod'
-import type { listRegistrationsInputSchema } from '../schema'
+import type { listRegistrationsInputSchema, studentProfileViewInputSchema } from '../schema'
 
 export async function listRegistrations(
   db: Db,
@@ -23,7 +23,6 @@ export async function listRegistrations(
       reviewedBy: true,
       reviewedAt: true,
       rejectionReason: true,
-      studentProfilePath: true,
       ocrStatus: true,
       ocrResult: true,
       person: { select: { name: true, email: true, ballot: { select: { id: true } } } },
@@ -31,33 +30,44 @@ export async function listRegistrations(
     orderBy: [{ submittedAt: 'asc' }, { id: 'asc' }],
   })
   const now = new Date()
-  const rows = await Promise.all(
-    registrations.map(
-      async ({ person, studentProfilePath, ocrResult, ocrStatus, ...registration }) => {
-        let studentProfileUrl: string | null = null
-        try {
-          studentProfileUrl = await createSignedStudentProfileView(studentProfilePath)
-        } catch {
-          // A failed/expired document must not hide the rest of the review queue.
-        }
-        const parsed = ocrResultSchema.safeParse(ocrResult)
-        return {
-          ...registration,
-          name: person.name,
-          email: person.email,
-          studentId: person.email.split('@')[0],
-          hasHeldBallot: Boolean(person.ballot) && registration.status !== 'APPROVED',
-          studentProfileUrl,
-          ocrStatus: ocrView({ ocrStatus, submittedAt: registration.submittedAt }, now),
-          ocrResult: parsed.success ? parsed.data : null,
-        }
-      },
-    ),
-  )
+  const rows = registrations.map(({ person, ocrResult, ocrStatus, ...registration }) => {
+    const parsed = ocrResultSchema.safeParse(ocrResult)
+    return {
+      ...registration,
+      name: person.name,
+      email: person.email,
+      studentId: person.email.split('@')[0],
+      hasHeldBallot: Boolean(person.ballot) && registration.status !== 'APPROVED',
+      ocrStatus: ocrView({ ocrStatus, submittedAt: registration.submittedAt }, now),
+      ocrResult: parsed.success ? parsed.data : null,
+    }
+  })
   // Only pending Held Ballots need review priority. Keep database order within each group.
   const priority = (row: (typeof rows)[number]) =>
     Number(row.status === 'PENDING' && row.hasHeldBallot)
   return rows.sort((a, b) => priority(b) - priority(a))
+}
+
+/**
+ * Signs the Student Profile for one submission only when an Admin opens it, instead of
+ * signing every row in the queue on each refresh.
+ */
+export async function getStudentProfileView(
+  db: Db,
+  input: z.infer<typeof studentProfileViewInputSchema>,
+) {
+  const registration = await db.registration.findUnique({
+    where: { id: input.id },
+    select: { studentProfilePath: true, submittedAt: true },
+  })
+  // A resubmission replaces the document, so never sign a newer file for an older version.
+  if (!registration || registration.submittedAt.getTime() !== input.submittedAt.getTime()) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'This registration changed. Refresh the queue.',
+    })
+  }
+  return { url: await createSignedStudentProfileView(registration.studentProfilePath) }
 }
 
 type Decision = { id: string; adminEmail: string; submittedAt: Date } & (

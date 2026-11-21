@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { Suspense } from 'react'
 import { ElectionResultsPage } from '@/components/results/election-results-page'
+import { ResultsPageSkeleton } from '@/components/results/results-skeleton'
 import { pageMetadata } from '@/lib/site'
 import { caller } from '@/server/trpc/server'
 
@@ -21,13 +22,7 @@ async function ReleasedOrPending() {
 
 export default function ResultsPage() {
   return (
-    <Suspense
-      fallback={
-        <output className="block min-h-svh bg-[#faf3e0] p-8 text-[#324e1f]">
-          Loading results…
-        </output>
-      }
-    >
+    <Suspense fallback={<ResultsPageSkeleton />}>
       <ReleasedOrPending />
     </Suspense>
   )

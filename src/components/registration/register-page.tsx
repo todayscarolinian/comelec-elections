@@ -8,6 +8,7 @@ import { schoolLabel, type School } from '@/server/trpc/api/v1/registration/core
 import { YEAR_LEVEL_LABELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationForm } from './registration-form'
 import { RegistrationSignIn } from './registration-sign-in'
+import { RegistrationStatusSkeleton } from './registration-skeletons'
 import {
   registrationAction,
   registrationHeading,
@@ -100,11 +101,7 @@ export function RegisterPage() {
       </header>
 
       {isLoading ? (
-        <div className="space-y-4 border-t border-[#b6c89f] pt-6">
-          <output className="block text-sm text-[#56654a]">Loading registration…</output>
-          <div aria-hidden="true" className="h-12 border border-[#b6c89f] bg-[#f1edd8]" />
-          <div aria-hidden="true" className="h-24 border border-[#b6c89f] bg-[#f1edd8]" />
-        </div>
+        <RegistrationStatusSkeleton />
       ) : (
         <>
           {isError && (
