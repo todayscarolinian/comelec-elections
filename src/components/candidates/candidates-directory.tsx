@@ -11,6 +11,7 @@ import {
   readCandidateFilters,
   type CandidateFilters,
 } from '@/lib/candidates'
+import { Bone, LoadingRegion, Repeat, boneWidths } from '@/components/skeleton'
 import { CandidateOfficeGrid } from './candidate-office-grid'
 import { CandidateFilter } from './candidate-filter'
 
@@ -113,18 +114,60 @@ export function CandidatesDirectory() {
   )
 }
 
+/** Mirrors the filters and office grid; candidates are static, so the shape is exact. */
 export function CandidatesDirectoryFallback() {
   return (
-    <div className="mt-12" aria-busy="true" aria-label="Loading candidates">
-      <output className="text-sm text-comelec-olive">Loading candidates…</output>
-      <div aria-hidden="true" className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-4">
-        {CANDIDATES.map((candidate) => (
-          <div
-            key={candidate.id}
-            className="aspect-square bg-comelec-sage/20 motion-safe:animate-pulse"
-          />
-        ))}
+    <LoadingRegion label="Loading candidates…">
+      <div className="mt-10 grid items-end gap-5 md:grid-cols-3 lg:mt-12">
+        <Repeat count={3}>
+          {(index) => (
+            <div key={index}>
+              <Bone className="mb-2 h-3 w-28" />
+              <Bone className="h-12 w-full rounded-md" />
+            </div>
+          )}
+        </Repeat>
       </div>
-    </div>
+      <div className="mt-5 flex min-h-12 items-center border-t border-comelec-sage/65 py-3">
+        <Bone className="h-3 w-20" />
+      </div>
+      <div className="mt-5 grid gap-x-4 gap-y-10 min-[38.01rem]:grid-cols-2">
+        {CANDIDATE_OFFICES.map((office, index) => {
+          const count = CANDIDATES.filter((candidate) => candidate.officeId === office.id).length
+          if (!count) return null
+          const wide = index >= 2
+          const columns = wide ? 'min-[38.01rem]:grid-cols-2 lg:grid-cols-4' : 'lg:grid-cols-2'
+          return (
+            <div key={office.id} className={wide ? 'col-span-full' : undefined}>
+              <div className="flex items-baseline justify-between gap-2">
+                <Bone className="h-6 w-40" />
+                <Bone className="h-3 w-20" />
+              </div>
+              <div className={`mt-4 grid gap-4 ${columns}`}>
+                <Repeat count={count}>
+                  {(card) => (
+                    <div
+                      key={card}
+                      className="border-t border-comelec-sage px-3 pt-3 sm:px-4 sm:pt-4"
+                    >
+                      <Bone className="mb-3 aspect-square w-full" />
+                      <div className="flex justify-between gap-3">
+                        <Bone className="h-3 w-16" />
+                        <Bone className="h-4 w-20" />
+                      </div>
+                      <div className="mt-2 min-h-20 space-y-2 lg:max-xl:min-h-25">
+                        <Bone className={`h-6 ${boneWidths[card % boneWidths.length]}`} />
+                        <Bone className="h-3.5 w-4/5" />
+                      </div>
+                      <Bone className="my-3.5 h-4 w-24" />
+                    </div>
+                  )}
+                </Repeat>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </LoadingRegion>
   )
 }
