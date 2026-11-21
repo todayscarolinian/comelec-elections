@@ -53,11 +53,13 @@ export async function listRegistrations(
       },
     ),
   )
-  // Stable sort preserves submission order within each priority group.
-  return rows.sort((a, b) => Number(b.hasHeldBallot) - Number(a.hasHeldBallot))
+  // Only pending Held Ballots need review priority. Keep database order within each group.
+  const priority = (row: (typeof rows)[number]) =>
+    Number(row.status === 'PENDING' && row.hasHeldBallot)
+  return rows.sort((a, b) => priority(b) - priority(a))
 }
 
-type Decision = { id: string; adminEmail: string; submittedAt?: Date } & (
+type Decision = { id: string; adminEmail: string; submittedAt: Date } & (
   { status: 'APPROVED'; yearLevel?: string } | { status: 'REJECTED'; reason: string }
 )
 type ReviewRow = {
@@ -66,6 +68,34 @@ type ReviewRow = {
   status: string
   yearLevel: string
   submittedAt: Date
+}
+
+function isRetryableSqlState(code: unknown) {
+  return code === '40001' || code === '40P01'
+}
+
+function isReviewConflict(error: unknown) {
+  const seen = new Set<object>()
+  function visit(value: unknown): boolean {
+    if (typeof value !== 'object' || value === null || seen.has(value)) return false
+    seen.add(value)
+    const { code, meta, originalCode, sqlState, cause } = value as Record<string, unknown>
+    if (
+      code === 'P2034' ||
+      isRetryableSqlState(code) ||
+      isRetryableSqlState(originalCode) ||
+      isRetryableSqlState(sqlState)
+    ) {
+      return true
+    }
+    if (code === 'P2010' && typeof meta === 'object' && meta !== null) {
+      const raw = meta as Record<string, unknown>
+      // adapter-pg 7.10.1 retains the SQLSTATE in meta.driverAdapterError.cause.originalCode.
+      if (isRetryableSqlState(raw.code) || visit(raw.driverAdapterError)) return true
+    }
+    return visit(cause)
+  }
+  return visit(error)
 }
 
 export async function reviewRegistration(db: Db, decision: Decision) {
@@ -79,10 +109,7 @@ export async function reviewRegistration(db: Db, decision: Decision) {
       `
         if (!registration)
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Registration not found.' })
-        if (
-          decision.submittedAt &&
-          registration.submittedAt.getTime() !== decision.submittedAt.getTime()
-        ) {
+        if (registration.submittedAt.getTime() !== decision.submittedAt?.getTime()) {
           throw new TRPCError({
             code: 'CONFLICT',
             message: 'Registration was resubmitted. Refresh the queue.',
@@ -98,13 +125,14 @@ export async function reviewRegistration(db: Db, decision: Decision) {
           decision.status === 'APPROVED'
             ? (decision.yearLevel ?? registration.yearLevel)
             : registration.yearLevel
+        const rejectionReason = decision.status === 'REJECTED' ? decision.reason : null
         const reviewedAt = new Date()
         await tx.registration.update({
           where: { id: registration.id },
           data: {
             status: decision.status,
             yearLevel,
-            rejectionReason: decision.status === 'REJECTED' ? decision.reason : null,
+            rejectionReason,
             reviewedBy: decision.adminEmail,
             reviewedAt,
           },
@@ -122,7 +150,11 @@ export async function reviewRegistration(db: Db, decision: Decision) {
             adminEmail: decision.adminEmail,
             action: decision.status === 'APPROVED' ? 'APPROVE_REGISTRATION' : 'REJECT_REGISTRATION',
             target: registration.id,
-            detail: { yearLevel },
+            detail: {
+              originalYearLevel: registration.yearLevel,
+              yearLevel,
+              ...(rejectionReason === null ? {} : { rejectionReason }),
+            },
           },
           tx,
         )
@@ -132,7 +164,7 @@ export async function reviewRegistration(db: Db, decision: Decision) {
     )
   } catch (error) {
     if (error instanceof TRPCError) throw error
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
+    if (isReviewConflict(error)) {
       throw new TRPCError({
         code: 'CONFLICT',
         message: 'Registration changed during review. Refresh and try again.',

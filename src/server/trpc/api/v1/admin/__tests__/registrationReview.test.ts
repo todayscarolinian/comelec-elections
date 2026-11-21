@@ -12,10 +12,13 @@ import { createCallerFactory, type Db, type Session } from '@/server/trpc/init'
 import { makeCtx } from '@/server/trpc/helpers'
 import { createSignedStudentProfileView } from '@/server/trpc/api/v1/registration/services/studentProfileStorage'
 import { adminRouter } from '../router'
+import { reviewRegistration } from '../services/registrationReview'
 
 const id = '09a25b2f-c059-45b4-8eb0-36a048d8ad36'
 const otherId = 'ba00dbb8-cd5c-4740-b4c4-df34152b6441'
 const adminEmail = 'admin@example.org'
+const submittedAt = new Date('2026-11-20T06:00:00Z')
+const reviewInput = { id, submittedAt }
 const session: Session = { user: { personId: 'admin-person', email: adminEmail } }
 const validOcr = {
   fields: {
@@ -53,7 +56,7 @@ function setup({
         personId: 'student-person',
         status: 'PENDING',
         yearLevel: '3',
-        submittedAt: new Date(),
+        submittedAt: new Date(submittedAt),
       },
     ]),
     registration: { update: vi.fn(async (_args: unknown) => ({ id })) },
@@ -89,8 +92,10 @@ describe('review queue access', () => {
   ] as const)('rejects callers without Admin rights', async (currentSession, code) => {
     const { caller, db } = setup({ currentSession, admins: new Set() })
     await expect(caller.listRegistrations({})).rejects.toMatchObject({ code })
-    await expect(caller.approveRegistration({ id })).rejects.toMatchObject({ code })
-    await expect(caller.rejectRegistration({ id, reason: 'Unreadable' })).rejects.toMatchObject({
+    await expect(caller.approveRegistration(reviewInput)).rejects.toMatchObject({ code })
+    await expect(
+      caller.rejectRegistration({ ...reviewInput, reason: 'Unreadable' }),
+    ).rejects.toMatchObject({
       code,
     })
     expect(db.registration.findMany).not.toHaveBeenCalled()
@@ -102,8 +107,12 @@ describe('review queue access', () => {
     await caller.listRegistrations({})
     admins.clear()
     await expect(caller.listRegistrations({})).rejects.toMatchObject({ code: 'FORBIDDEN' })
-    await expect(caller.approveRegistration({ id })).rejects.toMatchObject({ code: 'FORBIDDEN' })
-    await expect(caller.rejectRegistration({ id, reason: 'Unreadable' })).rejects.toMatchObject({
+    await expect(caller.approveRegistration(reviewInput)).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    })
+    await expect(
+      caller.rejectRegistration({ ...reviewInput, reason: 'Unreadable' }),
+    ).rejects.toMatchObject({
       code: 'FORBIDDEN',
     })
   })
@@ -179,6 +188,30 @@ describe('admin.listRegistrations', () => {
     ])
     expect((await caller.listRegistrations({})).map((item) => item.id)).toEqual([otherId, id])
   })
+  it.each([{}, { status: 'REJECTED' as const }])(
+    'keeps rejected Held Ballots in submission order with %j',
+    async (filter) => {
+      const { caller, db } = setup()
+      db.registration.findMany.mockResolvedValueOnce([
+        row({ status: 'REJECTED', submittedAt }),
+        row({
+          id: otherId,
+          status: 'REJECTED',
+          submittedAt: new Date(submittedAt.getTime() + 1),
+          person: { name: 'Held', email: 'held@example.org', ballot: { id: 'ballot' } },
+        }),
+      ])
+      expect(
+        (await caller.listRegistrations(filter)).map(({ id, hasHeldBallot }) => ({
+          id,
+          hasHeldBallot,
+        })),
+      ).toEqual([
+        { id, hasHeldBallot: false },
+        { id: otherId, hasHeldBallot: true },
+      ])
+    },
+  )
   it('keeps the queue available when Storage signing fails without leaking errors', async () => {
     const { caller } = setup()
     vi.mocked(createSignedStudentProfileView).mockRejectedValueOnce(
@@ -197,11 +230,33 @@ describe('admin.listRegistrations', () => {
 })
 
 describe('registration decisions', () => {
+  it('requires the submission timestamp for both decisions before starting a transaction', async () => {
+    const { caller, db } = setup()
+    // @ts-expect-error exercises runtime validation of untyped requests
+    await expect(caller.approveRegistration({ id })).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    const rejection = { id, reason: 'Unreadable' }
+    // @ts-expect-error exercises runtime validation of untyped requests
+    await expect(caller.rejectRegistration(rejection)).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    })
+    expect(db.$transaction).not.toHaveBeenCalled()
+  })
+  it('does not let an unvalidated service caller bypass the stale-submission check', async () => {
+    const { db, tx } = setup()
+    const decision = { id, adminEmail, status: 'APPROVED' as const }
+    // @ts-expect-error exercises the service's defense against untyped calls
+    const result = reviewRegistration(db as unknown as Db, decision)
+    await expect(result).rejects.toMatchObject({ code: 'CONFLICT' })
+    expect(tx.registration.update).not.toHaveBeenCalled()
+    expect(tx.auditLog.create).not.toHaveBeenCalled()
+  })
   it.each([undefined, '2'] as const)(
     'approves with optional year correction %s and audits atomically',
     async (yearLevel) => {
       const { caller, tx, db } = setup()
-      await expect(caller.approveRegistration({ id, yearLevel })).resolves.toEqual({ ok: true })
+      await expect(caller.approveRegistration({ ...reviewInput, yearLevel })).resolves.toEqual({
+        ok: true,
+      })
       expect(tx.$queryRaw.mock.calls[0][0].join('')).toMatch(/FOR UPDATE/)
       expect(tx.$queryRaw.mock.calls[0][0].join('')).not.toMatch(/ocr/i)
       const expectedYear = yearLevel ?? '3'
@@ -225,7 +280,7 @@ describe('registration decisions', () => {
           adminEmail,
           action: 'APPROVE_REGISTRATION',
           target: id,
-          detail: { yearLevel: expectedYear },
+          detail: { yearLevel: expectedYear, originalYearLevel: '3' },
         },
       })
       expect(db.$transaction).toHaveBeenCalledWith(expect.any(Function), {
@@ -236,7 +291,7 @@ describe('registration decisions', () => {
   )
   it('trims and saves the required rejection reason without reading OCR', async () => {
     const { caller, tx } = setup()
-    await caller.rejectRegistration({ id, reason: '  Upload current term  ' })
+    await caller.rejectRegistration({ ...reviewInput, reason: '  Upload current term  ' })
     expect(tx.registration.update.mock.calls[0][0]).toMatchObject({
       data: {
         status: 'REJECTED',
@@ -247,12 +302,15 @@ describe('registration decisions', () => {
     })
     expect(tx.ballot.updateMany).not.toHaveBeenCalled()
     expect(tx.auditLog.create.mock.calls[0][0]).toMatchObject({
-      data: { action: 'REJECT_REGISTRATION', detail: { yearLevel: '3' } },
+      data: {
+        action: 'REJECT_REGISTRATION',
+        detail: { yearLevel: '3', originalYearLevel: '3', rejectionReason: 'Upload current term' },
+      },
     })
   })
   it.each(['', '   ', 'x'.repeat(2001)])('rejects invalid reason', async (reason) => {
     const { caller, db } = setup()
-    await expect(caller.rejectRegistration({ id, reason })).rejects.toMatchObject({
+    await expect(caller.rejectRegistration({ ...reviewInput, reason })).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
     expect(db.$transaction).not.toHaveBeenCalled()
@@ -260,10 +318,13 @@ describe('registration decisions', () => {
   it('rejects invalid year and ID', async () => {
     const { caller, db } = setup()
     // @ts-expect-error exercises runtime enum validation
-    await expect(caller.approveRegistration({ id, yearLevel: '5' })).rejects.toMatchObject({
+    const invalidYear = caller.approveRegistration({ ...reviewInput, yearLevel: '5' })
+    await expect(invalidYear).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
-    await expect(caller.approveRegistration({ id: 'invalid' })).rejects.toMatchObject({
+    await expect(
+      caller.approveRegistration({ ...reviewInput, id: 'invalid' }),
+    ).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
     expect(db.$transaction).not.toHaveBeenCalled()
@@ -273,10 +334,14 @@ describe('registration decisions', () => {
     async (status) => {
       const { caller, tx } = setup()
       tx.$queryRaw.mockResolvedValue([
-        { id, personId: 'student-person', status, yearLevel: '3', submittedAt: new Date() },
+        { ...reviewInput, personId: 'student-person', status, yearLevel: '3' },
       ])
-      await expect(caller.approveRegistration({ id })).rejects.toMatchObject({ code: 'CONFLICT' })
-      await expect(caller.rejectRegistration({ id, reason: 'Reason' })).rejects.toMatchObject({
+      await expect(caller.approveRegistration(reviewInput)).rejects.toMatchObject({
+        code: 'CONFLICT',
+      })
+      await expect(
+        caller.rejectRegistration({ ...reviewInput, reason: 'Reason' }),
+      ).rejects.toMatchObject({
         code: 'CONFLICT',
       })
       expect(tx.registration.update).not.toHaveBeenCalled()
@@ -285,47 +350,100 @@ describe('registration decisions', () => {
   )
   it('rejects a decision based on an older document submission', async () => {
     const { caller, tx } = setup()
-    tx.$queryRaw.mockResolvedValueOnce([
-      {
-        id,
-        personId: 'student-person',
-        status: 'PENDING',
-        yearLevel: '3',
-        submittedAt: new Date('2026-11-20T06:00:00Z'),
-      },
-    ])
+    const stale = { id, submittedAt: new Date(submittedAt.getTime() - 1) }
+    const conflict = {
+      code: 'CONFLICT',
+      message: 'Registration was resubmitted. Refresh the queue.',
+    }
+    await expect(caller.approveRegistration(stale)).rejects.toMatchObject(conflict)
     await expect(
-      caller.approveRegistration({ id, submittedAt: new Date('2026-11-20T05:00:00Z') }),
-    ).rejects.toMatchObject({ code: 'CONFLICT' })
+      caller.rejectRegistration({ ...stale, reason: 'Unreadable' }),
+    ).rejects.toMatchObject(conflict)
     expect(tx.registration.update).not.toHaveBeenCalled()
+    expect(tx.auditLog.create).not.toHaveBeenCalled()
   })
   it('returns NOT_FOUND for a missing registration', async () => {
     const { caller, tx } = setup()
     tx.$queryRaw.mockResolvedValueOnce([])
-    await expect(caller.approveRegistration({ id })).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    await expect(caller.approveRegistration(reviewInput)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    })
   })
   it('propagates audit failure to roll back the transaction without leaking extracted data', async () => {
     const { caller, tx, db } = setup()
     tx.auditLog.create.mockRejectedValueOnce(new Error('private data'))
-    await expect(caller.approveRegistration({ id })).rejects.toMatchObject({
+    await expect(caller.approveRegistration(reviewInput)).rejects.toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
       message: 'Unable to save the review. Please try again.',
     })
     await expect(db.$transaction.mock.results[0].value).rejects.toThrow('private data')
   })
-  it('returns a safe conflict for a serialization failure', async () => {
-    const { caller, db } = setup()
-    db.$transaction.mockRejectedValueOnce(
+  it.each([
+    [
+      'P2034',
       new Prisma.PrismaClientKnownRequestError('private data', {
         code: 'P2034',
         clientVersion: 'test',
       }),
+    ],
+    ...['40001', '40P01'].flatMap((code) => [
+      [
+        `P2010/${code}`,
+        new Prisma.PrismaClientKnownRequestError('private data', {
+          code: 'P2010',
+          clientVersion: 'test',
+          meta: { code },
+        }),
+      ],
+      [
+        `P2010 adapter/${code}`,
+        new Prisma.PrismaClientKnownRequestError('private data', {
+          code: 'P2010',
+          clientVersion: 'test',
+          meta: {
+            driverAdapterError: new Error('TransactionWriteConflict', {
+              cause: { originalCode: code },
+            }),
+          },
+        }),
+      ],
+      [
+        `adapter cause/${code}`,
+        new Error('private data', {
+          cause: { kind: 'TransactionWriteConflict', originalCode: code },
+        }),
+      ],
+      [`driver/${code}`, Object.assign(new Error('private data'), { code })],
+    ]),
+  ])('returns a safe conflict for %s', async (_label, error) => {
+    const { caller, db } = setup()
+    db.$transaction.mockRejectedValueOnce(error)
+    await expect(caller.approveRegistration(reviewInput)).rejects.toMatchObject({
+      code: 'CONFLICT',
+      message: 'Registration changed during review. Refresh and try again.',
+      cause: undefined,
+    })
+  })
+  it('sanitizes unrelated raw query errors without treating them as conflicts', async () => {
+    const { caller, db } = setup()
+    db.$transaction.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError('private data', {
+        code: 'P2010',
+        clientVersion: 'test',
+        meta: {
+          driverAdapterError: new Error('private data', { cause: { originalCode: '23505' } }),
+        },
+      }),
     )
-    await expect(caller.approveRegistration({ id })).rejects.toMatchObject({ code: 'CONFLICT' })
+    await expect(caller.approveRegistration(reviewInput)).rejects.toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Unable to save the review. Please try again.',
+      cause: undefined,
+    })
   })
   it('does not inspect Registration or Election windows to allow reviews after close', async () => {
     const { caller, tx } = setup()
-    await caller.approveRegistration({ id })
+    await caller.approveRegistration(reviewInput)
     expect(tx.$queryRaw).toHaveBeenCalledTimes(1)
     expect(tx.$queryRaw.mock.calls[0][0].join('')).not.toContain('ElectionState')
   })

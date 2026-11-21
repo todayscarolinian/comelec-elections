@@ -258,11 +258,82 @@ describe('RegistrationReview live API wiring', () => {
     expect(screen.getByRole('alert').textContent).toBe("You don't have Admin access.")
     expect(screen.queryByText('Juan Dela Cruz')).toBeNull()
   })
+  it('keeps cached records hidden after a denied refresh until a refresh succeeds', () => {
+    const { rerender } = render(<RegistrationReview />)
+    state.query.isError = true
+    state.query.error = { data: { code: 'FORBIDDEN' } }
+    rerender(<RegistrationReview />)
+
+    state.query.error = new Error('Temporary outage')
+    rerender(<RegistrationReview />)
+    expect(screen.queryByRole('heading', { name: 'Juan Dela Cruz' })).toBeNull()
+
+    state.query.isError = false
+    rerender(<RegistrationReview />)
+    expect(screen.getByRole('heading', { name: 'Juan Dela Cruz' })).toBeTruthy()
+  })
   it('provides Retry for query errors', () => {
     state.query.isError = true
+    state.query.data = undefined
     render(<RegistrationReview />)
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
     expect(state.query.refetch).toHaveBeenCalled()
+  })
+  it('keeps the active rejection draft when a background refresh fails', () => {
+    const { rerender } = render(<RegistrationReview />)
+    const reason = screen.getByRole<HTMLTextAreaElement>('textbox', { name: /Rejection reason/ })
+    fireEvent.change(reason, { target: { value: 'Unreadable' } })
+
+    state.query.isError = true
+    state.query.error = new Error('Temporary outage')
+    rerender(<RegistrationReview />)
+
+    expect(screen.getByRole('alert').textContent).toContain('Unable to refresh registrations')
+    expect(screen.getByRole('textbox', { name: /Rejection reason/ })).toBe(reason)
+    expect(reason.value).toBe('Unreadable')
+  })
+  it('does not allow a second decision after saving if the queue refresh fails', async () => {
+    const { rerender } = render(<RegistrationReview />)
+    invalidateQueries.mockImplementationOnce(async () => {
+      state.query.isError = true
+      state.query.error = new Error('Temporary outage')
+      rerender(<RegistrationReview />)
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Approve registration' }))
+
+    await screen.findByText('Juan Dela Cruz approved for Year 3.')
+    const button = screen.getByRole<HTMLButtonElement>('button', { name: 'Approve registration' })
+    expect(button.disabled).toBe(true)
+    fireEvent.click(button)
+    expect(approve).toHaveBeenCalledTimes(1)
+  })
+  it('keeps the same applicant and draft when a refresh moves them to another page', () => {
+    const selected = registration({ id: 'page-two', name: 'Page Two Applicant' })
+    const rows = Array.from({ length: 9 }, (_, i) =>
+      registration({ id: `row-${i}`, name: `Applicant ${i}` }),
+    )
+    state.query.data = [...rows, selected]
+    const { rerender } = render(<RegistrationReview />)
+    fireEvent.click(screen.getByRole('button', { name: /Next applicants/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Page Two Applicant/ }))
+    const reason = screen.getByRole<HTMLTextAreaElement>('textbox', { name: /Rejection reason/ })
+    fireEvent.change(reason, { target: { value: 'Unreadable' } })
+
+    state.query.data = [registration({ hasHeldBallot: true }), ...rows, selected]
+    rerender(<RegistrationReview />)
+
+    expect(screen.getByRole('heading', { name: 'Page Two Applicant' })).toBeTruthy()
+    expect(screen.getByRole('textbox', { name: /Rejection reason/ })).toBe(reason)
+    expect(reason.value).toBe('Unreadable')
+
+    state.query.data = rows
+    rerender(<RegistrationReview />)
+    expect(screen.queryByRole('button', { name: 'Approve registration' })).toBeNull()
+    expect(screen.getByText('This application is no longer in this queue.')).toBeTruthy()
+
+    state.query.data = [...rows, selected]
+    rerender(<RegistrationReview />)
+    expect(screen.getByRole('main').classList.contains('is-detail')).toBe(false)
   })
   it('supports an empty queue', () => {
     state.query.data = []
@@ -275,7 +346,45 @@ describe('RegistrationReview live API wiring', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Refresh document' })[0])
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['listRegistrations'] })
   })
-  it('shows held priority and stored review metadata', () => {
+  it('keeps both images stable across URL renewal and uses the new URL after a load failure', () => {
+    const { rerender } = render(<RegistrationReview />)
+    const alt = 'Student profile for Juan Dela Cruz'
+    const images = screen.getAllByAltText(alt)
+    const renewedUrl = 'https://storage.example.org/renewed-view'
+
+    state.query.data = [registration({ studentProfileUrl: renewedUrl })]
+    rerender(<RegistrationReview />)
+
+    const refreshedImages = screen.getAllByAltText(alt)
+    expect(refreshedImages[0]).toBe(images[0])
+    expect(refreshedImages[1]).toBe(images[1])
+    expect(images[0].getAttribute('src')).toBe('https://storage.example.org/signed-view')
+    fireEvent.error(images[0])
+    expect(screen.getAllByAltText(alt)[0].getAttribute('src')).toBe(renewedUrl)
+
+    const replacementUrl = 'https://storage.example.org/replacement-view'
+    state.query.data = [
+      registration({
+        submittedAt: new Date('2026-11-20T06:00:00Z'),
+        studentProfileUrl: replacementUrl,
+      }),
+    ]
+    rerender(<RegistrationReview />)
+    expect(screen.getAllByAltText(alt).map((image) => image.getAttribute('src'))).toEqual([
+      replacementUrl,
+      replacementUrl,
+    ])
+  })
+  it('shows held ballot status without priority on a rejected application', () => {
+    state.query.data = [registration({ status: 'REJECTED', hasHeldBallot: true })]
+    render(<RegistrationReview />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Status' }), {
+      target: { value: 'REJECTED' },
+    })
+    expect(screen.getByRole('button', { name: /Held Ballot/ })).toBeTruthy()
+    expect(screen.queryByText('Held Ballot · priority review')).toBeNull()
+  })
+  it('shows stored review metadata', () => {
     state.query.data = [
       registration({
         status: 'APPROVED',

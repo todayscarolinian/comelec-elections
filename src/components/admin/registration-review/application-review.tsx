@@ -71,7 +71,9 @@ export function ApplicationReview({
             }).format(registration.submittedAt)}
           </small>
           {registration.hasHeldBallot && (
-            <p className="text-xs font-medium">Held Ballot · priority review</p>
+            <p className="text-xs font-medium">
+              Held Ballot{registration.status === 'PENDING' ? ' · priority review' : ''}
+            </p>
           )}
         </div>
         <span className="text-xs whitespace-nowrap text-review-muted min-[761px]:text-[11px]">
@@ -90,7 +92,6 @@ export function ApplicationReview({
             </button>
           </div>
           <StudentProfileImage
-            key={registration.studentProfileUrl}
             url={registration.studentProfileUrl}
             name={registration.name}
             onRefresh={onRefresh}
@@ -195,7 +196,6 @@ export function ApplicationReview({
           </button>
         </div>
         <StudentProfileImage
-          key={registration.studentProfileUrl}
           url={registration.studentProfileUrl}
           name={registration.name}
           onRefresh={onRefresh}

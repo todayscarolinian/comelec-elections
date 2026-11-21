@@ -29,7 +29,7 @@ export function RegistrationReview() {
     ...listOptions,
     refetchInterval: 60_000,
     gcTime: 0,
-    retry: false,
+    retry: (failureCount, error) => failureCount < 1 && !accessError(error),
   })
   const windowQuery = useQuery({
     ...trpc.admin.getRegistrationWindow.queryOptions(),
@@ -41,10 +41,12 @@ export function RegistrationReview() {
   const approve = useMutation(trpc.admin.approveRegistration.mutationOptions())
   const rejectMutation = useMutation(trpc.admin.rejectRegistration.mutationOptions())
   const saving = approve.isPending || rejectMutation.isPending
+  const [savedVersions, setSavedVersions] = useState<ReadonlyMap<string, number>>(new Map())
   const [saveError, setSaveError] = useState('')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
-  const [selectedId, setSelectedId] = useState('')
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [lastFetchDenied, setLastFetchDenied] = useState(false)
   const [mobileDetail, setMobileDetail] = useState(false)
   const [notice, setNotice] = useState('')
   const queueRef = useRef<HTMLHeadingElement>(null)
@@ -56,10 +58,25 @@ export function RegistrationReview() {
   )
   const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / PAGE_SIZE) - 1))
   const visible = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
-  const selected = visible.find((item) => item.id === selectedId) ?? visible[0]
+  const selected = registrations.find((item) => item.id === selectedId)
+  const deniedNow = registrationsQuery.isError && accessError(registrationsQuery.error)
+  const loaded = !registrationsQuery.isError && !registrationsQuery.isPending
+  const accessDenied = deniedNow || (lastFetchDenied && !loaded)
+  if (accessDenied !== lastFetchDenied) setLastFetchDenied(accessDenied)
+  // Choose a default only on entry or after an explicit filter change.
+  if (selectedId === null && !accessDenied && visible[0]) setSelectedId(visible[0].id)
+  if (mobileDetail && !selected) setMobileDetail(false)
+  const selectedAlreadySaved =
+    selected !== undefined && savedVersions.get(selected.id) === selected.submittedAt.getTime()
 
   function resetView() {
     setPage(0)
+    setSelectedId(null)
+    setMobileDetail(false)
+  }
+  function goToPage(nextPage: number) {
+    setPage(nextPage)
+    setSelectedId(filtered[nextPage * PAGE_SIZE]?.id ?? null)
     setMobileDetail(false)
   }
   function backToQueue() {
@@ -78,13 +95,19 @@ export function RegistrationReview() {
   ) {
     if (saving) return
     const applicant = registrations.find((item) => item.id === id)
-    if (!applicant || applicant.status !== 'PENDING') return
+    if (
+      !applicant ||
+      applicant.status !== 'PENDING' ||
+      savedVersions.get(id) === applicant.submittedAt.getTime()
+    )
+      return
     setNotice('')
     setSaveError('')
     try {
       if (nextStatus === 'APPROVED')
         await approve.mutateAsync({ id, yearLevel: nextYear, submittedAt: applicant.submittedAt })
       else await rejectMutation.mutateAsync({ id, reason, submittedAt: applicant.submittedAt })
+      setSavedVersions((versions) => new Map(versions).set(id, applicant.submittedAt.getTime()))
       setNotice(
         `${applicant.name} ${nextStatus === 'APPROVED' ? `approved for Year ${nextYear}` : 'rejected'}.`,
       )
@@ -110,12 +133,12 @@ export function RegistrationReview() {
         <output>Loading registrations…</output>
       </main>
     )
-  if (registrationsQuery.isError)
+  if (accessDenied || (registrationsQuery.isError && !registrationsQuery.data))
     return (
       <main className="min-h-dvh bg-review-paper p-6 text-review-ink">
         <h1>Registration review</h1>
         <p role="alert">
-          {accessError(registrationsQuery.error)
+          {accessDenied
             ? "You don't have Admin access."
             : 'Unable to load registrations. Please try again.'}
         </p>
@@ -186,7 +209,7 @@ export function RegistrationReview() {
       </aside>
       <main
         id="review-main"
-        className={`group min-w-0 px-4 py-6 min-[761px]:p-6 min-[1301px]:px-10 min-[1301px]:pb-10 ${mobileDetail ? 'is-detail' : ''}`}
+        className={`group min-w-0 px-4 py-6 min-[761px]:p-6 min-[1301px]:px-10 min-[1301px]:pb-10 ${mobileDetail && selected ? 'is-detail' : ''}`}
       >
         <header className="[&_p]:text-[11px] [&_p]:leading-4 [&_p]:text-review-muted [&_h1]:my-1.5 [&_h1]:font-display [&_h1]:text-[clamp(30px,8.5vw,40px)] [&_h1]:leading-[1.15] [&_h1]:italic min-[761px]:[&_h1]:my-0.5 min-[761px]:[&_h1]:text-5xl min-[761px]:[&_h1]:leading-[1.1] [&_span]:text-review-muted">
           <p>COMMISSION ADMIN</p>
@@ -261,6 +284,11 @@ export function RegistrationReview() {
           </button>
           {registrationsQuery.isFetching && <span>Refreshing…</span>}
         </div>
+        {registrationsQuery.isError && (
+          <p role="alert" className="text-review-error">
+            Unable to refresh registrations. Showing the last loaded queue.
+          </p>
+        )}
         <output className="block text-xs not-empty:py-3">{notice}</output>
         {saveError && (
           <p role="alert" className="text-review-error">
@@ -318,10 +346,7 @@ export function RegistrationReview() {
                   <button
                     className="min-h-11 border-0 bg-transparent p-0 text-review-ink underline underline-offset-3 min-[761px]:min-h-7"
                     aria-label="Previous applicants"
-                    onClick={() => {
-                      setPage(currentPage - 1)
-                      setMobileDetail(false)
-                    }}
+                    onClick={() => goToPage(currentPage - 1)}
                   >
                     ← Previous
                   </button>
@@ -329,10 +354,7 @@ export function RegistrationReview() {
                 {(currentPage + 1) * PAGE_SIZE < filtered.length && (
                   <button
                     className="min-h-11 border-0 bg-transparent p-0 text-review-ink underline underline-offset-3 min-[761px]:min-h-7"
-                    onClick={() => {
-                      setPage(currentPage + 1)
-                      setMobileDetail(false)
-                    }}
+                    onClick={() => goToPage(currentPage + 1)}
                   >
                     Next applicants →
                   </button>
@@ -347,11 +369,15 @@ export function RegistrationReview() {
               onDecision={decide}
               onBack={backToQueue}
               focusOnOpen={mobileDetail}
-              saving={saving}
+              saving={saving || selectedAlreadySaved}
               onRefresh={() => {
                 void refresh()
               }}
             />
+          ) : selectedId ? (
+            <output className="block p-6 text-review-muted">
+              This application is no longer in this queue.
+            </output>
           ) : (
             <div className="hidden p-6 text-review-muted min-[761px]:block">
               Select different filters to find an application.

@@ -71,12 +71,12 @@ export const registrationReviewOutputSchema = z.object({
 
 export const approveRegistrationInputSchema = z.object({
   id: z.uuid(),
-  submittedAt: z.date().optional(),
+  submittedAt: z.date(),
   yearLevel: z.enum(YEAR_LEVELS).optional(),
 })
 export const rejectRegistrationInputSchema = z.object({
   id: z.uuid(),
-  submittedAt: z.date().optional(),
+  submittedAt: z.date(),
   reason: z.string().trim().min(1).max(2000),
 })
 export const reviewDecisionOutputSchema = z.object({ ok: z.literal(true) })
