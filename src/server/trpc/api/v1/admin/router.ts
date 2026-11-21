@@ -1,13 +1,18 @@
 import { createTRPCRouter } from '@/server/trpc/init'
-import { listRegistrations } from './core/queries/listRegistrations'
 import { approveRegistration } from './core/mutations/approveRegistration'
-import { rejectRegistration } from './core/mutations/rejectRegistration'
+import { exportBallots } from './core/mutations/exportBallots'
 import { grantAdmin } from './core/mutations/grantAdmin'
+import { rejectRegistration } from './core/mutations/rejectRegistration'
+import { releaseResults } from './core/mutations/releaseResults'
 import { revokeAdmin } from './core/mutations/revokeAdmin'
 import { setElectionStatus } from './core/mutations/setElectionStatus'
 import { setRegistrationStatus } from './core/mutations/setRegistrationStatus'
+import { getDashboard } from './core/queries/getDashboard'
 import { getRegistrationWindow } from './core/queries/getRegistrationWindow'
 import { listAdmins } from './core/queries/listAdmins'
+import { listAuditLog } from './core/queries/listAuditLog'
+import { listBallots } from './core/queries/listBallots'
+import { listRegistrations } from './core/queries/listRegistrations'
 
 export const adminRouter = createTRPCRouter({
   listRegistrations,
@@ -19,4 +24,9 @@ export const adminRouter = createTRPCRouter({
   setRegistrationStatus,
   setElectionStatus,
   getRegistrationWindow,
+  getDashboard,
+  releaseResults,
+  listBallots,
+  exportBallots,
+  listAuditLog,
 })

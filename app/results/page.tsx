@@ -1,5 +1,8 @@
+import { TRPCError } from '@trpc/server'
+import { Suspense } from 'react'
 import { ElectionResultsPage } from '@/components/results/election-results-page'
 import { pageMetadata } from '@/lib/site'
+import { caller } from '@/server/trpc/server'
 
 export const metadata = pageMetadata({
   title: 'Election Results',
@@ -7,6 +10,25 @@ export const metadata = pageMetadata({
   path: '/results',
 })
 
+async function ReleasedOrPending() {
+  // FORBIDDEN means Results are not released yet; anything else is a real failure.
+  const results = await caller.results.get({ audience: 'public' }).catch((error: unknown) => {
+    if (error instanceof TRPCError && error.code === 'FORBIDDEN') return null
+    throw error
+  })
+  return <ElectionResultsPage results={results} />
+}
+
 export default function ResultsPage() {
-  return <ElectionResultsPage />
+  return (
+    <Suspense
+      fallback={
+        <output className="block min-h-svh bg-[#faf3e0] p-8 text-[#324e1f]">
+          Loading results…
+        </output>
+      }
+    >
+      <ReleasedOrPending />
+    </Suspense>
+  )
 }
