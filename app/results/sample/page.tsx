@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { ElectionResultsPage } from '@/components/results/election-results-page'
+import { SAMPLE_RESULTS } from '@/components/results/sample-results'
 
 export const metadata: Metadata = {
   title: 'Election Results Sample',
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 }
 
 export default function ResultsSamplePage() {
-  return <ElectionResultsPage released />
+  return <ElectionResultsPage results={SAMPLE_RESULTS} sample />
 }

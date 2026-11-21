@@ -74,6 +74,7 @@ function registration(overrides: Partial<Registration> = {}): Registration {
     email: '21012345@example.org',
     studentId: '21012345',
     yearLevel: '3',
+    school: 'SAFAD',
     status: 'PENDING',
     submittedAt,
     reviewedBy: null,
@@ -182,11 +183,19 @@ describe('RegistrationReview live API wiring', () => {
       (screen.getByRole('button', { name: 'Approve registration' }) as HTMLButtonElement).disabled,
     ).toBe(false)
   })
+  it('submits a corrected School with the approval', async () => {
+    render(<RegistrationReview />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'School on approval' }), {
+      target: { value: 'SBE' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Approve registration' }))
+    await waitFor(() => expect(approve).toHaveBeenCalledWith({ id, school: 'SBE', submittedAt }))
+  })
   it('approves without assigning a Year Level and refreshes the queue', async () => {
     render(<RegistrationReview />)
     expect(screen.queryByRole('combobox', { name: 'Year level on approval' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Approve registration' }))
-    await waitFor(() => expect(approve).toHaveBeenCalledWith({ id, submittedAt }))
+    await waitFor(() => expect(approve).toHaveBeenCalledWith({ id, school: 'SAFAD', submittedAt }))
     await waitFor(() =>
       expect(screen.getByRole('status').textContent).toContain('Juan Dela Cruz approved.'),
     )

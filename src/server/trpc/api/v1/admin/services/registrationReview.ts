@@ -17,6 +17,7 @@ export async function listRegistrations(
     select: {
       id: true,
       yearLevel: true,
+      school: true,
       status: true,
       submittedAt: true,
       reviewedBy: true,
@@ -60,13 +61,15 @@ export async function listRegistrations(
 }
 
 type Decision = { id: string; adminEmail: string; submittedAt: Date } & (
-  { status: 'APPROVED'; yearLevel?: string } | { status: 'REJECTED'; reason: string }
+  | { status: 'APPROVED'; yearLevel?: string; school?: string }
+  | { status: 'REJECTED'; reason: string }
 )
 type ReviewRow = {
   id: string
   personId: string
   status: string
   yearLevel: string
+  school: string
   submittedAt: Date
 }
 
@@ -104,7 +107,7 @@ export async function reviewRegistration(db: Db, decision: Decision) {
       async (tx) => {
         // Serialize competing reviews and resubmissions. Deliberately never select OCR data.
         const [registration] = await tx.$queryRaw<ReviewRow[]>`
-        SELECT "id", "personId", "status", "yearLevel", "submittedAt"
+        SELECT "id", "personId", "status", "yearLevel", "school", "submittedAt"
         FROM "Registration" WHERE "id" = ${decision.id} FOR UPDATE
       `
         if (!registration)
@@ -125,6 +128,10 @@ export async function reviewRegistration(db: Db, decision: Decision) {
           decision.status === 'APPROVED'
             ? (decision.yearLevel ?? registration.yearLevel)
             : registration.yearLevel
+        const school =
+          decision.status === 'APPROVED'
+            ? (decision.school ?? registration.school)
+            : registration.school
         const rejectionReason = decision.status === 'REJECTED' ? decision.reason : null
         const reviewedAt = new Date()
         await tx.registration.update({
@@ -132,6 +139,7 @@ export async function reviewRegistration(db: Db, decision: Decision) {
           data: {
             status: decision.status,
             yearLevel,
+            school,
             rejectionReason,
             reviewedBy: decision.adminEmail,
             reviewedAt,
@@ -139,10 +147,10 @@ export async function reviewRegistration(db: Db, decision: Decision) {
           select: { id: true },
         })
         if (decision.status === 'APPROVED') {
-          // Held Ballots inherit the corrected year in the same commit (ADR 0008).
+          // Held Ballots inherit the corrected year and School in the same commit (ADR 0008).
           await tx.ballot.updateMany({
             where: { personId: registration.personId },
-            data: { yearLevel },
+            data: { yearLevel, school },
           })
         }
         await writeAudit(
@@ -153,6 +161,8 @@ export async function reviewRegistration(db: Db, decision: Decision) {
             detail: {
               originalYearLevel: registration.yearLevel,
               yearLevel,
+              originalSchool: registration.school,
+              school,
               ...(rejectionReason === null ? {} : { rejectionReason }),
             },
           },

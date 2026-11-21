@@ -1,6 +1,12 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import {
+  SCHOOLS,
+  SCHOOL_LABELS,
+  isSchool,
+  type School,
+} from '@/server/trpc/api/v1/registration/core/school'
 import { StudentProfileImage } from './student-profile-image'
 import { OcrFindings } from './ocr-findings'
 import { statusLabels, type Registration } from './types'
@@ -14,12 +20,18 @@ export function ApplicationReview({
   onRefresh,
 }: {
   registration: Registration
-  onDecision: (id: string, status: 'APPROVED' | 'REJECTED', reason: string) => Promise<void>
+  onDecision: (
+    id: string,
+    status: 'APPROVED' | 'REJECTED',
+    school: School | undefined,
+    reason: string,
+  ) => Promise<void>
   onBack: () => void
   focusOnOpen: boolean
   saving: boolean
   onRefresh: () => void
 }) {
+  const [school, setSchool] = useState(registration.school)
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
   const reasonRef = useRef<HTMLTextAreaElement>(null)
@@ -35,7 +47,7 @@ export function ApplicationReview({
       reasonRef.current?.focus()
       return
     }
-    void onDecision(registration.id, 'REJECTED', reason.trim())
+    void onDecision(registration.id, 'REJECTED', undefined, reason.trim())
   }
 
   return (
@@ -94,12 +106,35 @@ export function ApplicationReview({
       </div>
       {registration.status === 'PENDING' ? (
         <div className="grid gap-6 border-t border-review-line pt-3 min-[761px]:gap-2">
-          <div className="grid grid-cols-1 items-end gap-3 min-[761px]:justify-end">
+          <div className="grid grid-cols-1 items-end gap-3 min-[761px]:grid-cols-2 min-[1301px]:grid-cols-[minmax(130px,216fr)_minmax(100px,256fr)_minmax(170px,216fr)] min-[1301px]:gap-6">
+            <label className="flex flex-col gap-1.5 text-xs text-review-muted min-[761px]:text-[11px] [&_select]:min-h-11 [&_select]:w-full [&_select]:min-w-0 [&_select]:border [&_select]:border-review-line [&_select]:bg-review-paper [&_select]:px-3 [&_select]:py-2.5 [&_select]:text-base [&_select]:text-review-ink min-[761px]:[&_select]:min-h-[42px] min-[761px]:[&_select]:text-[13px]">
+              School on approval
+              <select
+                disabled={saving}
+                value={school}
+                onChange={(event) => setSchool(event.target.value)}
+              >
+                {SCHOOLS.map((value) => (
+                  <option key={value} value={value}>
+                    {SCHOOL_LABELS[value]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="text-xs text-review-muted [&_small]:mt-1 [&_small]:block [&_small]:text-[11px]">
+              Correct the School if needed.
+              <small>Used for statistics only.</small>
+            </p>
             <button
-              className="min-h-12 border border-review-ink bg-review-ink px-3.5 py-2.5 text-sm text-review-paper hover:bg-[#263e17] min-[761px]:min-h-11"
+              className="col-span-full min-h-12 border border-review-ink bg-review-ink px-3.5 py-2.5 text-sm text-review-paper hover:bg-[#263e17] min-[761px]:min-h-11 min-[1301px]:col-span-1"
               disabled={saving}
               onClick={() => {
-                void onDecision(registration.id, 'APPROVED', '')
+                void onDecision(
+                  registration.id,
+                  'APPROVED',
+                  isSchool(school) ? school : undefined,
+                  '',
+                )
               }}
             >
               Approve registration
