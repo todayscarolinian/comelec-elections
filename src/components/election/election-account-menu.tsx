@@ -33,12 +33,9 @@ export function ElectionAccountMenu({ account }: { account: ElectionAccount }) {
 
   useEffect(() => {
     function dismissOutside(event: PointerEvent) {
-      if (
-        menu.current?.open &&
-        event.target instanceof Node &&
-        !menu.current.contains(event.target)
-      ) {
-        menu.current.open = false
+      const details = menu.current
+      if (details?.open && event.target instanceof Node && !details.contains(event.target)) {
+        details.open = false
       }
     }
 
@@ -64,7 +61,7 @@ export function ElectionAccountMenu({ account }: { account: ElectionAccount }) {
     <details ref={menu} className="group relative min-w-0 justify-self-end">
       <summary
         aria-label={`Account menu for ${name === 'Account' ? account.email : name}`}
-        className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-1 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-4 [&::-webkit-details-marker]:hidden"
+        className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-1 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-4 max-[38rem]:min-w-10 max-[38rem]:justify-center [&::-webkit-details-marker]:hidden"
       >
         <span
           aria-hidden="true"
@@ -72,8 +69,12 @@ export function ElectionAccountMenu({ account }: { account: ElectionAccount }) {
         >
           {initials}
         </span>
-        <span className="max-w-24 truncate sm:max-w-36">{name}</span>
-        <ChevronDown aria-hidden="true" size={16} className="shrink-0 group-open:rotate-180" />
+        <span className="max-w-24 truncate max-[38rem]:hidden sm:max-w-36">{name}</span>
+        <ChevronDown
+          aria-hidden="true"
+          size={16}
+          className="shrink-0 group-open:rotate-180 max-[38rem]:hidden"
+        />
       </summary>
       <div className="absolute end-0 top-full z-30 mt-2 w-[min(17.75rem,calc(100vw-2rem))] rounded-[10px] border border-comelec-sage bg-comelec-cream p-2 text-comelec-forest shadow-[0_12px_32px_rgba(10,20,5,0.2)]">
         <div className="mx-2 border-b border-comelec-sage px-0 pb-3 pt-2">
