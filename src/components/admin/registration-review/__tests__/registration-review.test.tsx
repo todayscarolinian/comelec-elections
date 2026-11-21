@@ -13,15 +13,28 @@ type QueryState = {
   error?: unknown
   refetch: ReturnType<typeof vi.fn>
 }
-const { state, approve, reject, invalidateQueries, listQueryOptions } = vi.hoisted(() => ({
-  state: {} as { query: QueryState; saving: boolean; pendingCount?: number },
-  listQueryOptions: vi.fn(),
-  approve: vi.fn(),
-  reject: vi.fn(),
-  invalidateQueries: vi.fn(),
-}))
+type ProfileState = {
+  data?: { url: string }
+  isPending: boolean
+  refetch: ReturnType<typeof vi.fn>
+}
+const { state, approve, reject, invalidateQueries, listQueryOptions, profileQueryOptions } =
+  vi.hoisted(() => ({
+    state: {} as {
+      query: QueryState
+      profile: ProfileState
+      saving: boolean
+      pendingCount?: number
+    },
+    profileQueryOptions: vi.fn(),
+    listQueryOptions: vi.fn(),
+    approve: vi.fn(),
+    reject: vi.fn(),
+    invalidateQueries: vi.fn(),
+  }))
 vi.mock('@tanstack/react-query', () => ({
   useQuery: (options: { kind: string; input?: { status?: string; yearLevel?: string } }) => {
+    if (options.kind === 'profile') return state.profile
     if (options.kind === 'window')
       return {
         data: {
@@ -56,6 +69,12 @@ vi.mock('@/lib/trpc/client', () => ({
         },
         queryKey: () => ['listRegistrations'],
       },
+      getStudentProfileView: {
+        queryOptions: (input: unknown) => {
+          profileQueryOptions(input)
+          return { kind: 'profile', input }
+        },
+      },
       getRegistrationWindow: {
         queryOptions: () => ({ kind: 'window' }),
         queryKey: () => ['getRegistrationWindow'],
@@ -80,7 +99,6 @@ function registration(overrides: Partial<Registration> = {}): Registration {
     reviewedAt: null,
     rejectionReason: null,
     hasHeldBallot: false,
-    studentProfileUrl: 'https://storage.example.org/signed-view',
     ocrStatus: 'DONE',
     ocrResult: {
       fields: {
@@ -99,6 +117,12 @@ beforeEach(() => {
   reject.mockReset().mockResolvedValue({ ok: true })
   invalidateQueries.mockReset().mockResolvedValue(undefined)
   listQueryOptions.mockClear()
+  profileQueryOptions.mockClear()
+  state.profile = {
+    data: { url: 'https://storage.example.org/signed-view' },
+    isPending: false,
+    refetch: vi.fn(),
+  }
   state.pendingCount = undefined
   state.saving = false
   state.query = {
@@ -327,12 +351,12 @@ describe('RegistrationReview live API wiring', () => {
   })
   it('keeps the same applicant and draft when a refresh moves them to another page', () => {
     const selected = registration({ id: 'page-two', name: 'Page Two Applicant' })
-    const rows = Array.from({ length: 9 }, (_, i) =>
+    const rows = Array.from({ length: 10 }, (_, i) =>
       registration({ id: `row-${i}`, name: `Applicant ${i}` }),
     )
     state.query.data = [...rows, selected]
     const { rerender } = render(<RegistrationReview />)
-    fireEvent.click(screen.getByRole('button', { name: /Next applicants/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }))
     fireEvent.click(screen.getByRole('button', { name: /Page Two Applicant/ }))
     const reason = screen.getByRole<HTMLTextAreaElement>('textbox', { name: /Rejection reason/ })
     fireEvent.change(reason, { target: { value: 'Unreadable' } })
@@ -358,11 +382,21 @@ describe('RegistrationReview live API wiring', () => {
     render(<RegistrationReview />)
     expect(screen.getByText('No applications match these filters.')).toBeTruthy()
   })
-  it('refreshes missing documents instead of rendering a broken image', () => {
-    state.query.data = [registration({ studentProfileUrl: null })]
+  it('signs the Student Profile only for the open submission', () => {
+    render(<RegistrationReview />)
+    expect(profileQueryOptions).toHaveBeenLastCalledWith({ id, submittedAt })
+  })
+  it('shows a placeholder while the Student Profile is being signed', () => {
+    state.profile = { isPending: true, refetch: vi.fn() }
+    render(<RegistrationReview />)
+    expect(screen.getAllByText('Loading student profile…').length).toBeGreaterThan(0)
+    expect(screen.queryByAltText('Student profile for Juan Dela Cruz')).toBeNull()
+  })
+  it('re-signs missing documents instead of rendering a broken image', () => {
+    state.profile = { isPending: false, refetch: vi.fn() }
     render(<RegistrationReview />)
     fireEvent.click(screen.getAllByRole('button', { name: 'Refresh document' })[0])
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['listRegistrations'] })
+    expect(state.profile.refetch).toHaveBeenCalled()
   })
   it('keeps both images stable across URL renewal and uses the new URL after a load failure', () => {
     const { rerender } = render(<RegistrationReview />)
@@ -370,7 +404,7 @@ describe('RegistrationReview live API wiring', () => {
     const images = screen.getAllByAltText(alt)
     const renewedUrl = 'https://storage.example.org/renewed-view'
 
-    state.query.data = [registration({ studentProfileUrl: renewedUrl })]
+    state.profile = { ...state.profile, data: { url: renewedUrl } }
     rerender(<RegistrationReview />)
 
     const refreshedImages = screen.getAllByAltText(alt)
@@ -379,19 +413,23 @@ describe('RegistrationReview live API wiring', () => {
     expect(images[0].getAttribute('src')).toBe('https://storage.example.org/signed-view')
     fireEvent.error(images[0])
     expect(screen.getAllByAltText(alt)[0].getAttribute('src')).toBe(renewedUrl)
-
-    const replacementUrl = 'https://storage.example.org/replacement-view'
-    state.query.data = [
-      registration({
-        submittedAt: new Date('2026-11-20T06:00:00Z'),
-        studentProfileUrl: replacementUrl,
-      }),
-    ]
-    rerender(<RegistrationReview />)
-    expect(screen.getAllByAltText(alt).map((image) => image.getAttribute('src'))).toEqual([
-      replacementUrl,
-      replacementUrl,
-    ])
+  })
+  it('pages through a long queue with page numbers and a page size', () => {
+    state.query.data = Array.from({ length: 45 }, (_, i) =>
+      registration({ id: `row-${i}`, name: `Applicant ${i}` }),
+    )
+    render(<RegistrationReview />)
+    expect(screen.getByText('1–10 of 45')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Page 5' }))
+    expect(screen.getByText('41–45 of 45')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Applicant 44/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Page 5' }).getAttribute('aria-current')).toBe('page')
+    expect((screen.getByRole('button', { name: 'Next page' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    )
+    fireEvent.change(screen.getByRole('combobox', { name: 'Show' }), { target: { value: '50' } })
+    expect(screen.getByText('1–45 of 45')).toBeTruthy()
+    expect(screen.queryByRole('navigation', { name: 'Queue pages' })).toBeNull()
   })
   it('shows held ballot status without priority on a rejected application', () => {
     state.query.data = [registration({ status: 'REJECTED', hasHeldBallot: true })]

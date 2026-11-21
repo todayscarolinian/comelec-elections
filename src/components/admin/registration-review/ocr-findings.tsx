@@ -6,7 +6,7 @@ import type { Registration } from './types'
 export function OcrIndicator({ registration }: { registration: Registration }) {
   const ocr = registration.ocrResult
   const base =
-    'inline-flex shrink-0 items-center gap-1 px-1.5 py-0.5 text-[10px] leading-none font-medium'
+    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-1.5 py-0.5 text-[10px] leading-none font-medium'
   if (registration.ocrStatus === 'PENDING') {
     return (
       <span className={`${base} border border-review-line text-review-muted`}>OCR pending</span>
