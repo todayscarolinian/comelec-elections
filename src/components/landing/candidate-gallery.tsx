@@ -1,19 +1,9 @@
 import { displayHeading, sectionInner, sectionPadding } from './landing-styles'
 import { ArrowUpRight } from 'lucide-react'
 import Image from 'next/image'
-import { ELECTION, type CandidateDef, type ElectionDef } from '@/election'
-
-const election: ElectionDef = ELECTION
-const officeNames = ['President', 'Vice Presidents', 'Councilors'] as const
-
-const offices =
-  election.title === 'Placeholder Election'
-    ? officeNames.map((title, index) => ({
-        id: String(index),
-        title,
-        candidates: election.questions[index]?.candidates ?? [],
-      }))
-    : election.questions
+import Link from 'next/link'
+import type { CandidateDef } from '@/election'
+import { CANDIDATE_OFFICES as offices, candidateHref } from '@/lib/candidates'
 
 function CandidateCard({ candidate }: { candidate: CandidateDef }) {
   return (
@@ -29,21 +19,21 @@ function CandidateCard({ candidate }: { candidate: CandidateDef }) {
       <h4 className="mt-2 text-[clamp(1rem,1.5vw,1.25rem)] leading-tight break-words [font-family:var(--landing-text),Georgia,serif]">
         {candidate.name}
       </h4>
-      <details className="text-sm [&>p]:text-(--landing-muted)">
-        <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center justify-between gap-x-2 gap-y-1 hover:[&>span:last-child]:underline [&::-webkit-details-marker]:hidden">
-          <span
-            className="border border-(--landing-green)/35 px-2 py-1 text-xs data-[party=Tingog]:border-[#c80968] data-[party=STAND]:border-[#9d781d]"
-            data-party={candidate.party}
-          >
-            {candidate.party ?? 'Independent'}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            View profile <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
-            <span className="sr-only"> for {candidate.name}</span>
-          </span>
-        </summary>
-        <p>{candidate.bio}</p>
-      </details>
+      <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-2 gap-y-1 text-sm">
+        <span
+          className="border border-(--landing-green)/35 px-2 py-1 text-xs data-[party=Tingog]:border-[#c80968] data-[party=STAND]:border-[#9d781d]"
+          data-party={candidate.party}
+        >
+          {candidate.party ?? 'Independent'}
+        </span>
+        <Link
+          href={candidateHref(candidate.id)}
+          className="inline-flex min-h-11 items-center gap-1 hover:underline hover:underline-offset-4"
+        >
+          View profile <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
+          <span className="sr-only"> for {candidate.name}</span>
+        </Link>
+      </div>
     </li>
   )
 }
@@ -109,39 +99,12 @@ export function CandidateGallery() {
             </section>
           ))}
         </div>
-        <details className="mt-10">
-          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-2 border border-(--landing-green)/45 px-4 text-2xl hover:underline hover:underline-offset-4 [font-family:var(--landing-text),Georgia,serif] [&::-webkit-details-marker]:hidden">
-            View all candidates <ArrowUpRight aria-hidden="true" className="size-5 shrink-0" />
-          </summary>
-          <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-6 [&_summary]:cursor-pointer [&_summary]:py-1.5">
-            {offices.map((office) => (
-              <section key={office.id} aria-labelledby={`directory-office-${office.id}`}>
-                <h3
-                  id={`directory-office-${office.id}`}
-                  className="mb-2 text-xl italic [font-family:var(--landing-display),Georgia,serif]"
-                >
-                  {office.title}
-                </h3>
-                {office.candidates.length > 0 ? (
-                  <ul>
-                    {office.candidates.map((candidate) => (
-                      <li key={candidate.id}>
-                        <details>
-                          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-2 border border-(--landing-green)/45 px-4 text-2xl hover:underline hover:underline-offset-4 [font-family:var(--landing-text),Georgia,serif] [&::-webkit-details-marker]:hidden">
-                            {candidate.name} · {candidate.party ?? 'Independent'}
-                          </summary>
-                          <p>{candidate.bio}</p>
-                        </details>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>Councilor profiles have yet to be published.</p>
-                )}
-              </section>
-            ))}
-          </div>
-        </details>
+        <Link
+          href="/candidates"
+          className="mt-10 flex min-h-14 items-center justify-between gap-2 border border-(--landing-green)/45 px-4 text-2xl hover:underline hover:underline-offset-4 [font-family:var(--landing-text),Georgia,serif]"
+        >
+          View all candidates <ArrowUpRight aria-hidden="true" className="size-5 shrink-0" />
+        </Link>
       </div>
     </section>
   )

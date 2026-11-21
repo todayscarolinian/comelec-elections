@@ -19,9 +19,21 @@ type ElectionLinkProps = Omit<ComponentPropsWithoutRef<'a'>, 'href'> & {
   section: Section
 }
 
-type NavigationProps = { isLanding: boolean; hideSignIn: boolean }
+type NavigationProps = {
+  isLanding: boolean
+  hideSignIn: boolean
+  activeSection?: Section
+  variant: 'default' | 'editorial'
+}
 
 function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkProps) {
+  if (section === 'candidates') {
+    return (
+      <Link href="/candidates" {...props}>
+        {children}
+      </Link>
+    )
+  }
   const hash = `#${section}`
   if (isLanding) {
     return (
@@ -41,13 +53,17 @@ function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkPr
 function NavigationBar({
   isLanding,
   hideSignIn,
+  activeSection,
+  variant,
   account,
 }: NavigationProps & { account?: ElectionAccount | null }) {
   return (
     <header className={`sticky top-0 z-20 ${isLanding ? 'h-0' : ''}`}>
-      <div className="pointer-events-none w-full px-[clamp(0.5rem,1.1vw,1rem)] pt-[clamp(0.625rem,1.35vw,1.25rem)]">
+      <div
+        className={`pointer-events-none w-full ${variant === 'editorial' ? 'mx-auto max-w-[1440px] px-[clamp(1rem,3.5vw,3rem)] pt-5 sm:pt-8' : 'px-[clamp(0.5rem,1.1vw,1rem)] pt-[clamp(0.625rem,1.35vw,1.25rem)]'}`}
+      >
         <nav
-          className="pointer-events-auto grid min-h-[4.625rem] grid-cols-[1fr_auto_1fr] items-center rounded-full border border-[#324e1f]/35 bg-[#e5efda]/44 px-[clamp(0.75rem,1.5vw,1.375rem)] py-3 text-[#17290e] shadow-[inset_0_1px_0_rgb(255_255_255/18%)] backdrop-blur-[16px] backdrop-saturate-125 max-[38rem]:grid-cols-[auto_1fr] max-[38rem]:gap-x-3 max-[38rem]:rounded-[1.25rem] max-[38rem]:py-[0.35rem] [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a]:font-medium [&_a:hover]:underline [&_a:hover]:underline-offset-4"
+          className={`pointer-events-auto grid min-h-[4.625rem] grid-cols-[1fr_auto_1fr] items-center rounded-full border border-[#324e1f]/35 ${variant === 'editorial' ? 'bg-comelec-cream/95 text-sm' : 'bg-[#e5efda]/44'} px-[clamp(0.75rem,1.5vw,1.375rem)] py-3 text-[#17290e] shadow-[inset_0_1px_0_rgb(255_255_255/18%)] backdrop-blur-[16px] backdrop-saturate-125 max-[38rem]:grid-cols-[auto_1fr] max-[38rem]:gap-x-3 max-[38rem]:rounded-[1.25rem] max-[38rem]:py-[0.35rem] [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a]:font-medium [&_a:hover]:underline [&_a:hover]:underline-offset-4`}
           aria-label="Main navigation"
         >
           <div className="flex items-center gap-2 justify-self-start">
@@ -71,7 +87,12 @@ function NavigationBar({
                 <ElectionLink
                   isLanding={isLanding}
                   section={section}
-                  aria-current={isLanding && section === 'home' ? 'page' : undefined}
+                  aria-current={
+                    section === (activeSection ?? (isLanding ? 'home' : undefined))
+                      ? 'page'
+                      : undefined
+                  }
+                  className={section === activeSection ? 'underline underline-offset-4' : undefined}
                 >
                   {label}
                 </ElectionLink>
@@ -114,8 +135,10 @@ async function SessionNavigation(props: NavigationProps) {
 export function ElectionNavigation({
   isLanding = false,
   hideSignIn = false,
+  activeSection,
+  variant = 'default',
 }: Partial<NavigationProps>) {
-  const props = { isLanding, hideSignIn }
+  const props = { isLanding, hideSignIn, activeSection, variant }
   return (
     <Suspense fallback={<NavigationBar {...props} />}>
       <SessionNavigation {...props} />

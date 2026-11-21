@@ -18,7 +18,7 @@ const text = localFont({
 })
 
 const footerLinks = [
-  { href: '/#candidates', label: 'Candidates' },
+  { href: '/candidates', label: 'Candidates' },
   { href: '/#voting', label: 'Ballot' },
 ]
 
