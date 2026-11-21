@@ -12,7 +12,7 @@ export const submit = protectedProcedure
   .input(submitRegistrationInputSchema)
   .mutation(async ({ ctx, input }) => {
     const personId = ctx.person.id
-    const { yearLevel, studentProfilePath } = input
+    const { yearLevel, school, studentProfilePath } = input
     // One timestamp per submission: stored on the Registration and used to scope the OCR job.
     const submittedAt = new Date()
 
@@ -49,6 +49,7 @@ export const submit = protectedProcedure
             data: {
               personId,
               yearLevel,
+              school,
               studentProfilePath,
               status: 'PENDING',
               submittedAt,
@@ -65,6 +66,7 @@ export const submit = protectedProcedure
           where: { personId, status: { in: ['PENDING', 'REJECTED'] } },
           data: {
             yearLevel,
+            school,
             studentProfilePath,
             status: 'PENDING',
             rejectionReason: null,
@@ -83,9 +85,9 @@ export const submit = protectedProcedure
         }
 
         // Only PENDING/REJECTED Registrations get here, so any Ballot is a Held Ballot.
-        // Keep its Year Level snapshot in step with the resubmitted Registration;
+        // Keep its Year Level and School snapshots in step with the resubmitted Registration;
         // approval may still correct both
-        await tx.ballot.updateMany({ where: { personId }, data: { yearLevel } })
+        await tx.ballot.updateMany({ where: { personId }, data: { yearLevel, school } })
       })
     } catch (error) {
       // Two first-time submits at once: the second INSERT hits personId @unique.

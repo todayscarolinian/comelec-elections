@@ -6,7 +6,7 @@ import { ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
 import { ocrView } from '@/server/trpc/api/v1/registration/core/ocrView'
 import { createSignedStudentProfileView } from '@/server/trpc/api/v1/registration/services/studentProfileStorage'
 import type { z } from 'zod'
-import type { listRegistrationsInputSchema } from '../schema'
+import type { listRegistrationsInputSchema, studentProfileViewInputSchema } from '../schema'
 
 export async function listRegistrations(
   db: Db,
@@ -17,12 +17,12 @@ export async function listRegistrations(
     select: {
       id: true,
       yearLevel: true,
+      school: true,
       status: true,
       submittedAt: true,
       reviewedBy: true,
       reviewedAt: true,
       rejectionReason: true,
-      studentProfilePath: true,
       ocrStatus: true,
       ocrResult: true,
       person: { select: { name: true, email: true, ballot: { select: { id: true } } } },
@@ -30,43 +30,56 @@ export async function listRegistrations(
     orderBy: [{ submittedAt: 'asc' }, { id: 'asc' }],
   })
   const now = new Date()
-  const rows = await Promise.all(
-    registrations.map(
-      async ({ person, studentProfilePath, ocrResult, ocrStatus, ...registration }) => {
-        let studentProfileUrl: string | null = null
-        try {
-          studentProfileUrl = await createSignedStudentProfileView(studentProfilePath)
-        } catch {
-          // A failed/expired document must not hide the rest of the review queue.
-        }
-        const parsed = ocrResultSchema.safeParse(ocrResult)
-        return {
-          ...registration,
-          name: person.name,
-          email: person.email,
-          studentId: person.email.split('@')[0],
-          hasHeldBallot: Boolean(person.ballot) && registration.status !== 'APPROVED',
-          studentProfileUrl,
-          ocrStatus: ocrView({ ocrStatus, submittedAt: registration.submittedAt }, now),
-          ocrResult: parsed.success ? parsed.data : null,
-        }
-      },
-    ),
-  )
+  const rows = registrations.map(({ person, ocrResult, ocrStatus, ...registration }) => {
+    const parsed = ocrResultSchema.safeParse(ocrResult)
+    return {
+      ...registration,
+      name: person.name,
+      email: person.email,
+      studentId: person.email.split('@')[0],
+      hasHeldBallot: Boolean(person.ballot) && registration.status !== 'APPROVED',
+      ocrStatus: ocrView({ ocrStatus, submittedAt: registration.submittedAt }, now),
+      ocrResult: parsed.success ? parsed.data : null,
+    }
+  })
   // Only pending Held Ballots need review priority. Keep database order within each group.
   const priority = (row: (typeof rows)[number]) =>
     Number(row.status === 'PENDING' && row.hasHeldBallot)
   return rows.sort((a, b) => priority(b) - priority(a))
 }
 
+/**
+ * Signs the Student Profile for one submission only when an Admin opens it, instead of
+ * signing every row in the queue on each refresh.
+ */
+export async function getStudentProfileView(
+  db: Db,
+  input: z.infer<typeof studentProfileViewInputSchema>,
+) {
+  const registration = await db.registration.findUnique({
+    where: { id: input.id },
+    select: { studentProfilePath: true, submittedAt: true },
+  })
+  // A resubmission replaces the document, so never sign a newer file for an older version.
+  if (!registration || registration.submittedAt.getTime() !== input.submittedAt.getTime()) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'This registration changed. Refresh the queue.',
+    })
+  }
+  return { url: await createSignedStudentProfileView(registration.studentProfilePath) }
+}
+
 type Decision = { id: string; adminEmail: string; submittedAt: Date } & (
-  { status: 'APPROVED'; yearLevel?: string } | { status: 'REJECTED'; reason: string }
+  | { status: 'APPROVED'; yearLevel?: string; school?: string }
+  | { status: 'REJECTED'; reason: string }
 )
 type ReviewRow = {
   id: string
   personId: string
   status: string
   yearLevel: string
+  school: string
   submittedAt: Date
 }
 
@@ -104,7 +117,7 @@ export async function reviewRegistration(db: Db, decision: Decision) {
       async (tx) => {
         // Serialize competing reviews and resubmissions. Deliberately never select OCR data.
         const [registration] = await tx.$queryRaw<ReviewRow[]>`
-        SELECT "id", "personId", "status", "yearLevel", "submittedAt"
+        SELECT "id", "personId", "status", "yearLevel", "school", "submittedAt"
         FROM "Registration" WHERE "id" = ${decision.id} FOR UPDATE
       `
         if (!registration)
@@ -125,6 +138,10 @@ export async function reviewRegistration(db: Db, decision: Decision) {
           decision.status === 'APPROVED'
             ? (decision.yearLevel ?? registration.yearLevel)
             : registration.yearLevel
+        const school =
+          decision.status === 'APPROVED'
+            ? (decision.school ?? registration.school)
+            : registration.school
         const rejectionReason = decision.status === 'REJECTED' ? decision.reason : null
         const reviewedAt = new Date()
         await tx.registration.update({
@@ -132,6 +149,7 @@ export async function reviewRegistration(db: Db, decision: Decision) {
           data: {
             status: decision.status,
             yearLevel,
+            school,
             rejectionReason,
             reviewedBy: decision.adminEmail,
             reviewedAt,
@@ -139,10 +157,10 @@ export async function reviewRegistration(db: Db, decision: Decision) {
           select: { id: true },
         })
         if (decision.status === 'APPROVED') {
-          // Held Ballots inherit the corrected year in the same commit (ADR 0008).
+          // Held Ballots inherit the corrected year and School in the same commit (ADR 0008).
           await tx.ballot.updateMany({
             where: { personId: registration.personId },
-            data: { yearLevel },
+            data: { yearLevel, school },
           })
         }
         await writeAudit(
@@ -153,6 +171,8 @@ export async function reviewRegistration(db: Db, decision: Decision) {
             detail: {
               originalYearLevel: registration.yearLevel,
               yearLevel,
+              originalSchool: registration.school,
+              school,
               ...(rejectionReason === null ? {} : { rejectionReason }),
             },
           },

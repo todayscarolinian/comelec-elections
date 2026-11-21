@@ -39,3 +39,31 @@ jobs:
       - name: Run Unit Tests (full suite)
         if: github.event_name == 'push'
         run: npx vitest run --passWithNoTests
+
+  integration:
+    name: Run PostgreSQL Integration Tests
+    runs-on: ubuntu-latest
+    env:
+      COMELEC_TEST_DB_PORT: '55432'
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: comelec_test
+          POSTGRES_PASSWORD: comelec_test
+          POSTGRES_DB: comelec_test
+        ports:
+          - '127.0.0.1:55432:5432'
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U comelec_test -d comelec_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:integration

@@ -75,7 +75,7 @@ describe('BallotPage', () => {
     myStatus.mockReset().mockResolvedValue({ status: 'can_vote' })
     registration.mockReset().mockResolvedValue({
       account,
-      registration: { status: 'APPROVED', rejectionReason: null },
+      registration: { status: 'APPROVED', school: 'SAFAD', rejectionReason: null },
       canSubmit: true,
     })
     cast.mockReset().mockResolvedValue({ ok: true, held: false })
@@ -186,7 +186,7 @@ describe('BallotPage', () => {
   it('requires a separate acknowledgement before casting a held ballot', async () => {
     registration.mockResolvedValue({
       account,
-      registration: { status: 'PENDING', rejectionReason: null },
+      registration: { status: 'PENDING', school: 'SAFAD', rejectionReason: null },
       canSubmit: true,
     })
     cast.mockResolvedValue({ ok: true, held: true })

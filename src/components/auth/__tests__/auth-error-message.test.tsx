@@ -8,17 +8,18 @@ vi.mock('next-auth/react', () => ({ signIn }))
 beforeEach(() => signIn.mockReset().mockResolvedValue(undefined))
 
 describe('authentication error message', () => {
-  it('explains why non-organization accounts cannot sign in', () => {
+  it('guides denied sign-ins to the university account picker without duplicate instructions', () => {
     render(<AuthErrorMessage error="AccessDenied" allowedDomain="example.com" />)
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Use your university account.',
     )
     expect(
-      screen.getByText('Only @example.com Google Workspace accounts can sign in.'),
+      screen.getByText(
+        'Please choose your university account (@example.com) in the Google account picker to continue.',
+      ),
     ).toBeTruthy()
-    expect(
-      screen.getByText(/Please choose your university account in the Google account picker/),
-    ).toBeTruthy()
+    expect(screen.queryByText(/Only @/)).toBeNull()
+    expect(screen.queryByText(/Personal Google accounts/)).toBeNull()
     expect(screen.getByRole('link', { name: 'Back to home' }).getAttribute('href')).toBe('/')
   })
 
@@ -32,13 +33,19 @@ describe('authentication error message', () => {
   it('uses the configured domain rather than a hardcoded placeholder', () => {
     render(<AuthErrorMessage error="AccessDenied" allowedDomain="organization.edu" />)
     expect(
-      screen.getByText('Only @organization.edu Google Workspace accounts can sign in.'),
+      screen.getByText(
+        'Please choose your university account (@organization.edu) in the Google account picker to continue.',
+      ),
     ).toBeTruthy()
   })
 
   it('displays the normalized configured domain', () => {
     render(<AuthErrorMessage error="AccessDenied" allowedDomain=" USC.EDU.PH " />)
-    expect(screen.getByText('Only @usc.edu.ph Google Workspace accounts can sign in.')).toBeTruthy()
+    expect(
+      screen.getByText(
+        'Please choose your university account (@usc.edu.ph) in the Google account picker to continue.',
+      ),
+    ).toBeTruthy()
   })
 
   it.each([undefined, '', '   '])('reports missing domain configuration: %j', (allowedDomain) => {
@@ -48,7 +55,7 @@ describe('authentication error message', () => {
         'Organization sign-in is not configured. Contact the election administrator.',
       ),
     ).toBeTruthy()
-    expect(screen.queryByText(/Only @/)).toBeNull()
+    expect(screen.queryByText(/Please choose your university account/)).toBeNull()
     expect(screen.queryByRole('button')).toBeNull()
     expect(screen.getByRole('link', { name: 'Back to home' })).toBeTruthy()
   })
@@ -71,7 +78,7 @@ describe('authentication error message', () => {
       expect(
         screen.getByText('We could not complete your Google sign-in. Please try again.'),
       ).toBeTruthy()
-      expect(screen.queryByText(/Only @/)).toBeNull()
+      expect(screen.queryByText(/Please choose your university account/)).toBeNull()
       expect(screen.queryByText(/private-error/)).toBeNull()
       expect(screen.getByRole('button', { name: 'Try Google sign-in again' })).toBeTruthy()
     },
@@ -83,7 +90,7 @@ describe('authentication error message', () => {
     expect(
       screen.getByText('Sign-in is temporarily unavailable. Please try again in a moment.'),
     ).toBeTruthy()
-    expect(screen.queryByText(/Only @/)).toBeNull()
+    expect(screen.queryByText(/Please choose your university account/)).toBeNull()
     expect(screen.getByRole('button', { name: 'Try Google sign-in again' })).toBeTruthy()
   })
 
