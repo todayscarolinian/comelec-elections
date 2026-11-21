@@ -1,6 +1,6 @@
 import { ArrowUpRight } from 'lucide-react'
 import { signOutFromElection } from '@/server/auth/actions'
-import { Bone } from './admin-skeletons'
+import { Bone } from '../skeleton'
 
 export function AdminAccountPanel({ email }: { email: string | null }) {
   return (
