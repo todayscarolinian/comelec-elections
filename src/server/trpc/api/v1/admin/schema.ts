@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { normalizeHostedDomain } from '@/server/auth/policy'
+import { YEAR_LEVELS, ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
 
 const organizationEmail = z
   .string()
@@ -42,3 +43,40 @@ export const registrationWindowOutputSchema = z.object({
   registrationStatus: windowStatus,
   pendingCount: z.number().int().nonnegative(),
 })
+
+const registrationStatusSchema = z.enum(['PENDING', 'APPROVED', 'REJECTED'])
+export const listRegistrationsInputSchema = z
+  .object({
+    status: registrationStatusSchema.optional(),
+    yearLevel: z.enum(YEAR_LEVELS).optional(),
+  })
+  .default({})
+
+export const registrationReviewOutputSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  studentId: z.string(),
+  yearLevel: z.string(),
+  status: registrationStatusSchema,
+  submittedAt: z.date(),
+  reviewedBy: z.string().nullable(),
+  reviewedAt: z.date().nullable(),
+  rejectionReason: z.string().nullable(),
+  hasHeldBallot: z.boolean(),
+  studentProfileUrl: z.url().nullable(),
+  ocrStatus: z.enum(['PENDING', 'DONE', 'FAILED']),
+  ocrResult: ocrResultSchema.nullable(),
+})
+
+export const approveRegistrationInputSchema = z.object({
+  id: z.uuid(),
+  submittedAt: z.date(),
+  yearLevel: z.enum(YEAR_LEVELS).optional(),
+})
+export const rejectRegistrationInputSchema = z.object({
+  id: z.uuid(),
+  submittedAt: z.date(),
+  reason: z.string().trim().min(1).max(2000),
+})
+export const reviewDecisionOutputSchema = z.object({ ok: z.literal(true) })

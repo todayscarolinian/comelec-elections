@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
-import { RegistrationReview } from "./registration-review";
+import type { Metadata } from 'next'
+import { RegistrationReview } from '@/components/admin/registration-review/registration-review'
 
 export const metadata: Metadata = {
-  title: "Registration review · SSC COMELEC",
-  description: "Admin registration review interface preview.",
-};
+  title: 'Registration review · SSC COMELEC',
+  description: 'Review voter registrations and student profiles.',
+}
 
 export default function RegistrationsPage() {
-  return <RegistrationReview />;
+  return <RegistrationReview />
 }

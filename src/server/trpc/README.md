@@ -104,6 +104,14 @@ const result = await caller.health.ping()
 - Never log or echo procedure inputs, especially Ballot inputs. Don't add an `errorFormatter` that includes them.
 - `POST /api/trpc` requests must carry an `Origin` matching `AUTH_URL`, or the request's own origin when `AUTH_URL` is unset. Mutations are POST, so cross-origin mutations get a 403.
 
+## Registration review (S2-05)
+
+- `admin.listRegistrations({ status?, yearLevel? })` lists registrations with identity, review metadata, a Held Ballot flag, a signed Student Profile URL valid for 600 seconds, and validated advisory OCR. Held Ballots are flagged for pending and rejected registrations, but only pending Held Ballots sort first. Storage signing failures return a null URL so other registrations remain reviewable. `ocrView` turns OCR PENDING older than ten minutes into FAILED; malformed OCR becomes null. Raw paths and OCR values are never included in logs or errors.
+- `admin.approveRegistration({ id, yearLevel?, submittedAt })` and `admin.rejectRegistration({ id, reason, submittedAt })` require current Admin rights and the timestamp of the submission being reviewed. Rejection reasons are trimmed, required, and limited to 2,000 characters.
+- Decisions act only on PENDING registrations, regardless of Registration/Election windows. A row lock and serializable transaction keep the decision, reviewer/time, optional corrected Held Ballot year, and audit together. The audit records the original and final year, plus the trimmed reason for rejections. Already-reviewed, resubmitted, or concurrently changed records return a conflict; no OCR fields are selected by decisions.
+- The review UI requests PENDING registrations by default and passes status/Year Level filters to the server before signing documents. It polls only the selected queue every minute to renew ten-minute document URLs and OCR results; pending totals come from the lightweight `getRegistrationWindow` query. Decisions wait for server success, then refresh the queue and pending count. No sample registrations are used.
+- Registration window controls retain develop's `admin.getRegistrationWindow()` and `admin.setRegistrationStatus({ status })` contract.
+
 ## Testing
 
 Test procedures through `createCallerFactory` with a fake context. There's no HTTP involved:

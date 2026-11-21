@@ -6,6 +6,7 @@ const { setRegistrationStatusService, getRegistrationWindowService } = vi.hoiste
   getRegistrationWindowService: vi.fn(),
 }))
 
+vi.mock('@/server/storage', () => ({ getSupabaseAdmin: vi.fn() }))
 vi.mock('@/lib/prisma', () => ({ default: {} }))
 vi.mock('@/server/auth', () => ({ auth: vi.fn().mockResolvedValue(null) }))
 vi.mock('../services/electionState', () => ({

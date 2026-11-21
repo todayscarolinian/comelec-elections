@@ -81,3 +81,30 @@ describe('studentProfileExists', () => {
     )
   })
 })
+
+describe('createSignedStudentProfileView', () => {
+  it('signs private profiles for exactly ten minutes', async () => {
+    const { createSignedStudentProfileView } = await import('../services/studentProfileStorage')
+    const createSignedUrl = vi.fn().mockResolvedValue({
+      data: { signedUrl: 'https://storage.example.org/view?token=private' },
+      error: null,
+    })
+    await expect(
+      createSignedStudentProfileView('person/profile', { createSignedUrl }),
+    ).resolves.toBe('https://storage.example.org/view?token=private')
+    expect(createSignedUrl).toHaveBeenCalledWith('person/profile', 600)
+  })
+  it('hides storage errors and missing responses', async () => {
+    const { createSignedStudentProfileView } = await import('../services/studentProfileStorage')
+    const createSignedUrl = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('private path'))
+      .mockResolvedValue({ data: null, error: null })
+    await expect(
+      createSignedStudentProfileView('person/profile', { createSignedUrl }),
+    ).rejects.toThrow('Unable to view Student Profile.')
+    await expect(
+      createSignedStudentProfileView('person/profile', { createSignedUrl }),
+    ).rejects.toThrow('Unable to view Student Profile.')
+  })
+})
