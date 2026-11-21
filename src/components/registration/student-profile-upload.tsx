@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useId, useRef, useState } from 'react'
 import { getStudentProfileValidationError, STUDENT_PROFILE_MIME_TYPES } from '@/lib/student-profile'
 import { useTRPC } from '@/lib/trpc/client'
+import { StudentProfileTutorial } from './student-profile-tutorial'
 
 type StudentProfileUploadProps = {
   onUploaded: (path: string) => void
@@ -105,15 +106,7 @@ export function StudentProfileUpload({
       <p id={hintId} className="text-sm leading-relaxed text-[#56654a]">
         Make sure your name and current enrollment are readable.
       </p>
-      <details className="text-sm leading-relaxed text-[#56654a]">
-        <summary className="w-fit cursor-pointer font-medium text-[#324e1f] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">
-          Where do I find my Student Profile?
-        </summary>
-        <p className="mt-2">
-          In ISMIS, click your avatar in the top right, then My Profile. Upload a screenshot that
-          shows your name, student ID, Year Level and current term.
-        </p>
-      </details>
+      <StudentProfileTutorial />
 
       {isUploading && (
         <output className="block text-sm text-[#56654a]">Uploading Student Profile...</output>

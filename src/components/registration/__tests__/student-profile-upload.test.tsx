@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { STUDENT_PROFILE_MAX_BYTES } from '@/lib/student-profile'
 import { StudentProfileUpload } from '../student-profile-upload'
@@ -63,20 +63,43 @@ describe('StudentProfileUpload', () => {
     expect(screen.getByRole('status').textContent).toBe('Student Profile uploaded.')
   })
 
-  it('describes the upload and lets students expand the ISMIS instructions', () => {
+  it('describes the upload and guides students through the ISMIS tutorial', () => {
     render(<StudentProfileUpload onUploaded={vi.fn()} />)
 
     const input = screen.getByLabelText('Student Profile')
     const hint = document.getElementById(input.getAttribute('aria-describedby') ?? '')
 
-    const summary = screen.getByText('Where do I find my Student Profile?')
-    const details = summary.closest('details')
+    const help = screen.getByRole('button', { name: 'Where do I find my Student Profile?' })
+    const dialog = screen.getByRole('dialog', { hidden: true }) as HTMLDialogElement
+    // jsdom does not implement the native dialog methods.
+    Object.assign(dialog, {
+      showModal: () => {
+        dialog.open = true
+      },
+      close: () => {
+        dialog.open = false
+      },
+    })
 
     expect(hint?.textContent).toContain('Make sure your name and current enrollment are readable.')
-    expect(details?.open).toBe(false)
-    fireEvent.click(summary)
-    expect(details?.open).toBe(true)
-    expect(details?.textContent).toContain('click your avatar in the top right, then My Profile')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.click(help)
+    expect(screen.getByRole('dialog', { name: 'Log in to ISMIS' })).toBe(dialog)
+    const tutorial = within(dialog)
+
+    fireEvent.click(tutorial.getByRole('button', { name: 'Next' }))
+    expect(tutorial.getByRole('heading', { name: 'Open My Profile' })).toBeTruthy()
+    fireEvent.click(tutorial.getByRole('button', { name: 'Back' }))
+    expect(tutorial.getByRole('heading', { name: 'Log in to ISMIS' })).toBeTruthy()
+    fireEvent.click(tutorial.getByRole('button', { name: 'Next' }))
+    fireEvent.click(tutorial.getByRole('button', { name: 'Next' }))
+    expect(tutorial.getByRole('heading', { name: 'Take a screenshot' })).toBeTruthy()
+    fireEvent.click(tutorial.getByRole('button', { name: 'Done' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(mutateAsync).not.toHaveBeenCalled()
+
+    fireEvent.click(help)
+    expect(screen.getByRole('dialog', { name: 'Log in to ISMIS' })).toBeTruthy()
   })
 
   it('uploads an image dropped on the file picker', async () => {
