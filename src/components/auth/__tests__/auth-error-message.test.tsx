@@ -1,15 +1,25 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthErrorMessage } from '../auth-error-message'
 
 const { signIn } = vi.hoisted(() => ({ signIn: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('next-auth/react', () => ({ signIn }))
 
+beforeEach(() => signIn.mockReset().mockResolvedValue(undefined))
+
 describe('authentication error message', () => {
   it('explains why non-organization accounts cannot sign in', () => {
     render(<AuthErrorMessage error="AccessDenied" allowedDomain="example.com" />)
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Sign-in not allowed')
-    expect(screen.getByText('Only @example.com organization accounts can sign in.')).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'Use your university account.',
+    )
+    expect(
+      screen.getByText('Only @example.com Google Workspace accounts can sign in.'),
+    ).toBeTruthy()
+    expect(
+      screen.getByText(/Please choose your university account in the Google account picker/),
+    ).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Back to home' }).getAttribute('href')).toBe('/')
   })
 
   it('links to the Privacy Policy', () => {
@@ -22,13 +32,13 @@ describe('authentication error message', () => {
   it('uses the configured domain rather than a hardcoded placeholder', () => {
     render(<AuthErrorMessage error="AccessDenied" allowedDomain="organization.edu" />)
     expect(
-      screen.getByText('Only @organization.edu organization accounts can sign in.'),
+      screen.getByText('Only @organization.edu Google Workspace accounts can sign in.'),
     ).toBeTruthy()
   })
 
   it('displays the normalized configured domain', () => {
     render(<AuthErrorMessage error="AccessDenied" allowedDomain=" USC.EDU.PH " />)
-    expect(screen.getByText('Only @usc.edu.ph organization accounts can sign in.')).toBeTruthy()
+    expect(screen.getByText('Only @usc.edu.ph Google Workspace accounts can sign in.')).toBeTruthy()
   })
 
   it.each([undefined, '', '   '])('reports missing domain configuration: %j', (allowedDomain) => {
@@ -39,6 +49,8 @@ describe('authentication error message', () => {
       ),
     ).toBeTruthy()
     expect(screen.queryByText(/Only @/)).toBeNull()
+    expect(screen.queryByRole('button')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Back to home' })).toBeTruthy()
   })
 
   it('does not blame the account when the OAuth client is misconfigured', () => {
@@ -49,9 +61,10 @@ describe('authentication error message', () => {
         'Organization sign-in is not configured. Contact the election administrator.',
       ),
     ).toBeTruthy()
+    expect(screen.queryByRole('button')).toBeNull()
   })
 
-  it.each(['OAuthCallbackError', 'SignInUnavailable', '<script>private-error</script>', undefined])(
+  it.each(['OAuthCallbackError', '<script>private-error</script>', undefined])(
     'shows a safe generic message for other failures: %j',
     (error) => {
       render(<AuthErrorMessage error={error} allowedDomain="example.com" />)
@@ -60,12 +73,27 @@ describe('authentication error message', () => {
       ).toBeTruthy()
       expect(screen.queryByText(/Only @/)).toBeNull()
       expect(screen.queryByText(/private-error/)).toBeNull()
+      expect(screen.getByRole('button', { name: 'Try Google sign-in again' })).toBeTruthy()
     },
   )
 
-  it('retries directly with Google and returns to registration after sign-in', () => {
+  it('offers a retry for temporary failures without blaming the account', () => {
+    render(<AuthErrorMessage error="SignInUnavailable" allowedDomain="usc.edu.ph" />)
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Please try again shortly.')
+    expect(
+      screen.getByText('Sign-in is temporarily unavailable. Please try again in a moment.'),
+    ).toBeTruthy()
+    expect(screen.queryByText(/Only @/)).toBeNull()
+    expect(screen.getByRole('button', { name: 'Try Google sign-in again' })).toBeTruthy()
+  })
+
+  it('retries with Google using the normal post-sign-in destination flow', () => {
     render(<AuthErrorMessage error="AccessDenied" allowedDomain="example.com" />)
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
-    expect(signIn).toHaveBeenCalledWith('google', { redirectTo: '/register' })
+    fireEvent.click(screen.getByRole('button', { name: 'Choose another Google account' }))
+    expect(signIn).toHaveBeenCalledExactlyOnceWith('google', { redirectTo: '/auth/sign-in' })
+    expect(
+      (screen.getByRole('button', { name: 'Redirecting to Google…' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true)
   })
 })
