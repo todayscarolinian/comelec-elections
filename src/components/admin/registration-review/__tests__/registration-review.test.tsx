@@ -182,17 +182,13 @@ describe('RegistrationReview live API wiring', () => {
       (screen.getByRole('button', { name: 'Approve registration' }) as HTMLButtonElement).disabled,
     ).toBe(false)
   })
-  it('submits corrected Year Level and submission version, then refreshes the queue', async () => {
+  it('approves without assigning a Year Level and refreshes the queue', async () => {
     render(<RegistrationReview />)
-    fireEvent.change(screen.getByRole('combobox', { name: 'Year level on approval' }), {
-      target: { value: '2' },
-    })
+    expect(screen.queryByRole('combobox', { name: 'Year level on approval' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Approve registration' }))
-    await waitFor(() => expect(approve).toHaveBeenCalledWith({ id, yearLevel: '2', submittedAt }))
+    await waitFor(() => expect(approve).toHaveBeenCalledWith({ id, submittedAt }))
     await waitFor(() =>
-      expect(screen.getByRole('status').textContent).toContain(
-        'Juan Dela Cruz approved for Year 2',
-      ),
+      expect(screen.getByRole('status').textContent).toContain('Juan Dela Cruz approved.'),
     )
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['listRegistrations'] })
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['getRegistrationWindow'] })
@@ -301,7 +297,7 @@ describe('RegistrationReview live API wiring', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Approve registration' }))
 
-    await screen.findByText('Juan Dela Cruz approved for Year 3.')
+    await screen.findByText('Juan Dela Cruz approved.')
     const button = screen.getByRole<HTMLButtonElement>('button', { name: 'Approve registration' })
     expect(button.disabled).toBe(true)
     fireEvent.click(button)
