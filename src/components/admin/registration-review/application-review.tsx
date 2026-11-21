@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useTRPC } from '@/lib/trpc/client'
 import { YEAR_LEVELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { StudentProfileImage } from './student-profile-image'
 import { OcrFindings } from './ocr-findings'
@@ -12,7 +14,6 @@ export function ApplicationReview({
   onBack,
   focusOnOpen,
   saving,
-  onRefresh,
 }: {
   registration: Registration
   onDecision: (
@@ -24,8 +25,25 @@ export function ApplicationReview({
   onBack: () => void
   focusOnOpen: boolean
   saving: boolean
-  onRefresh: () => void
 }) {
+  const trpc = useTRPC()
+  // Signed only for the open application; refresh before the 10-minute signature expires.
+  const profileView = useQuery({
+    ...trpc.admin.getStudentProfileView.queryOptions({
+      id: registration.id,
+      submittedAt: registration.submittedAt,
+    }),
+    staleTime: 8 * 60_000,
+    refetchInterval: 8 * 60_000,
+    retry: 1,
+  })
+  const profileImage = {
+    url: profileView.data?.url ?? null,
+    loading: profileView.isPending,
+    onRefresh: () => {
+      void profileView.refetch()
+    },
+  }
   const [year, setYear] = useState(registration.yearLevel as YearLevel)
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
@@ -91,11 +109,7 @@ export function ApplicationReview({
               Open document ↗
             </button>
           </div>
-          <StudentProfileImage
-            url={registration.studentProfileUrl}
-            name={registration.name}
-            onRefresh={onRefresh}
-          />
+          <StudentProfileImage {...profileImage} name={registration.name} />
         </section>
         <OcrFindings registration={registration} />
       </div>
@@ -195,11 +209,7 @@ export function ApplicationReview({
             Close ×
           </button>
         </div>
-        <StudentProfileImage
-          url={registration.studentProfileUrl}
-          name={registration.name}
-          onRefresh={onRefresh}
-        />
+        <StudentProfileImage {...profileImage} name={registration.name} />
       </dialog>
     </article>
   )
