@@ -1,4 +1,6 @@
-export const sectionInner = 'w-full px-(--landing-section-gutter)'
+import { electionContent } from '@/components/election/election-styles'
+
+export const sectionInner = electionContent
 export const sectionPadding = 'py-[clamp(3rem,6svh,5.5rem)]'
 export const sectionAnchor = 'scroll-mt-[calc(var(--landing-header-space)+1rem)]'
 export const displayHeading =

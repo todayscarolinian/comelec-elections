@@ -1,6 +1,7 @@
 import { ArrowUpRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { BallotEntry } from '@/components/ballot/ballot-entry'
 import { ElectionNavigation } from '@/components/election/election-navigation'
 
 const ballotCount = 2000
@@ -56,8 +57,8 @@ function ResultsFooter() {
         aria-label="Footer navigation"
         className="flex flex-wrap gap-x-8 text-sm font-medium [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a:hover]:underline [&_a:hover]:underline-offset-4"
       >
-        <Link href="/#candidates">Candidates</Link>
-        <Link href="/#voting">Ballot</Link>
+        <Link href="/candidates">Candidates</Link>
+        <BallotEntry />
       </nav>
     </footer>
   )

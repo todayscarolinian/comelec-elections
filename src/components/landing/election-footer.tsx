@@ -1,39 +1,30 @@
-import { sectionInner } from './landing-styles'
+import { electionContent } from '@/components/election/election-styles'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Suspense } from 'react'
-import { BallotEntryTrigger } from '@/components/ballot/ballot-sign-in'
-import { auth } from '@/server/auth'
-
-async function FooterBallotEntry() {
-  const session = await auth()
-  return session ? <Link href="/ballot">Ballot</Link> : <BallotEntryTrigger />
-}
+import { BallotEntry } from '@/components/ballot/ballot-entry'
 
 export function ElectionFooter() {
   return (
-    <footer>
+    <footer className="mt-auto">
       <div
-        className={`${sectionInner} flex min-h-[7.5rem] items-center justify-between gap-5 py-5 max-[38rem]:flex-col max-[38rem]:items-start`}
+        className={`${electionContent} flex min-h-[7.5rem] items-center justify-between gap-5 py-5 max-[38rem]:flex-col max-[38rem]:items-start`}
       >
         <div className="flex items-center gap-3">
           <Image src="/landing/mark.webp" alt="" width={56} height={56} />
           <div>
-            <p className="text-[clamp(1.35rem,2.15vw,2rem)] leading-tight [font-family:var(--landing-text),Georgia,serif]">
+            <p className="text-[clamp(1.35rem,2.15vw,2rem)] leading-tight [font-family:var(--landing-text,var(--font-antinomia-text)),Georgia,serif]">
               SSC COMELEC
             </p>
-            <small className="text-(--landing-muted)">Student council elections · 2026</small>
+            <small className="text-[#4f6041]">Student council elections · 2026</small>
           </div>
         </div>
         <nav
           className="flex flex-wrap gap-x-6 text-sm [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a]:font-medium [&_a:hover]:underline [&_a:hover]:underline-offset-4"
           aria-label="Footer navigation"
         >
-          <Link href="/#candidates">Candidates</Link>
+          <Link href="/candidates">Candidates</Link>
           <Link href="/register">Registration</Link>
-          <Suspense fallback={<BallotEntryTrigger />}>
-            <FooterBallotEntry />
-          </Suspense>
+          <BallotEntry />
         </nav>
       </div>
     </footer>
