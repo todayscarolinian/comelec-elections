@@ -51,7 +51,7 @@ async function fillForm() {
   fireEvent.change(screen.getByLabelText('Student Profile'), {
     target: { files: [new File(['image'], 'profile.png', { type: 'image/png' })] },
   })
-  await screen.findByText('Student Profile uploaded.')
+  await screen.findByText('profile.png')
 }
 
 function button(label = 'Submit registration') {
