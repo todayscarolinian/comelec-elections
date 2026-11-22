@@ -86,7 +86,7 @@ describe('registration.submit', () => {
   it('rejects a Year Level outside YEAR_LEVELS', async () => {
     const { caller } = setup()
     // @ts-expect-error invalid on purpose
-    await expect(caller.submit({ ...input, yearLevel: '5' })).rejects.toMatchObject({
+    await expect(caller.submit({ ...input, yearLevel: '6' })).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
     expect(after).not.toHaveBeenCalled()
@@ -162,6 +162,15 @@ describe('registration.submit', () => {
         ocrStatus: 'PENDING',
         ocrResult: Prisma.DbNull,
       },
+    })
+  })
+
+  it('accepts and stores a 5th Year registration', async () => {
+    const { caller, tx } = setup()
+    const fifthYearInput = { ...input, yearLevel: '5' as const }
+    await expect(caller.submit(fifthYearInput)).resolves.toEqual({ status: 'PENDING' })
+    expect(tx.registration.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ yearLevel: '5' }),
     })
   })
 
