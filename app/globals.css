@@ -33,6 +33,12 @@
   }
 }
 
+html:has(#home) {
+  --background: var(--color-comelec-cream);
+  background-color: var(--background);
+  overscroll-behavior-y: none;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
