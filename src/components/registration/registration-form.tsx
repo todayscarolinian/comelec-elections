@@ -3,7 +3,7 @@
 import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useEffect, useState, type FormEvent } from 'react'
-import { trackEvent } from '@/lib/analytics/client'
+import { trackEvent, trackEventOnce } from '@/lib/analytics/client'
 import { useTRPC } from '@/lib/trpc/client'
 import {
   SCHOOLS,
@@ -53,7 +53,7 @@ export function RegistrationForm({
       if (error.data?.code === 'BAD_REQUEST') setStudentProfilePath('')
     },
   })
-  useEffect(() => trackEvent('registration_started'), [])
+  useEffect(() => trackEventOnce('registration_started'), [])
   const selectedYear = YEAR_LEVELS.find((level) => level === yearLevel)
   const canSubmit = !!selectedYear && isSchool(school) && !!studentProfilePath && !submit.isPending
   const errorMessage =

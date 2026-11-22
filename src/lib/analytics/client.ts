@@ -15,6 +15,7 @@ declare global {
 
 let loadedId: string | null = null
 let lastLocation: string | null = null
+const sentOnce = new Set<FunnelEvent>()
 
 function gtag(...args: unknown[]): void {
   window.gtag?.(...args)
@@ -59,9 +60,16 @@ export function trackPageView(pathname: string): void {
   lastLocation = location
 }
 
-export function trackEvent(name: FunnelEvent): void {
-  if (!trackablePath(window.location.pathname) || !loadAnalytics()) return
+export function trackEvent(name: FunnelEvent): boolean {
+  if (!trackablePath(window.location.pathname) || !loadAnalytics()) return false
   gtag('event', name)
+  return true
+}
+
+/** Sends an event at most once per page load, so remounts don't inflate funnel counts. */
+export function trackEventOnce(name: FunnelEvent): void {
+  if (sentOnce.has(name)) return
+  if (trackEvent(name)) sentOnce.add(name)
 }
 
 /** Stops collection, removes Google Analytics cookies, and reloads so gtag.js is gone. */

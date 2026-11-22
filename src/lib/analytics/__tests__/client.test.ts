@@ -135,6 +135,31 @@ describe('trackEvent', () => {
     expect(window.dataLayer).toBeUndefined()
   })
 
+  it('sends once-only events a single time per page load', async () => {
+    const { setConsent, trackEventOnce } = await loadClient()
+    setConsent('granted')
+
+    trackEventOnce('ballot_started')
+    trackEventOnce('ballot_started')
+    trackEventOnce('registration_started')
+
+    const events = commands().filter(([command]) => command === 'event')
+    expect(events).toEqual([
+      ['event', 'ballot_started'],
+      ['event', 'registration_started'],
+    ])
+  })
+
+  it('still sends a once-only event that was skipped before consent', async () => {
+    const { setConsent, trackEventOnce } = await loadClient()
+
+    trackEventOnce('ballot_started')
+    setConsent('granted')
+    trackEventOnce('ballot_started')
+
+    expect(commands()).toContainEqual(['event', 'ballot_started'])
+  })
+
   it('sends nothing from the admin area', async () => {
     const { setConsent, trackEvent } = await loadClient()
     setConsent('granted')
