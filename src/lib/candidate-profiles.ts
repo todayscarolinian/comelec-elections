@@ -12,6 +12,7 @@ export type CandidateProfileContent = {
   motto?: string
   personalTrait?: string
   leadershipTrait?: string
+  platformHighlights?: readonly string[]
   projects: readonly { name: string; description: string }[]
 }
 
@@ -45,6 +46,11 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
         motto: 'Doing it scared is just as brave',
         personalTrait: 'outspoken',
         leadershipTrait: 'proactive',
+        platformHighlights: [
+          'Survey students about campus services',
+          'Review SSC officers through surveys',
+          'Reform the constitution and committees',
+        ],
         projects: [
           {
             name: 'Carolinian Consensus',
