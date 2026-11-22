@@ -21,12 +21,14 @@ function setup({
 } = {}) {
   const update = vi.fn(async ({ data }: { data: { resultsReleasedAt: Date } }) => data)
   const auditCreate = vi.fn().mockResolvedValue({ id: 'audit-1' })
+  const notificationCreate = vi.fn().mockResolvedValue({ id: 'notification-1' })
   const ballotCount = vi.fn().mockResolvedValue(heldPending)
   const queryRaw = vi.fn().mockResolvedValue([{ electionStatus, resultsReleasedAt }])
   const tx = {
     electionState: { createMany: vi.fn().mockResolvedValue({ count: 0 }), update },
     ballot: { count: ballotCount },
     auditLog: { create: auditCreate },
+    notification: { create: notificationCreate },
     $queryRaw: queryRaw,
   }
   const db = {
@@ -34,7 +36,7 @@ function setup({
       work(tx as unknown as Prisma.TransactionClient),
     ),
   } as unknown as Db
-  return { db, update, auditCreate, ballotCount, queryRaw }
+  return { db, update, auditCreate, notificationCreate, ballotCount, queryRaw }
 }
 
 describe('releaseResults', () => {
@@ -51,6 +53,10 @@ describe('releaseResults', () => {
     expect(s.update).toHaveBeenCalledOnce()
     expect(s.auditCreate).toHaveBeenCalledExactlyOnceWith({
       data: { adminEmail, action: 'RELEASE_RESULTS', target: 'main', detail: undefined },
+    })
+    expect(s.notificationCreate).toHaveBeenCalledExactlyOnceWith({
+      data: { personId: null, type: 'RESULTS_RELEASED', data: undefined },
+      select: { id: true },
     })
   })
 

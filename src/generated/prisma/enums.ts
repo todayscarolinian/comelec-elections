@@ -33,3 +33,17 @@ export const OcrStatus = {
 } as const
 
 export type OcrStatus = (typeof OcrStatus)[keyof typeof OcrStatus]
+
+
+export const NotificationType = {
+  REGISTRATION_APPROVED: 'REGISTRATION_APPROVED',
+  REGISTRATION_REJECTED: 'REGISTRATION_REJECTED',
+  BALLOT_RECORDED: 'BALLOT_RECORDED',
+  REGISTRATION_OPENED: 'REGISTRATION_OPENED',
+  REGISTRATION_CLOSED: 'REGISTRATION_CLOSED',
+  VOTING_OPENED: 'VOTING_OPENED',
+  VOTING_CLOSED: 'VOTING_CLOSED',
+  RESULTS_RELEASED: 'RESULTS_RELEASED'
+} as const
+
+export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]

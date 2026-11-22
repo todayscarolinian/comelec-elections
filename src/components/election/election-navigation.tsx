@@ -1,4 +1,4 @@
-import { Bell, LogIn } from 'lucide-react'
+import { LogIn } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Suspense, type ComponentPropsWithoutRef } from 'react'
@@ -6,6 +6,7 @@ import { BallotEntryTrigger, BallotSignInTrigger } from '@/components/ballot/bal
 import prisma from '@/lib/prisma'
 import { auth } from '@/server/auth'
 import { ElectionAccountMenu, type ElectionAccount } from './election-account-menu'
+import { NotificationBell } from './notification-bell'
 
 const sections = [
   { section: 'home', label: 'Home' },
@@ -14,7 +15,7 @@ const sections = [
   { section: 'turnout', label: 'Results' },
 ] as const
 
-type Section = (typeof sections)[number]['section'] | 'calendar'
+type Section = (typeof sections)[number]['section']
 type ElectionLinkProps = Omit<ComponentPropsWithoutRef<'a'>, 'href'> & {
   isLanding: boolean
   section: Section
@@ -101,14 +102,7 @@ function NavigationBar({
           <div className="flex min-w-0 items-center gap-1 justify-self-end max-[38rem]:col-start-2 max-[38rem]:row-start-1">
             {account ? (
               <>
-                <ElectionLink
-                  isLanding={isLanding}
-                  section="calendar"
-                  className="min-w-11 shrink-0 justify-center"
-                  aria-label="Election calendar"
-                >
-                  <Bell aria-hidden="true" size={20} />
-                </ElectionLink>
+                <NotificationBell />
                 <ElectionAccountMenu account={account} />
               </>
             ) : account === null && !hideSignIn ? (
