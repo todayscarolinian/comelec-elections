@@ -19,8 +19,8 @@ const election: ElectionDef = {
       title: 'President',
       selectionLimit: 1,
       candidates: [
-        { id: 'a', name: 'Ana', photo: '', bio: '' },
-        { id: 'b', name: 'Ben', photo: '', bio: '' },
+        { id: 'a', name: 'Ana' },
+        { id: 'b', name: 'Ben' },
       ],
     },
   ],
