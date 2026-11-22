@@ -9,7 +9,7 @@
 
 ## 1. Summary
 
-A web app for running one Election for members of the `example.com` organization, replacing Google Forms. Before election day, people register by uploading a screenshot of their Student Profile and declaring their Year Level, and an Admin approves or rejects each Registration. On election day, each person signs in with their organization Google account and casts one Ballot. People who missed the Registration Period, or whose Registration isn't approved yet, can register or fix their Registration and vote on the day; their Held Ballot counts once an Admin approves the Registration. Anyone can follow the public Turnout count. Admins can audit every Ballot with the Voter's name and release the Results in the app.
+A web app for running one Election for members of the `usc.edu.ph` university domain, replacing Google Forms. Before election day, people register by uploading a screenshot of their Student Profile and declaring their Year Level, and an Admin approves or rejects each Registration. On election day, each person signs in with their university Google account and casts one Ballot. People who missed the Registration Period, or whose Registration isn't approved yet, can register or fix their Registration and vote on the day; their Held Ballot counts once an Admin approves the Registration. Anyone can follow the public Turnout count. Admins can audit every Ballot with the Voter's name and release the Results in the app.
 
 ## 2. Problem and goals
 
@@ -66,10 +66,10 @@ The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 
 ### 5.1 Signing in
 
-- **US-1**: As a member of the organization, I sign in with my `@example.com` Google account.
+- **US-1**: As a member of the university, I sign in with my `@usc.edu.ph` Google account.
   - FR-1.1: Sign-in uses Google only. There are no passwords and no other providers.
-  - FR-1.2: Only verified Google Workspace accounts on the `example.com` domain are accepted. Personal Google accounts that happen to use an `@example.com` address are rejected.
-  - FR-1.3: Rejected sign-ins see a clear message: "Only @example.com organization accounts can sign in."
+  - FR-1.2: Only verified Google Workspace accounts on the `usc.edu.ph` domain are accepted. Personal Google accounts that happen to use an `@usc.edu.ph` address are rejected.
+  - FR-1.3: Rejected sign-ins see a clear message: "Only @usc.edu.ph university accounts can sign in."
   - FR-1.4: The system stores the person's email and name from their Google account, so Admins can identify Registrations and Ballots.
 
 ### 5.2 Registering
@@ -222,7 +222,7 @@ People whose Registration isn't approved yet also see (FR-5.10):
 - When does the Registration Period close? Admins need time to review before Nov 20.
 - The list of Year Levels (1st–4th only, or also 5th year or others). Information only; there are no batch rep Questions.
 - Final list of Questions, Selection Limits and Candidate profiles (name, photo, bio, Party). Candidate profiles are due from the client.
-- The organization's Google Workspace domain, to replace `example.com`.
+- The university's Google Workspace domain, to replace `example.com`.
 - Who will be the first Admin.
 - Approval of the disclosure wording in §7, including the Held Ballot acknowledgement.
 - Agreement to Held Ballots for late Registrations (ADR 0008), and whether public Turnout should show held and counted Ballots separately.

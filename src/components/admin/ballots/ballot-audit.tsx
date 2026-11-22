@@ -105,7 +105,7 @@ export function BallotAudit() {
           Search voters
           <input
             type="search"
-            placeholder="Name or organizational email"
+            placeholder="Name or USC email (@usc.edu.ph)"
             value={draft.search}
             onChange={(event) => setDraft({ ...draft, search: event.target.value })}
           />

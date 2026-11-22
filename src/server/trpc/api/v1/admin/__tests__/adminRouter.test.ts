@@ -160,7 +160,7 @@ describe('admin router', () => {
       })
     })
 
-    it('rejects an email outside the organization domain', async () => {
+    it('rejects an email outside the university domain', async () => {
       const caller = callerFor(ADMIN_A, new Set([ADMIN_A]))
 
       await expect(caller.revokeAdmin({ email: 'someone@other.org' })).rejects.toMatchObject({

@@ -5,7 +5,7 @@ amends: ADR-0002
 
 # People who aren't approved yet can vote on election day, but their Ballot is held until their Registration is approved
 
-ADR 0002 moved eligibility checks before the Election, so only approved Voters could vote. That shuts out anyone who missed the short Registration Period (Nov 15–18), or whose Registration was still pending or rejected on Nov 20. Instead, while the Election is open, anyone signed in with an organization account can submit a Registration, or fix a rejected one, and cast a Ballot straight away. A Ballot whose Registration isn't approved is a **Held Ballot**: it is recorded but left out of the Results. It counts as soon as an Admin approves the Registration, even after the Election has closed. Registrations can't be submitted or resubmitted once the Election is closed, so a Registration that is rejected at close stays rejected, and its Ballot never counts.
+ADR 0002 moved eligibility checks before the Election, so only approved Voters could vote. That shuts out anyone who missed the short Registration Period (Nov 15–18), or whose Registration was still pending or rejected on Nov 20. Instead, while the Election is open, anyone signed in with a university account can submit a Registration, or fix a rejected one, and cast a Ballot straight away. A Ballot whose Registration isn't approved is a **Held Ballot**: it is recorded but left out of the Results. It counts as soon as an Admin approves the Registration, even after the Election has closed. Registrations can't be submitted or resubmitted once the Election is closed, so a Registration that is rejected at close stays rejected, and its Ballot never counts.
 
 ## Considered Options
 
