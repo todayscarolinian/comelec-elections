@@ -66,7 +66,7 @@ In the [Google Cloud console](https://console.cloud.google.com/apis/credentials)
 
 Google's `hd` authorization parameter only filters the account picker. The actual
 server-side `signIn` callback requires an exact matching `profile.hd`, literal
-`profile.email_verified === true`, and a nonempty email. An organization-looking
+`profile.email_verified === true`, and a nonempty email. A valid university-looking
 email address alone is insufficient. OAuth tokens are never added to JWT/session
 data; no Google API offline access or refresh-token storage is requested.
 
@@ -75,7 +75,7 @@ data; no Google API offline access or refresh-token storage is requested.
 - Open `/api/auth/signin` and choose Google.
 - A verified account in the configured Workspace should sign in.
 - Personal Google accounts and accounts from another Workspace must be rejected.
-- `/auth/error?error=AccessDenied` displays the configured organization-only message;
+- `/auth/error?error=AccessDenied` displays the configured university-only message;
   other OAuth/configuration failures get a separate safe message.
 - Inspect `/api/auth/session`: S1-02 exposes only `expires` and `user.email`, with
   the email trimmed and lowercased. It must not expose Google tokens, name, or photo.

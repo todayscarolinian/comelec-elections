@@ -117,7 +117,7 @@ enum WindowStatus {
   CLOSED
 }
 
-/// Anyone who has signed in with a verified organization account.
+/// Anyone who has signed in with a verified university account.
 model Person {
   id           String        @id @default(uuid())
   email        String        @unique // lowercased and trimmed
@@ -220,10 +220,10 @@ model AuditLog {
 
 Google's `hd` *authorization parameter* only pre-filters the account picker and can be bypassed by anyone. The enforced check is in the Auth.js `signIn` callback, against the verified Google profile claims:
 
-- `hd === ALLOWED_HOSTED_DOMAIN` (present only on Google Workspace accounts, so this rejects consumer accounts registered with an organization address)
+- `hd === ALLOWED_HOSTED_DOMAIN` (present only on Google Workspace accounts, so this rejects consumer accounts registered with an university address)
 - `email_verified === true`
 
-If either fails, `signIn` returns `false` and the user sees the "organization accounts only" message.
+If either fails, `signIn` returns `false` and the user sees the "university accounts only" message.
 
 ### 4.2 Auth.js configuration
 
@@ -421,7 +421,7 @@ No per-Candidate data, ever. `ballotsCast` includes Held Ballots. Caching keeps 
 
 ### 8.2 Admin management
 
-- `grantAdmin(email)`: `adminProcedure`, validate and normalise the email (organization domain, lowercased, trimmed), upsert `Admin`. Works before the person has signed in.
+- `grantAdmin(email)`: `adminProcedure`, validate and normalise the email (university domain, lowercased, trimmed), upsert `Admin`. Works before the person has signed in.
 - `revokeAdmin(email)`: `adminProcedure`; in one transaction, reject if this is the last Admin, otherwise remove the row. Takes effect on that person's next action.
 - Both write `AuditLog`. The Admin panel lists Admins by email.
 
@@ -464,7 +464,7 @@ It upserts the `Admin` row with `grantedBy = "seed"`, and with `--dry-run` print
 | `AUTH_SECRET` | Auth.js cookie encryption |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | Google OAuth client |
 | `AUTH_URL` | Public base URL (optional on Vercel) |
-| `ALLOWED_HOSTED_DOMAIN` | The organization's Google Workspace domain (pending from the client) |
+| `ALLOWED_HOSTED_DOMAIN` | The university's Google Workspace domain (pending from the client) |
 
 ## 11. Project structure (proposed)
 

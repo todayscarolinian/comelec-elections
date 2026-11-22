@@ -45,7 +45,7 @@ export function AdminManagement() {
     } catch (grantError) {
       setError(
         errorCode(grantError) === 'BAD_REQUEST'
-          ? 'Enter an organizational email address.'
+          ? 'Enter a valid USC email address.'
           : adminErrorMessage(grantError, 'Unable to grant admin access. Please try again.'),
       )
     }
@@ -83,7 +83,7 @@ export function AdminManagement() {
           <input
             type="email"
             required
-            placeholder="Organizational email"
+            placeholder="School email (@usc.edu.ph)"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
