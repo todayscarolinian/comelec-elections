@@ -126,7 +126,14 @@ describe('RegisterPage', () => {
       within(screen.getByLabelText('Year Level'))
         .getAllByRole('option')
         .map((option) => option.textContent),
-    ).toEqual(['Choose your Year Level', '1st Year', '2nd Year', '3rd Year', '4th Year'])
+    ).toEqual([
+      'Choose your Year Level',
+      '1st Year',
+      '2nd Year',
+      '3rd Year',
+      '4th Year',
+      '5th Year',
+    ])
     expect(
       within(screen.getByLabelText('School'))
         .getAllByRole('option')

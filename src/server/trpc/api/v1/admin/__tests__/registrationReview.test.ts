@@ -447,7 +447,7 @@ describe('registration decisions', () => {
   it('rejects invalid year and ID', async () => {
     const { caller, db } = setup()
     // @ts-expect-error exercises runtime enum validation
-    const invalidYear = caller.approveRegistration({ ...reviewInput, yearLevel: '5' })
+    const invalidYear = caller.approveRegistration({ ...reviewInput, yearLevel: '6' })
     await expect(invalidYear).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
