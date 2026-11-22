@@ -35,7 +35,10 @@ function subscribe(listener: () => void): () => void {
   }
 }
 
-/** The visitor's stored choice; null when they haven't chosen yet, and always null on the server. */
-export function useAnalyticsConsent(): AnalyticsConsent | null {
-  return useSyncExternalStore(subscribe, getConsent, () => null)
+/**
+ * The visitor's stored choice: null when they haven't chosen yet, and undefined while it can't be
+ * read (on the server and during hydration).
+ */
+export function useAnalyticsConsent(): AnalyticsConsent | null | undefined {
+  return useSyncExternalStore(subscribe, getConsent, () => undefined)
 }

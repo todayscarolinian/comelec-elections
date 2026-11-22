@@ -2,7 +2,8 @@
 
 import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { trackEvent } from '@/lib/analytics/client'
 import { useTRPC } from '@/lib/trpc/client'
 import {
   SCHOOLS,
@@ -42,13 +43,17 @@ export function RegistrationForm({
   const [studentProfilePath, setStudentProfilePath] = useState('')
   const submit = useMutation({
     ...trpc.registration.submit.mutationOptions(),
-    onSuccess: (_data, input) => onSubmitted(input.yearLevel, input.school),
+    onSuccess: (_data, input) => {
+      trackEvent('registration_submitted')
+      onSubmitted(input.yearLevel, input.school)
+    },
     onError: (error) => {
       if (error.data?.code === 'UNAUTHORIZED') onSessionExpired()
       if (error.data?.code === 'FORBIDDEN' || error.data?.code === 'CONFLICT') onRefresh()
       if (error.data?.code === 'BAD_REQUEST') setStudentProfilePath('')
     },
   })
+  useEffect(() => trackEvent('registration_started'), [])
   const selectedYear = YEAR_LEVELS.find((level) => level === yearLevel)
   const canSubmit = !!selectedYear && isSchool(school) && !!studentProfilePath && !submit.isPending
   const errorMessage =
