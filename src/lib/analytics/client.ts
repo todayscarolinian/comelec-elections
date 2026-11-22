@@ -48,9 +48,18 @@ export function loadAnalytics(): boolean {
   return true
 }
 
+function setCollection(enabled: boolean): void {
+  if (loadedId) (window as unknown as Record<string, unknown>)[`ga-disable-${loadedId}`] = !enabled
+}
+
 export function trackPageView(pathname: string): void {
   const path = trackablePath(pathname)
-  if (!path || !loadAnalytics()) return
+  if (!path) {
+    setCollection(false)
+    return
+  }
+  if (!loadAnalytics()) return
+  setCollection(true)
   const origin = window.location.origin
   const location = `${origin}${path}`
   if (location === lastLocation) return

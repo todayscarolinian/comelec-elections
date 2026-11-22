@@ -28,7 +28,12 @@ afterEach(() => {
   for (const script of gtagScripts()) script.remove()
   delete window.dataLayer
   delete window.gtag
+  delete (window as unknown as Record<string, unknown>)[`ga-disable-${ID}`]
 })
+
+function collectionDisabled() {
+  return (window as unknown as Record<string, unknown>)[`ga-disable-${ID}`]
+}
 
 describe('loadAnalytics', () => {
   it('does nothing without consent', async () => {
@@ -114,6 +119,23 @@ describe('trackPageView', () => {
 
     expect(gtagScripts()).toHaveLength(0)
     expect(window.dataLayer).toBeUndefined()
+    expect(collectionDisabled()).toBeUndefined()
+  })
+
+  it('pauses collection in the admin area and resumes on public pages', async () => {
+    const { setConsent, trackPageView } = await loadClient()
+    setConsent('granted')
+
+    trackPageView('/candidates')
+    expect(collectionDisabled()).toBe(false)
+
+    trackPageView('/admin/ballots')
+    expect(collectionDisabled()).toBe(true)
+    expect(commands().filter(([, name]) => name === 'page_view')).toHaveLength(1)
+
+    trackPageView('/register')
+    expect(collectionDisabled()).toBe(false)
+    expect(commands().filter(([, name]) => name === 'page_view')).toHaveLength(2)
   })
 })
 
