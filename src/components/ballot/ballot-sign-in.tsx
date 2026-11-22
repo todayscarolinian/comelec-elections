@@ -42,13 +42,18 @@ export function BallotSignInTrigger({
   )
 }
 
-export function BallotEntryTrigger({ isCurrent = false }: { isCurrent?: boolean }) {
+export function BallotEntryTrigger({
+  isCurrent = false,
+  className = 'inline-flex min-h-11 cursor-pointer items-center font-medium underline-offset-4 hover:underline aria-[current=page]:underline',
+  children = 'Ballot',
+}: {
+  isCurrent?: boolean
+  className?: string
+  children?: ReactNode
+}) {
   return (
-    <BallotSignInTrigger
-      isCurrent={isCurrent}
-      className="inline-flex min-h-11 cursor-pointer items-center font-medium underline-offset-4 hover:underline aria-[current=page]:underline"
-    >
-      Ballot
+    <BallotSignInTrigger isCurrent={isCurrent} className={className}>
+      {children}
     </BallotSignInTrigger>
   )
 }
