@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { SCHOOLS } from './core/school'
 
 export const YEAR_LEVELS = ['1', '2', '3', '4'] as const
 
@@ -18,6 +19,7 @@ export const createStudentProfileUploadOutputSchema = z.object({
 
 export const submitRegistrationInputSchema = z.object({
   yearLevel: z.enum(YEAR_LEVELS),
+  school: z.enum(SCHOOLS),
   studentProfilePath: z.string().min(1),
 })
 
@@ -47,6 +49,7 @@ export const ownRegistrationOutputSchema = z.object({
     .object({
       status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
       yearLevel: z.string(),
+      school: z.string(),
       rejectionReason: z.string().nullable(),
     })
     .nullable(),

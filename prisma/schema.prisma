@@ -40,8 +40,10 @@ model Person {
   name      String
   createdAt DateTime @default(now())
 
-  registration Registration?
-  ballot       Ballot?
+  registration      Registration?
+  ballot            Ballot?
+  notifications     Notification[]
+  notificationReads NotificationRead[]
 }
 
 model Registration {
@@ -49,6 +51,7 @@ model Registration {
   personId           String             @unique
   person             Person             @relation(fields: [personId], references: [id])
   yearLevel          String // one of YEAR_LEVELS; may be corrected by an Admin on approval
+  school             String // one of SCHOOLS; may be corrected by an Admin on approval
   studentProfilePath String // object path in the student-profiles bucket
   status             RegistrationStatus @default(PENDING)
   rejectionReason    String?
@@ -56,21 +59,22 @@ model Registration {
   reviewedAt         DateTime?
   submittedAt        DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  ocrStatus OcrStatus @default(PENDING)
-  ocrResult Json?
+  ocrStatus          OcrStatus          @default(PENDING)
+  ocrResult          Json?
 
   @@index([status, yearLevel])
 }
 
 /// A cast Ballot, linked to its Voter.
 model Ballot {
-  id                   String   @id @default(uuid())
-  personId             String   @unique // one Ballot per Voter
-  person               Person   @relation(fields: [personId], references: [id])
+  id                   String    @id @default(uuid())
+  personId             String    @unique // one Ballot per Voter
+  person               Person    @relation(fields: [personId], references: [id])
   yearLevel            String // snapshot of the approved Year Level at casting
+  school               String // snapshot of the Registration's School at casting
   disclosureAcceptedAt DateTime
   heldAcknowledgedAt   DateTime?
-  castAt               DateTime @default(now())
+  castAt               DateTime  @default(now())
 
   answers BallotAnswer[]
 }
@@ -108,4 +112,42 @@ enum OcrStatus {
   PENDING
   DONE
   FAILED
+}
+
+enum NotificationType {
+  REGISTRATION_APPROVED
+  REGISTRATION_REJECTED
+  BALLOT_RECORDED
+  REGISTRATION_OPENED
+  REGISTRATION_CLOSED
+  VOTING_OPENED
+  VOTING_CLOSED
+  RESULTS_RELEASED
+}
+
+/// An in-app notice. personId null = broadcast to every signed-in Person.
+/// data holds display parameters only (e.g. rejectionReason, held), never Ballot choices.
+model Notification {
+  id        String             @id @default(uuid())
+  personId  String?
+  // Cascade, never SetNull: a nulled personId would turn a private notice into a broadcast.
+  person    Person?            @relation(fields: [personId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  data      Json?
+  createdAt DateTime           @default(now())
+  reads     NotificationRead[]
+
+  @@index([personId, createdAt])
+}
+
+/// Per-Person read receipt, so broadcasts keep separate read state for each Person.
+model NotificationRead {
+  notificationId String
+  personId       String
+  readAt         DateTime     @default(now())
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  person         Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, personId])
+  @@index([personId])
 }

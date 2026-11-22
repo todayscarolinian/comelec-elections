@@ -72,8 +72,12 @@ export function ElectionAccountMenu({ account }: { account: ElectionAccount }) {
         >
           {initials}
         </span>
-        <span className="max-w-24 truncate sm:max-w-36">{name}</span>
-        <ChevronDown aria-hidden="true" size={16} className="shrink-0 group-open:rotate-180" />
+        <span className="max-w-24 truncate max-[38rem]:hidden sm:max-w-36">{name}</span>
+        <ChevronDown
+          aria-hidden="true"
+          size={16}
+          className="shrink-0 group-open:rotate-180 max-[38rem]:hidden"
+        />
       </summary>
       <div className="absolute end-0 top-full z-30 mt-2 w-[min(17.75rem,calc(100vw-2rem))] rounded-[10px] border border-comelec-sage bg-comelec-cream p-2 text-comelec-forest shadow-[0_12px_32px_rgba(10,20,5,0.2)]">
         <div className="mx-2 border-b border-comelec-sage px-0 pb-3 pt-2">

@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import { BallotEntry } from '@/components/ballot/ballot-entry'
 import { ElectionNavigation } from './election-navigation'
 import { legalLinks } from './footer-links'
+import { footerGutters } from './election-styles'
 
 const inter = Inter({ subsets: ['latin'], variable: '--registration-body' })
 const display = localFont({
@@ -53,7 +54,7 @@ export function ElectionPageShell({
         <ElectionNavigation hideSignIn={hideSignIn} />
         {children}
       </div>
-      <footer className={contentGutters}>
+      <footer className={footerGutters}>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#b6c89f] py-5">
           <Link href="/" className="flex items-center gap-3" aria-label="SSC COMELEC home">
             <Image src="/landing/mark.webp" alt="" width={56} height={56} />
@@ -61,7 +62,9 @@ export function ElectionPageShell({
               <span className="block text-[clamp(1.5rem,2.5vw,2.25rem)] leading-tight [font-family:var(--registration-text),Georgia,serif]">
                 SSC COMELEC
               </span>
-              <span className="block text-sm text-[#56654a]">Student council elections · 2026</span>
+              <span className="block text-sm text-[#56654a]">
+                Supreme Student Council Elections · 2026
+              </span>
             </span>
           </Link>
           <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-6 text-sm">

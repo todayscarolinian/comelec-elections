@@ -52,3 +52,14 @@ export type Admin = Prisma.AdminModel
  * Append-only record of every Admin action, including views of Ballots.
  */
 export type AuditLog = Prisma.AuditLogModel
+/**
+ * Model Notification
+ * An in-app notice. personId null = broadcast to every signed-in Person.
+ * data holds display parameters only (e.g. rejectionReason, held), never Ballot choices.
+ */
+export type Notification = Prisma.NotificationModel
+/**
+ * Model NotificationRead
+ * Per-Person read receipt, so broadcasts keep separate read state for each Person.
+ */
+export type NotificationRead = Prisma.NotificationReadModel

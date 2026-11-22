@@ -35,9 +35,10 @@ export function setup({
   currentSession = session as Session,
   personExists = true,
   electionStatus = 'OPEN' as 'OPEN' | 'CLOSED' | null,
-  registration = { status: 'APPROVED', yearLevel: '2' } as {
+  registration = { status: 'APPROVED', yearLevel: '2', school: 'SAFAD' } as {
     status: 'APPROVED' | 'PENDING' | 'REJECTED'
     yearLevel: string
+    school?: string
   } | null,
 } = {}) {
   const events: string[] = []
@@ -60,6 +61,12 @@ export function setup({
       createMany: vi.fn(async (_args: unknown) => {
         events.push('answers')
         return { count: 3 }
+      }),
+    },
+    notification: {
+      create: vi.fn(async (_args: unknown) => {
+        events.push('notification')
+        return { id: 'notification-1' }
       }),
     },
   }

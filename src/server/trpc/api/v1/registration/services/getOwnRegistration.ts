@@ -5,7 +5,7 @@ export async function getOwnRegistration(db: Db, personId: string) {
   const [registration, canSubmit] = await Promise.all([
     db.registration.findUnique({
       where: { personId },
-      select: { status: true, yearLevel: true, rejectionReason: true },
+      select: { status: true, yearLevel: true, school: true, rejectionReason: true },
     }),
     isRegistrationOpen(db),
   ])

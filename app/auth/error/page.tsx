@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { AuthErrorMessage } from '@/components/auth/auth-error-message'
 import { RegistrationShell } from '@/components/registration/registration-shell'
-import { registrationPanel } from '@/components/registration/registration-styles'
+import { SignInPanelSkeleton } from '@/components/registration/registration-skeletons'
 import { allowedHostedDomain } from '@/server/auth'
 
 export const metadata: Metadata = {
@@ -28,7 +28,7 @@ async function ErrorContent({ searchParams }: ErrorPageProps) {
 export default function AuthErrorPage({ searchParams }: ErrorPageProps) {
   return (
     <RegistrationShell signInPage>
-      <Suspense fallback={<output className={registrationPanel}>Loading sign-in details…</output>}>
+      <Suspense fallback={<SignInPanelSkeleton label="Loading sign-in details…" />}>
         <ErrorContent searchParams={searchParams} />
       </Suspense>
     </RegistrationShell>

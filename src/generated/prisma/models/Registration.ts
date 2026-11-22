@@ -28,6 +28,7 @@ export type RegistrationMinAggregateOutputType = {
   id: string | null
   personId: string | null
   yearLevel: string | null
+  school: string | null
   studentProfilePath: string | null
   status: $Enums.RegistrationStatus | null
   rejectionReason: string | null
@@ -42,6 +43,7 @@ export type RegistrationMaxAggregateOutputType = {
   id: string | null
   personId: string | null
   yearLevel: string | null
+  school: string | null
   studentProfilePath: string | null
   status: $Enums.RegistrationStatus | null
   rejectionReason: string | null
@@ -56,6 +58,7 @@ export type RegistrationCountAggregateOutputType = {
   id: number
   personId: number
   yearLevel: number
+  school: number
   studentProfilePath: number
   status: number
   rejectionReason: number
@@ -73,6 +76,7 @@ export type RegistrationMinAggregateInputType = {
   id?: true
   personId?: true
   yearLevel?: true
+  school?: true
   studentProfilePath?: true
   status?: true
   rejectionReason?: true
@@ -87,6 +91,7 @@ export type RegistrationMaxAggregateInputType = {
   id?: true
   personId?: true
   yearLevel?: true
+  school?: true
   studentProfilePath?: true
   status?: true
   rejectionReason?: true
@@ -101,6 +106,7 @@ export type RegistrationCountAggregateInputType = {
   id?: true
   personId?: true
   yearLevel?: true
+  school?: true
   studentProfilePath?: true
   status?: true
   rejectionReason?: true
@@ -189,6 +195,7 @@ export type RegistrationGroupByOutputType = {
   id: string
   personId: string
   yearLevel: string
+  school: string
   studentProfilePath: string
   status: $Enums.RegistrationStatus
   rejectionReason: string | null
@@ -225,6 +232,7 @@ export type RegistrationWhereInput = {
   id?: Prisma.StringFilter<"Registration"> | string
   personId?: Prisma.StringFilter<"Registration"> | string
   yearLevel?: Prisma.StringFilter<"Registration"> | string
+  school?: Prisma.StringFilter<"Registration"> | string
   studentProfilePath?: Prisma.StringFilter<"Registration"> | string
   status?: Prisma.EnumRegistrationStatusFilter<"Registration"> | $Enums.RegistrationStatus
   rejectionReason?: Prisma.StringNullableFilter<"Registration"> | string | null
@@ -241,6 +249,7 @@ export type RegistrationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   personId?: Prisma.SortOrder
   yearLevel?: Prisma.SortOrder
+  school?: Prisma.SortOrder
   studentProfilePath?: Prisma.SortOrder
   status?: Prisma.SortOrder
   rejectionReason?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -260,6 +269,7 @@ export type RegistrationWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.RegistrationWhereInput[]
   NOT?: Prisma.RegistrationWhereInput | Prisma.RegistrationWhereInput[]
   yearLevel?: Prisma.StringFilter<"Registration"> | string
+  school?: Prisma.StringFilter<"Registration"> | string
   studentProfilePath?: Prisma.StringFilter<"Registration"> | string
   status?: Prisma.EnumRegistrationStatusFilter<"Registration"> | $Enums.RegistrationStatus
   rejectionReason?: Prisma.StringNullableFilter<"Registration"> | string | null
@@ -276,6 +286,7 @@ export type RegistrationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   personId?: Prisma.SortOrder
   yearLevel?: Prisma.SortOrder
+  school?: Prisma.SortOrder
   studentProfilePath?: Prisma.SortOrder
   status?: Prisma.SortOrder
   rejectionReason?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -297,6 +308,7 @@ export type RegistrationScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Registration"> | string
   personId?: Prisma.StringWithAggregatesFilter<"Registration"> | string
   yearLevel?: Prisma.StringWithAggregatesFilter<"Registration"> | string
+  school?: Prisma.StringWithAggregatesFilter<"Registration"> | string
   studentProfilePath?: Prisma.StringWithAggregatesFilter<"Registration"> | string
   status?: Prisma.EnumRegistrationStatusWithAggregatesFilter<"Registration"> | $Enums.RegistrationStatus
   rejectionReason?: Prisma.StringNullableWithAggregatesFilter<"Registration"> | string | null
@@ -311,6 +323,7 @@ export type RegistrationScalarWhereWithAggregatesInput = {
 export type RegistrationCreateInput = {
   id?: string
   yearLevel: string
+  school: string
   studentProfilePath: string
   status?: $Enums.RegistrationStatus
   rejectionReason?: string | null
@@ -327,6 +340,7 @@ export type RegistrationUncheckedCreateInput = {
   id?: string
   personId: string
   yearLevel: string
+  school: string
   studentProfilePath: string
   status?: $Enums.RegistrationStatus
   rejectionReason?: string | null
@@ -341,6 +355,7 @@ export type RegistrationUncheckedCreateInput = {
 export type RegistrationUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   studentProfilePath?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRegistrationStatusFieldUpdateOperationsInput | $Enums.RegistrationStatus
   rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -357,6 +372,7 @@ export type RegistrationUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personId?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   studentProfilePath?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRegistrationStatusFieldUpdateOperationsInput | $Enums.RegistrationStatus
   rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -372,6 +388,7 @@ export type RegistrationCreateManyInput = {
   id?: string
   personId: string
   yearLevel: string
+  school: string
   studentProfilePath: string
   status?: $Enums.RegistrationStatus
   rejectionReason?: string | null
@@ -386,6 +403,7 @@ export type RegistrationCreateManyInput = {
 export type RegistrationUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   studentProfilePath?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRegistrationStatusFieldUpdateOperationsInput | $Enums.RegistrationStatus
   rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -401,6 +419,7 @@ export type RegistrationUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   personId?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   studentProfilePath?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRegistrationStatusFieldUpdateOperationsInput | $Enums.RegistrationStatus
   rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -421,6 +440,7 @@ export type RegistrationCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   personId?: Prisma.SortOrder
   yearLevel?: Prisma.SortOrder
+  school?: Prisma.SortOrder
   studentProfilePath?: Prisma.SortOrder
   status?: Prisma.SortOrder
   rejectionReason?: Prisma.SortOrder
@@ -436,6 +456,7 @@ export type RegistrationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   personId?: Prisma.SortOrder
   yearLevel?: Prisma.SortOrder
+  school?: Prisma.SortOrder
   studentProfilePath?: Prisma.SortOrder
   status?: Prisma.SortOrder
   rejectionReason?: Prisma.SortOrder
@@ -450,6 +471,7 @@ export type RegistrationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   personId?: Prisma.SortOrder
   yearLevel?: Prisma.SortOrder
+  school?: Prisma.SortOrder
   studentProfilePath?: Prisma.SortOrder
   status?: Prisma.SortOrder
   rejectionReason?: Prisma.SortOrder
@@ -507,6 +529,7 @@ export type EnumOcrStatusFieldUpdateOperationsInput = {
 export type RegistrationCreateWithoutPersonInput = {
   id?: string
   yearLevel: string
+  school: string
   studentProfilePath: string
   status?: $Enums.RegistrationStatus
   rejectionReason?: string | null
@@ -521,6 +544,7 @@ export type RegistrationCreateWithoutPersonInput = {
 export type RegistrationUncheckedCreateWithoutPersonInput = {
   id?: string
   yearLevel: string
+  school: string
   studentProfilePath: string
   status?: $Enums.RegistrationStatus
   rejectionReason?: string | null
@@ -551,6 +575,7 @@ export type RegistrationUpdateToOneWithWhereWithoutPersonInput = {
 export type RegistrationUpdateWithoutPersonInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   studentProfilePath?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRegistrationStatusFieldUpdateOperationsInput | $Enums.RegistrationStatus
   rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -565,6 +590,7 @@ export type RegistrationUpdateWithoutPersonInput = {
 export type RegistrationUncheckedUpdateWithoutPersonInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   yearLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  school?: Prisma.StringFieldUpdateOperationsInput | string
   studentProfilePath?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRegistrationStatusFieldUpdateOperationsInput | $Enums.RegistrationStatus
   rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -582,6 +608,7 @@ export type RegistrationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   id?: boolean
   personId?: boolean
   yearLevel?: boolean
+  school?: boolean
   studentProfilePath?: boolean
   status?: boolean
   rejectionReason?: boolean
@@ -598,6 +625,7 @@ export type RegistrationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   id?: boolean
   personId?: boolean
   yearLevel?: boolean
+  school?: boolean
   studentProfilePath?: boolean
   status?: boolean
   rejectionReason?: boolean
@@ -614,6 +642,7 @@ export type RegistrationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   id?: boolean
   personId?: boolean
   yearLevel?: boolean
+  school?: boolean
   studentProfilePath?: boolean
   status?: boolean
   rejectionReason?: boolean
@@ -630,6 +659,7 @@ export type RegistrationSelectScalar = {
   id?: boolean
   personId?: boolean
   yearLevel?: boolean
+  school?: boolean
   studentProfilePath?: boolean
   status?: boolean
   rejectionReason?: boolean
@@ -641,7 +671,7 @@ export type RegistrationSelectScalar = {
   ocrResult?: boolean
 }
 
-export type RegistrationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "personId" | "yearLevel" | "studentProfilePath" | "status" | "rejectionReason" | "reviewedBy" | "reviewedAt" | "submittedAt" | "updatedAt" | "ocrStatus" | "ocrResult", ExtArgs["result"]["registration"]>
+export type RegistrationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "personId" | "yearLevel" | "school" | "studentProfilePath" | "status" | "rejectionReason" | "reviewedBy" | "reviewedAt" | "submittedAt" | "updatedAt" | "ocrStatus" | "ocrResult", ExtArgs["result"]["registration"]>
 export type RegistrationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   person?: boolean | Prisma.PersonDefaultArgs<ExtArgs>
 }
@@ -661,6 +691,7 @@ export type $RegistrationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     id: string
     personId: string
     yearLevel: string
+    school: string
     studentProfilePath: string
     status: $Enums.RegistrationStatus
     rejectionReason: string | null
@@ -1097,6 +1128,7 @@ export interface RegistrationFieldRefs {
   readonly id: Prisma.FieldRef<"Registration", 'String'>
   readonly personId: Prisma.FieldRef<"Registration", 'String'>
   readonly yearLevel: Prisma.FieldRef<"Registration", 'String'>
+  readonly school: Prisma.FieldRef<"Registration", 'String'>
   readonly studentProfilePath: Prisma.FieldRef<"Registration", 'String'>
   readonly status: Prisma.FieldRef<"Registration", 'RegistrationStatus'>
   readonly rejectionReason: Prisma.FieldRef<"Registration", 'String'>

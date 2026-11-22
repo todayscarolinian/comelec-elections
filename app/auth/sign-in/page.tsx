@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { RegistrationShell } from '@/components/registration/registration-shell'
 import { RegistrationSignIn } from '@/components/registration/registration-sign-in'
-import { registrationPanel } from '@/components/registration/registration-styles'
+import { SignInPanelSkeleton } from '@/components/registration/registration-skeletons'
 import { auth } from '@/server/auth'
 import { getSignInDestination } from '@/server/auth/sign-in-destination'
 
@@ -33,7 +33,7 @@ async function SignInContent({ searchParams }: SignInPageProps) {
 export default function SignInPage(props: SignInPageProps) {
   return (
     <RegistrationShell signInPage>
-      <Suspense fallback={<output className={registrationPanel}>Loading sign-in…</output>}>
+      <Suspense fallback={<SignInPanelSkeleton label="Loading sign-in…" />}>
         <SignInContent {...props} />
       </Suspense>
     </RegistrationShell>

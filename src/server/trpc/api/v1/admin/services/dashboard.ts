@@ -1,5 +1,7 @@
 import type { Db } from '@/server/trpc/init'
 import { dashboardPhase } from '../core/dashboardPhase'
+import { totalsBySchool } from '../core/schoolBreakdown'
+import { countBallotsBySchool } from './schoolBallotCounts'
 
 const electionStatusAudit = (status: 'OPEN' | 'CLOSED') => ({
   action: 'SET_ELECTION_STATUS',
@@ -17,6 +19,7 @@ export async function getDashboard(db: Db) {
     recentActivity,
     firstOpened,
     lastClosed,
+    schoolCounts,
   ] = await db.$transaction([
     db.electionState.findUnique({
       where: { id: 'main' },
@@ -43,6 +46,7 @@ export async function getDashboard(db: Db) {
       orderBy: { at: 'desc' },
       select: { at: true },
     }),
+    countBallotsBySchool(db),
   ])
 
   const electionStatus = state?.electionStatus ?? 'CLOSED'
@@ -63,5 +67,6 @@ export async function getDashboard(db: Db) {
       email: person.email,
     })),
     recentActivity,
+    turnoutBySchool: totalsBySchool(schoolCounts),
   }
 }

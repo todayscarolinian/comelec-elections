@@ -7,6 +7,7 @@
   - [Pull Request (PR) Process](#pull-request-pr-process)
   - [Version Tagging](#version-tagging)
 - [Git Hooks and CI](#git-hooks-and-ci)
+- [PostgreSQL integration tests](#postgresql-integration-tests)
 - [Step-by-Step Instructions for Developers](#step-by-step-instructions-for-developers)
   - [Setting Up Git](#setting-up-git)
   - [Cloning the Repository](#cloning-the-repository)
@@ -189,3 +190,20 @@ git push origin S1-03
   ```bash
   git branch -d S1-03
   ```
+## PostgreSQL integration tests
+
+Run the same server-side voting tests as CI against a disposable local Postgres in Docker (works in PowerShell, Git Bash, macOS and Linux; Docker must be running):
+
+```sh
+npm run test:integration:docker
+```
+
+This recreates the `postgres` container from `docker-compose.test.yml` on `127.0.0.1:55432`, waits for it to be healthy, applies Prisma migrations, and runs the suite. The database lives in tmpfs, so each run starts empty, and fixture tables are cleared between tests. Production `.env` settings are not used.
+
+The container keeps running so you can re-run `npm run test:integration` quickly. Stop it with:
+
+```sh
+npm run db:test:down
+```
+
+To use a different Postgres instance, set `COMELEC_TEST_DB_PORT` to its port; the host, user, password and database are fixed to `127.0.0.1` / `comelec_test`.

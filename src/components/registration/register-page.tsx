@@ -4,9 +4,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useTRPC } from '@/lib/trpc/client'
+import { schoolLabel, type School } from '@/server/trpc/api/v1/registration/core/school'
 import { YEAR_LEVEL_LABELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationForm } from './registration-form'
 import { RegistrationSignIn } from './registration-sign-in'
+import { RegistrationStatusSkeleton } from './registration-skeletons'
 import {
   registrationAction,
   registrationHeading,
@@ -54,17 +56,19 @@ export function RegisterPage() {
   const registration = data?.registration
   const state = registration ? statusCopy[registration.status] : null
   const closed = data?.canSubmit === false
+  const showForm =
+    !!data?.canSubmit && !isError && (!registration || registration.status === 'REJECTED')
 
   function refresh() {
     void query.refetch()
   }
 
-  function submitted(yearLevel: YearLevel) {
+  function submitted(yearLevel: YearLevel, school: School) {
     // Keep the successful submission visible if the following read fails.
     if (data) {
       queryClient.setQueryData(options.queryKey, {
         ...data,
-        registration: { status: 'PENDING' as const, yearLevel, rejectionReason: null },
+        registration: { status: 'PENDING' as const, yearLevel, school, rejectionReason: null },
       })
     }
     void queryClient.invalidateQueries({ queryKey: options.queryKey })
@@ -97,11 +101,7 @@ export function RegisterPage() {
       </header>
 
       {isLoading ? (
-        <div className="space-y-4 border-t border-[#b6c89f] pt-6">
-          <output className="block text-sm text-[#56654a]">Loading registration…</output>
-          <div aria-hidden="true" className="h-12 border border-[#b6c89f] bg-[#f1edd8]" />
-          <div aria-hidden="true" className="h-24 border border-[#b6c89f] bg-[#f1edd8]" />
-        </div>
+        <RegistrationStatusSkeleton />
       ) : (
         <>
           {isError && (
@@ -142,6 +142,8 @@ export function RegisterPage() {
                     {YEAR_LEVEL_LABELS[registration.yearLevel as YearLevel] ??
                       registration.yearLevel}
                   </dd>
+                  <dt className="text-[#56654a]">School</dt>
+                  <dd className="text-end font-medium">{schoolLabel(registration.school)}</dd>
                   <dt className="text-[#56654a]">Student Profile</dt>
                   <dd className="text-end font-medium">Submitted</dd>
                 </dl>
@@ -168,7 +170,7 @@ export function RegisterPage() {
             </section>
           )}
 
-          {data?.canSubmit && !isError && (!registration || registration.status === 'REJECTED') && (
+          {showForm && (
             <RegistrationForm
               key={
                 registration
@@ -176,6 +178,7 @@ export function RegisterPage() {
                   : 'new'
               }
               initialYearLevel={registration?.yearLevel}
+              initialSchool={registration?.school}
               resubmitting={registration?.status === 'REJECTED'}
               onSubmitted={submitted}
               onSessionExpired={() => setSessionExpired(true)}

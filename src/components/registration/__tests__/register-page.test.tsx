@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { RegisterPage } from '../register-page'
 
@@ -48,6 +48,7 @@ function showPage() {
 
 async function fillForm() {
   fireEvent.change(await screen.findByLabelText('Year Level'), { target: { value: '2' } })
+  fireEvent.change(screen.getByLabelText('School'), { target: { value: 'SAFAD' } })
   fireEvent.change(screen.getByLabelText('Student Profile'), {
     target: { files: [new File(['image'], 'profile.png', { type: 'image/png' })] },
   })
@@ -64,6 +65,7 @@ function rejected(canSubmit = true) {
     registration: {
       status: 'REJECTED',
       yearLevel: '3',
+      school: 'SAS',
       rejectionReason: 'Please include the current term.',
     },
   }
@@ -110,7 +112,7 @@ describe('RegisterPage', () => {
     await screen.findByLabelText('Year Level')
   })
 
-  it('requires both Year Level and a completed upload before submitting', async () => {
+  it('requires Year Level, School and a completed upload before submitting', async () => {
     showPage()
     await screen.findByLabelText('Year Level')
     expect(screen.getByText(account.name)).toBeDefined()
@@ -118,13 +120,18 @@ describe('RegisterPage', () => {
     expect(button().disabled).toBe(true)
     fireEvent.change(screen.getByLabelText('Year Level'), { target: { value: '2' } })
     expect(button().disabled).toBe(true)
-    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
-      'Choose your Year Level',
-      '1st Year',
-      '2nd Year',
-      '3rd Year',
-      '4th Year',
-    ])
+    fireEvent.change(screen.getByLabelText('School'), { target: { value: 'SAFAD' } })
+    expect(button().disabled).toBe(true)
+    expect(
+      within(screen.getByLabelText('Year Level'))
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['Choose your Year Level', '1st Year', '2nd Year', '3rd Year', '4th Year'])
+    expect(
+      within(screen.getByLabelText('School'))
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['Choose your School', 'SAFAD', 'SAS', 'SBE', 'SED', 'SHCP', 'SLG', 'SOE'])
     await fillForm()
     expect(button().disabled).toBe(false)
   })
@@ -148,13 +155,14 @@ describe('RegisterPage', () => {
       registration: {
         status: 'PENDING',
         yearLevel: '2',
+        school: 'SAFAD',
         rejectionReason: null,
       },
     })
     fireEvent.click(button())
     await screen.findByRole('heading', { name: 'Registration submitted.' })
     expect(submit).toHaveBeenCalledWith(
-      { yearLevel: '2', studentProfilePath: path },
+      { yearLevel: '2', school: 'SAFAD', studentProfilePath: path },
       expect.anything(),
     )
     expect(screen.queryByLabelText('Student Profile')).toBeNull()
@@ -173,6 +181,7 @@ describe('RegisterPage', () => {
     fireEvent.click(button())
     await waitFor(() => expect(button('Submitting…').disabled).toBe(true))
     expect((screen.getByLabelText('Year Level') as HTMLSelectElement).disabled).toBe(true)
+    expect((screen.getByLabelText('School') as HTMLSelectElement).disabled).toBe(true)
     expect((screen.getByLabelText('Student Profile') as HTMLInputElement).disabled).toBe(true)
     fireEvent.click(button('Submitting…'))
     expect(submit).toHaveBeenCalledTimes(1)
@@ -181,6 +190,7 @@ describe('RegisterPage', () => {
       registration: {
         status: 'PENDING',
         yearLevel: '2',
+        school: 'SAFAD',
         rejectionReason: null,
       },
     })
@@ -196,13 +206,14 @@ describe('RegisterPage', () => {
   ])('shows %s read-only, without upload or submission controls', async (status, heading) => {
     getMine.mockResolvedValue({
       canSubmit: true,
-      registration: { status, yearLevel: '2', rejectionReason: null },
+      registration: { status, yearLevel: '2', school: 'SBE', rejectionReason: null },
     })
     showPage()
     await screen.findByRole('heading', { name: heading })
     expect(screen.queryByLabelText('Student Profile')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Submit registration' })).toBeNull()
     expect(screen.getByText('2nd Year')).toBeDefined()
+    expect(screen.getByText('SBE')).toBeDefined()
   })
 
   it('shows the Admin reason and prefills Year Level when resubmitting a rejection', async () => {
@@ -210,6 +221,7 @@ describe('RegisterPage', () => {
     showPage()
     await screen.findByText('Please include the current term.')
     expect((screen.getByLabelText('Year Level') as HTMLSelectElement).value).toBe('3')
+    expect((screen.getByLabelText('School') as HTMLSelectElement).value).toBe('SAS')
     expect(button('Resubmit registration').disabled).toBe(true)
     await fillForm()
     getMine.mockResolvedValue({
@@ -217,12 +229,24 @@ describe('RegisterPage', () => {
       registration: {
         status: 'PENDING',
         yearLevel: '2',
+        school: 'SAFAD',
         rejectionReason: null,
       },
     })
     fireEvent.click(button('Resubmit registration'))
     await screen.findByRole('heading', { name: 'Registration submitted.' })
     expect(screen.queryByText('Please include the current term.')).toBeNull()
+  })
+
+  it('shows the recorded School with the Registration details', async () => {
+    getMine.mockResolvedValue({
+      account,
+      canSubmit: false,
+      registration: { status: 'APPROVED', yearLevel: '2', school: 'SAS', rejectionReason: null },
+    })
+    showPage()
+    const details = await screen.findByRole('region', { name: 'Registration details' })
+    expect(within(details).getByText('School').nextElementSibling?.textContent).toBe('SAS')
   })
 
   it.each([null, rejected(false).registration])(
@@ -300,6 +324,7 @@ describe('RegisterPage', () => {
       registration: {
         status: 'APPROVED',
         yearLevel: '2',
+        school: 'SAFAD',
         rejectionReason: null,
       },
     })

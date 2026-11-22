@@ -33,6 +33,7 @@ function row(overrides = {}) {
   return {
     id,
     yearLevel: '3',
+    school: 'SAFAD',
     status: 'PENDING',
     submittedAt: new Date(),
     reviewedBy: null,
@@ -56,12 +57,14 @@ function setup({
         personId: 'student-person',
         status: 'PENDING',
         yearLevel: '3',
+        school: 'SAFAD' as string | null,
         submittedAt: new Date(submittedAt),
       },
     ]),
     registration: { update: vi.fn(async (_args: unknown) => ({ id })) },
     ballot: { updateMany: vi.fn(async () => ({ count: 0 })) },
     auditLog: { create: vi.fn(async (_args: unknown) => ({ id: 'audit-1' })) },
+    notification: { create: vi.fn(async (_args: unknown) => ({ id: 'notification-1' })) },
   }
   const db = {
     person: {
@@ -70,7 +73,13 @@ function setup({
     admin: {
       findUnique: vi.fn(async () => (admins.has(adminEmail) ? { email: adminEmail } : null)),
     },
-    registration: { findMany: vi.fn(async (_args: unknown) => [row()]) },
+    registration: {
+      findMany: vi.fn(async (_args: unknown) => [row()]),
+      findUnique: vi.fn(async (_args: unknown) => ({
+        studentProfilePath: 'student-person/private-profile',
+        submittedAt: new Date(submittedAt),
+      })),
+    },
     $transaction: vi.fn(async (fn: (client: typeof tx) => Promise<unknown>) => fn(tx)),
   }
   const caller = createCallerFactory(adminRouter)(
@@ -92,6 +101,7 @@ describe('review queue access', () => {
   ] as const)('rejects callers without Admin rights', async (currentSession, code) => {
     const { caller, db } = setup({ currentSession, admins: new Set() })
     await expect(caller.listRegistrations({})).rejects.toMatchObject({ code })
+    await expect(caller.getStudentProfileView(reviewInput)).rejects.toMatchObject({ code })
     await expect(caller.approveRegistration(reviewInput)).rejects.toMatchObject({ code })
     await expect(
       caller.rejectRegistration({ ...reviewInput, reason: 'Unreadable' }),
@@ -99,6 +109,7 @@ describe('review queue access', () => {
       code,
     })
     expect(db.registration.findMany).not.toHaveBeenCalled()
+    expect(db.registration.findUnique).not.toHaveBeenCalled()
     expect(db.$transaction).not.toHaveBeenCalled()
     expect(createSignedStudentProfileView).not.toHaveBeenCalled()
   })
@@ -107,6 +118,9 @@ describe('review queue access', () => {
     await caller.listRegistrations({})
     admins.clear()
     await expect(caller.listRegistrations({})).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    await expect(caller.getStudentProfileView(reviewInput)).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    })
     await expect(caller.approveRegistration(reviewInput)).rejects.toMatchObject({
       code: 'FORBIDDEN',
     })
@@ -119,7 +133,7 @@ describe('review queue access', () => {
 })
 
 describe('admin.listRegistrations', () => {
-  it('returns signed profiles and validated OCR without exposing paths or person relations', async () => {
+  it('returns validated OCR without signing documents or exposing paths or person relations', async () => {
     const { caller } = setup()
     const [registration] = await caller.listRegistrations()
     expect(registration).toMatchObject({
@@ -127,13 +141,14 @@ describe('admin.listRegistrations', () => {
       name: 'Juan Dela Cruz',
       studentId: '21012345',
       yearLevel: '3',
-      studentProfileUrl: 'https://storage.example.org/signed-view',
+      school: 'SAFAD',
       ocrStatus: 'DONE',
       ocrResult: validOcr,
     })
     expect(registration).not.toHaveProperty('studentProfilePath')
     expect(registration).not.toHaveProperty('person')
-    expect(createSignedStudentProfileView).toHaveBeenCalledWith('student-person/private-profile')
+    expect(registration).not.toHaveProperty('studentProfileUrl')
+    expect(createSignedStudentProfileView).not.toHaveBeenCalled()
   })
   it('passes optional status and Year Level filters to the database', async () => {
     const { caller, db } = setup()
@@ -212,13 +227,6 @@ describe('admin.listRegistrations', () => {
       ])
     },
   )
-  it('keeps the queue available when Storage signing fails without leaking errors', async () => {
-    const { caller } = setup()
-    vi.mocked(createSignedStudentProfileView).mockRejectedValueOnce(
-      new Error('private object path'),
-    )
-    expect((await caller.listRegistrations({}))[0].studentProfileUrl).toBeNull()
-  })
   it('sanitizes database errors', async () => {
     const { caller, db } = setup()
     db.registration.findMany.mockRejectedValueOnce(new Error('secret fields'))
@@ -226,6 +234,57 @@ describe('admin.listRegistrations', () => {
       code: 'INTERNAL_SERVER_ERROR',
       message: 'Unable to load registrations.',
     })
+  })
+})
+
+describe('admin.getStudentProfileView', () => {
+  it('signs only the requested submission', async () => {
+    const { caller, db } = setup()
+    await expect(caller.getStudentProfileView(reviewInput)).resolves.toEqual({
+      url: 'https://storage.example.org/signed-view',
+    })
+    expect(db.registration.findUnique).toHaveBeenCalledWith({
+      where: { id },
+      select: { studentProfilePath: true, submittedAt: true },
+    })
+    expect(createSignedStudentProfileView).toHaveBeenCalledTimes(1)
+    expect(createSignedStudentProfileView).toHaveBeenCalledWith('student-person/private-profile')
+  })
+  it.each([
+    ['a missing registration', null],
+    [
+      'a resubmitted registration',
+      { studentProfilePath: 'student-person/newer', submittedAt: new Date('2026-11-21T00:00:00Z') },
+    ],
+  ])('returns NOT_FOUND without signing for %s', async (_name, found) => {
+    const { caller, db } = setup()
+    db.registration.findUnique.mockResolvedValueOnce(found as never)
+    await expect(caller.getStudentProfileView(reviewInput)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    })
+    expect(createSignedStudentProfileView).not.toHaveBeenCalled()
+  })
+  it('hides Storage and database errors', async () => {
+    const { caller, db } = setup()
+    vi.mocked(createSignedStudentProfileView).mockRejectedValueOnce(
+      new Error('private object path'),
+    )
+    await expect(caller.getStudentProfileView(reviewInput)).rejects.toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Unable to view Student Profile.',
+    })
+    db.registration.findUnique.mockRejectedValueOnce(new Error('secret fields'))
+    await expect(caller.getStudentProfileView(reviewInput)).rejects.toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Unable to view Student Profile.',
+    })
+  })
+  it('rejects malformed input before reading the database', async () => {
+    const { caller, db } = setup()
+    await expect(
+      caller.getStudentProfileView({ id: 'not-a-uuid', submittedAt }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    expect(db.registration.findUnique).not.toHaveBeenCalled()
   })
 })
 
@@ -265,6 +324,7 @@ describe('registration decisions', () => {
         data: {
           status: 'APPROVED',
           yearLevel: expectedYear,
+          school: 'SAFAD',
           rejectionReason: null,
           reviewedBy: adminEmail,
           reviewedAt: expect.any(Date),
@@ -273,15 +333,24 @@ describe('registration decisions', () => {
       })
       expect(tx.ballot.updateMany).toHaveBeenCalledWith({
         where: { personId: 'student-person' },
-        data: { yearLevel: expectedYear },
+        data: { yearLevel: expectedYear, school: 'SAFAD' },
       })
       expect(tx.auditLog.create).toHaveBeenCalledExactlyOnceWith({
         data: {
           adminEmail,
           action: 'APPROVE_REGISTRATION',
           target: id,
-          detail: { yearLevel: expectedYear, originalYearLevel: '3' },
+          detail: {
+            yearLevel: expectedYear,
+            originalYearLevel: '3',
+            school: 'SAFAD',
+            originalSchool: 'SAFAD',
+          },
         },
+      })
+      expect(tx.notification.create).toHaveBeenCalledExactlyOnceWith({
+        data: { personId: 'student-person', type: 'REGISTRATION_APPROVED', data: undefined },
+        select: { id: true },
       })
       expect(db.$transaction).toHaveBeenCalledWith(expect.any(Function), {
         isolationLevel: 'Serializable',
@@ -289,6 +358,56 @@ describe('registration decisions', () => {
       expect(createSignedStudentProfileView).not.toHaveBeenCalled()
     },
   )
+  it.each([
+    ['SAFAD', 'SAS'],
+    [null, 'SBE'],
+  ] as const)(
+    'approves with a corrected School (%s to %s) and copies it to a Held Ballot',
+    async (original, school) => {
+      const { caller, tx } = setup()
+      tx.$queryRaw.mockResolvedValue([
+        {
+          id,
+          personId: 'student-person',
+          status: 'PENDING',
+          yearLevel: '3',
+          school: original,
+          submittedAt: new Date(submittedAt),
+        },
+      ])
+      await caller.approveRegistration({ ...reviewInput, school })
+      expect(tx.registration.update.mock.calls[0][0]).toMatchObject({ data: { school } })
+      expect(tx.ballot.updateMany).toHaveBeenCalledWith({
+        where: { personId: 'student-person' },
+        data: { yearLevel: '3', school },
+      })
+      expect(tx.auditLog.create.mock.calls[0][0]).toMatchObject({
+        data: { detail: { originalSchool: original, school } },
+      })
+    },
+  )
+  it('keeps the Applicant’s School when approving without a correction', async () => {
+    const { caller, tx } = setup()
+    tx.$queryRaw.mockResolvedValue([
+      {
+        id,
+        personId: 'student-person',
+        status: 'PENDING',
+        yearLevel: '3',
+        school: 'SAS',
+        submittedAt: new Date(submittedAt),
+      },
+    ])
+    await caller.approveRegistration(reviewInput)
+    expect(tx.registration.update.mock.calls[0][0]).toMatchObject({ data: { school: 'SAS' } })
+  })
+  it('rejects a School outside the list', async () => {
+    const { caller, db } = setup()
+    // @ts-expect-error exercises runtime enum validation
+    const invalid = caller.approveRegistration({ ...reviewInput, school: 'NOT_A_SCHOOL' })
+    await expect(invalid).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    expect(db.$transaction).not.toHaveBeenCalled()
+  })
   it('trims and saves the required rejection reason without reading OCR', async () => {
     const { caller, tx } = setup()
     await caller.rejectRegistration({ ...reviewInput, reason: '  Upload current term  ' })
@@ -307,6 +426,15 @@ describe('registration decisions', () => {
         action: 'REJECT_REGISTRATION',
         detail: { yearLevel: '3', originalYearLevel: '3', rejectionReason: 'Upload current term' },
       },
+    })
+    // The reason goes only to the Applicant's own notification, never a broadcast.
+    expect(tx.notification.create).toHaveBeenCalledExactlyOnceWith({
+      data: {
+        personId: 'student-person',
+        type: 'REGISTRATION_REJECTED',
+        data: { rejectionReason: 'Upload current term' },
+      },
+      select: { id: true },
     })
   })
   it.each(['', '   ', 'x'.repeat(2001)])('rejects invalid reason', async (reason) => {
@@ -335,7 +463,7 @@ describe('registration decisions', () => {
     async (status) => {
       const { caller, tx } = setup()
       tx.$queryRaw.mockResolvedValue([
-        { ...reviewInput, personId: 'student-person', status, yearLevel: '3' },
+        { ...reviewInput, personId: 'student-person', status, yearLevel: '3', school: 'SAS' },
       ])
       await expect(caller.approveRegistration(reviewInput)).rejects.toMatchObject({
         code: 'CONFLICT',

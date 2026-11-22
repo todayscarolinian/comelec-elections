@@ -9,7 +9,7 @@
 
 ## 1. Summary
 
-A web app for running one Election for members of the `example.com` organization, replacing Google Forms. Before election day, people register by uploading a screenshot of their Student Profile and declaring their Year Level, and an Admin approves or rejects each Registration. On election day, each person signs in with their organization Google account and casts one Ballot. People who missed the Registration Period, or whose Registration isn't approved yet, can register or fix their Registration and vote on the day; their Held Ballot counts once an Admin approves the Registration. Anyone can follow the public Turnout count. Admins can audit every Ballot with the Voter's name and release the Results in the app.
+A web app for running one Election for members of the `usc.edu.ph` university domain, replacing Google Forms. Before election day, people register by uploading a screenshot of their Student Profile and declaring their Year Level, and an Admin approves or rejects each Registration. On election day, each person signs in with their university Google account and casts one Ballot. People who missed the Registration Period, or whose Registration isn't approved yet, can register or fix their Registration and vote on the day; their Held Ballot counts once an Admin approves the Registration. Anyone can follow the public Turnout count. Admins can audit every Ballot with the Voter's name and release the Results in the app.
 
 ## 2. Problem and goals
 
@@ -66,17 +66,17 @@ The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 
 ### 5.1 Signing in
 
-- **US-1**: As a member of the organization, I sign in with my `@example.com` Google account.
+- **US-1**: As a member of the university, I sign in with my `@usc.edu.ph` Google account.
   - FR-1.1: Sign-in uses Google only. There are no passwords and no other providers.
-  - FR-1.2: Only verified Google Workspace accounts on the `example.com` domain are accepted. Personal Google accounts that happen to use an `@example.com` address are rejected.
-  - FR-1.3: Rejected sign-ins see a clear message: "Only @example.com organization accounts can sign in."
+  - FR-1.2: Only verified Google Workspace accounts on the `usc.edu.ph` domain are accepted. Personal Google accounts that happen to use an `@usc.edu.ph` address are rejected.
+  - FR-1.3: Rejected sign-ins see a clear message: "Only @usc.edu.ph university accounts can sign in."
   - FR-1.4: The system stores the person's email and name from their Google account, so Admins can identify Registrations and Ballots.
 
 ### 5.2 Registering
 
 - **US-2**: As an Applicant, I register during the Registration Period so I can vote on election day.
   - FR-2.1: The Registration Period opens on **2026-11-15** and closes before the Election opens (see §10). Registrations are accepted again while the Election is open (ADR 0008).
-  - FR-2.2: A Registration requires a Year Level, picked from a fixed list, and a Student Profile image upload. The Year Level is for information only and doesn't affect the Ballot.
+  - FR-2.2: A Registration requires a Year Level and a School, each picked from a fixed list, and a Student Profile image upload. The Year Level and School are for information and statistics only and don't affect the Ballot.
   - FR-2.3: The Applicant can see their Registration status: pending, approved or rejected.
   - FR-2.4: A rejected Registration shows the reason the Admin gave. The Applicant can fix it and resubmit while the Registration Period or the Election is open.
   - FR-2.5: An approved Registration can't be changed by the Voter.
@@ -85,7 +85,7 @@ The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 - **US-3**: As an Admin, I review Registrations.
   - FR-3.1: Admins see a list of Registrations, filterable by status and Year Level, showing name, email, Year Level and the Student Profile image, with OCR findings next to it when available (ADR 0006). OCR findings are advisory and never approve or reject a Registration.
   - FR-3.2: An Admin approves a Registration, or rejects it with a required reason.
-  - FR-3.3: An Admin can correct an Applicant's Year Level before approving.
+  - FR-3.3: An Admin can correct an Applicant's Year Level and School before approving.
   - FR-3.4: Every decision records which Admin made it and when.
   - FR-3.5: Registrations with a Held Ballot are marked and listed first.
   - FR-3.6: Admins can review pending Registrations after the Election closes. A Registration that is rejected when the Election closes stays rejected.
@@ -122,6 +122,8 @@ The full definitions live in the [Glossary](./GLOSSARY.md). In brief:
 
 - **US-7**: As an Admin, I audit Ballots and release the Results.
   - FR-7.1: Admins can see the Results (picks per Candidate, per Question, and Abstentions) at any time. Results count only Ballots whose Registration is approved, and show how many Held Ballots are left out.
+  - FR-7.6: The Admin dashboard shows turnout per School: counted Ballots and Held Ballots for each School.
+  - FR-7.7: Admins can see the Results split by School. These stay Admin-only even after release, because a small School's tally can point to how individuals voted. Viewing them before release is recorded like viewing the Results.
   - FR-7.2: Admins can list every Ballot with the Voter's name, email, Year Level and whether it counts (Counted, Held, or Held and rejected), and export the list.
   - FR-7.3: Every time an Admin views or exports Ballots, the system records which Admin did it and when.
   - FR-7.4: An Admin can release the Results only after the Election is closed and no Held Ballot's Registration is still pending. Released Results become public.
@@ -220,7 +222,7 @@ People whose Registration isn't approved yet also see (FR-5.10):
 - When does the Registration Period close? Admins need time to review before Nov 20.
 - The list of Year Levels (1st–4th only, or also 5th year or others). Information only; there are no batch rep Questions.
 - Final list of Questions, Selection Limits and Candidate profiles (name, photo, bio, Party). Candidate profiles are due from the client.
-- The organization's Google Workspace domain, to replace `example.com`.
+- The university's Google Workspace domain, to replace `example.com`.
 - Who will be the first Admin.
 - Approval of the disclosure wording in §7, including the Held Ballot acknowledgement.
 - Agreement to Held Ballots for late Registrations (ADR 0008), and whether public Turnout should show held and counted Ballots separately.

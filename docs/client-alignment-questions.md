@@ -58,7 +58,7 @@ Meeting script to align the client's vision with the Live Voting design (see [GL
 - Candidate order: random, alphabetical, or fixed?
 
 ## 5. Voters & eligibility
-- ⚠️ Voters sign in with an organization-domain account. Which domain? Does every eligible voter have one?
+- ⚠️ Voters sign in with an university-domain account (@usc.edu.ph). Which domain? Does every eligible voter have one?
 - Is everyone on that domain eligible, or only a specific list (paid members, specific college)?
 - Roughly how many voters? How many in the first 10 minutes? *(load planning)*
 - What happens if someone eligible can't log in?

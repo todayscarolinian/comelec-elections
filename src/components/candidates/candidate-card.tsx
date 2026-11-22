@@ -22,6 +22,13 @@ export function CandidateCard({
   heading?: 'h3' | 'h4'
 }) {
   const href = `${candidateHref(candidate.id)}${query}`
+  const academicDetails = [
+    candidate.school,
+    candidate.program,
+    candidate.year && `Year ${candidate.year}`,
+  ]
+    .filter(Boolean)
+    .join(' · ')
   return (
     <li className="flex min-w-0 flex-col items-start border-t border-comelec-sage px-3 pt-3 sm:px-4 sm:pt-4">
       <CandidatePortrait
@@ -37,9 +44,9 @@ export function CandidateCard({
         <Heading className="font-editorial text-[1.375rem] leading-tight wrap-anywhere">
           {candidate.name}
         </Heading>
-        <p className="mt-1 text-sm leading-snug text-comelec-olive">
-          {candidate.school} · {candidate.program} · Year {candidate.year}
-        </p>
+        {academicDetails && (
+          <p className="mt-1 text-sm leading-snug text-comelec-olive">{academicDetails}</p>
+        )}
       </div>
       <Link
         href={href}

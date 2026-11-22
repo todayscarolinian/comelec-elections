@@ -8,6 +8,7 @@ import { electionDay } from '@/components/landing/landing-schedule'
 import { useTRPC } from '@/lib/trpc/client'
 import { BallotFlow } from './ballot-flow'
 import { BallotSignIn } from './ballot-sign-in'
+import { BallotSkeleton } from './ballot-skeleton'
 import { BallotIntro, BallotProgress } from './ballot-steps'
 import { ballotAction, ballotEntrance, ballotHeading, ballotTextAction } from './ballot-styles'
 
@@ -186,11 +187,7 @@ export function BallotPage() {
       </div>
     )
   } else if (!ballot.data || !election.data || (status === 'can_vote' && !registration.data)) {
-    content = (
-      <output className="grow border-t border-comelec-sage py-12 text-comelec-olive">
-        Loading ballot…
-      </output>
-    )
+    content = <BallotSkeleton />
   } else if (status === 'not_registered' || !voter) {
     content = (
       <Notice

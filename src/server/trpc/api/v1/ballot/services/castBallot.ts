@@ -2,6 +2,7 @@ import { ZodError } from 'zod'
 import { Prisma } from '@/generated/prisma/client'
 import { validateBallot } from '@/server/trpc/api/v1/ballot/core/validateBallot'
 import type { BallotInput } from '@/server/trpc/api/v1/ballot/schema'
+import { notifyPerson } from '@/server/trpc/api/v1/notification/services/createNotification'
 import type { Db } from '@/server/trpc/init'
 
 type CastFailure =
@@ -16,6 +17,7 @@ export class BallotCastError extends Error {
 type RegistrationRow = {
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   yearLevel: string
+  school: string
 }
 
 function isPersonIdTarget(target: unknown) {
@@ -64,7 +66,7 @@ export async function castBallot(
       // finishes first (and this cast reads its result) or waits for this cast to
       // commit (and then sees, and updates, the new Ballot).
       const [registration] = await tx.$queryRaw<RegistrationRow[]>`
-        SELECT status, "yearLevel"
+        SELECT status, "yearLevel", school
         FROM "Registration"
         WHERE "personId" = ${personId}
         FOR SHARE
@@ -90,6 +92,7 @@ export async function castBallot(
         data: {
           personId,
           yearLevel: registration.yearLevel,
+          school: registration.school,
           disclosureAcceptedAt: castAt,
           heldAcknowledgedAt: held ? castAt : null,
           castAt,
@@ -101,6 +104,8 @@ export async function castBallot(
         return candidates.map((candidateId) => ({ ballotId: ballot.id, questionId, candidateId }))
       })
       await tx.ballotAnswer.createMany({ data: answers })
+      // Only whether it is held; never choices or the Ballot id.
+      await notifyPerson(tx, personId, 'BALLOT_RECORDED', { held })
       return { held }
     })
   } catch (error) {

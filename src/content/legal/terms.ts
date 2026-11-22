@@ -24,7 +24,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
         {
           items: [
             'Anyone can view the candidates, the election calendar, the Turnout count, and the Results once they are released.',
-            'To register or vote, you must sign in with your own organization Google account with a verified email address.',
+            'To register or vote, you must sign in with your own USC Google account with a verified email address.',
             'Only Ballots from people whose Registration is approved by the commission are counted.',
           ],
         },

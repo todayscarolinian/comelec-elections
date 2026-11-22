@@ -1,9 +1,11 @@
 import { z } from 'zod'
 import { normalizeHostedDomain } from '@/server/auth/policy'
 import { AUDIT_ACTIONS } from '@/server/trpc/api/v1/audit/schema'
+import { SCHOOLS } from '@/server/trpc/api/v1/registration/core/school'
 import { YEAR_LEVELS, ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
+import { resultsOutputSchema } from '@/server/trpc/api/v1/results/schema'
 
-const organizationEmail = z
+const schoolEmail = z
   .string()
   .trim()
   .toLowerCase()
@@ -13,13 +15,13 @@ const organizationEmail = z
       const domain = normalizeHostedDomain(process.env.ALLOWED_HOSTED_DOMAIN)
       return !!domain && email.endsWith(`@${domain}`)
     },
-    { message: 'Email must belong to the organization domain' },
+    { message: 'Email must belong to the USC domain' },
   )
 
-export const grantAdminInputSchema = z.object({ email: organizationEmail })
+export const grantAdminInputSchema = z.object({ email: schoolEmail })
 export const grantAdminOutputSchema = z.object({ email: z.string() })
 
-export const revokeAdminInputSchema = z.object({ email: organizationEmail })
+export const revokeAdminInputSchema = z.object({ email: schoolEmail })
 export const revokeAdminOutputSchema = z.object({ ok: z.literal(true) })
 
 export const listAdminsOutputSchema = z.array(
@@ -59,21 +61,28 @@ export const registrationReviewOutputSchema = z.object({
   email: z.string(),
   studentId: z.string(),
   yearLevel: z.string(),
+  school: z.string(),
   status: registrationStatusSchema,
   submittedAt: z.date(),
   reviewedBy: z.string().nullable(),
   reviewedAt: z.date().nullable(),
   rejectionReason: z.string().nullable(),
   hasHeldBallot: z.boolean(),
-  studentProfileUrl: z.url().nullable(),
   ocrStatus: z.enum(['PENDING', 'DONE', 'FAILED']),
   ocrResult: ocrResultSchema.nullable(),
 })
+
+export const studentProfileViewInputSchema = z.object({
+  id: z.uuid(),
+  submittedAt: z.date(),
+})
+export const studentProfileViewOutputSchema = z.object({ url: z.url() })
 
 export const approveRegistrationInputSchema = z.object({
   id: z.uuid(),
   submittedAt: z.date(),
   yearLevel: z.enum(YEAR_LEVELS).optional(),
+  school: z.enum(SCHOOLS).optional(),
 })
 export const rejectRegistrationInputSchema = z.object({
   id: z.uuid(),
@@ -81,6 +90,19 @@ export const rejectRegistrationInputSchema = z.object({
   reason: z.string().trim().min(1).max(2000),
 })
 export const reviewDecisionOutputSchema = z.object({ ok: z.literal(true) })
+
+const count = z.number().int().nonnegative()
+
+/** Ballot totals for one School. */
+export const schoolTotalsSchema = z.object({
+  school: z.string(),
+  label: z.string(),
+  counted: count,
+  heldPending: count,
+  heldRejected: count,
+})
+
+export type SchoolTotals = z.infer<typeof schoolTotalsSchema>
 
 export const DASHBOARD_PHASES = [
   'BEFORE_VOTING',
@@ -115,6 +137,7 @@ export const dashboardOutputSchema = z.object({
     z.object({ id: z.string(), name: z.string(), email: z.string(), yearLevel: z.string() }),
   ),
   recentActivity: z.array(auditEntryOutputSchema),
+  turnoutBySchool: z.array(schoolTotalsSchema),
 })
 
 export const releaseResultsOutputSchema = z.object({ resultsReleasedAt: z.date() })
@@ -162,3 +185,11 @@ export const listAuditLogOutputSchema = z.object({
   items: z.array(auditEntryOutputSchema),
   nextCursor: z.string().nullable(),
 })
+
+export const resultsBySchoolOutputSchema = z.array(
+  z.object({
+    school: z.string(),
+    label: z.string(),
+    results: resultsOutputSchema,
+  }),
+)
