@@ -44,7 +44,7 @@ export function AdminShell({ account, children }: { account: ReactNode; children
       >
         <div className="flex min-h-10 items-center gap-3 min-[1001px]:border-b min-[1001px]:border-review-line min-[1001px]:pb-4">
           <Image
-            src="/comelec-seal.png"
+            src="/branding/comelec-seal.png"
             alt="SSC COMELEC seal"
             loading="eager"
             width={33}

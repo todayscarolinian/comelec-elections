@@ -11,7 +11,7 @@ export function ElectionFooter() {
         className={`${footerGutters} flex min-h-[7.5rem] items-center justify-between gap-5 py-5 max-[38rem]:flex-col max-[38rem]:items-start`}
       >
         <div className="flex items-center gap-3">
-          <Image src="/landing/mark.webp" alt="" width={56} height={56} />
+          <Image src="/branding/comelec-seal.png" alt="" width={56} height={56} />
           <div>
             <p className="text-[clamp(1.35rem,2.15vw,2rem)] leading-tight [font-family:var(--landing-text,var(--font-antinomia-text)),Georgia,serif]">
               SSC COMELEC

@@ -75,7 +75,7 @@ function NavigationBar({
         >
           <div className="justify-self-start">
             <ElectionLink isLanding={isLanding} section="home" aria-label="SSC COMELEC home">
-              <Image src="/landing/mark.webp" alt="" width={33} height={33} />
+              <Image src="/branding/comelec-seal.png" alt="" width={33} height={33} />
             </ElectionLink>
           </div>
           <ul className="flex flex-wrap gap-x-[clamp(1rem,4.4vw,4rem)] gap-y-1 max-[38rem]:hidden">

@@ -57,7 +57,7 @@ export function ElectionPageShell({
       <footer className={footerGutters}>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#b6c89f] py-5">
           <Link href="/" className="flex items-center gap-3" aria-label="SSC COMELEC home">
-            <Image src="/landing/mark.webp" alt="" width={56} height={56} />
+            <Image src="/branding/comelec-seal.png" alt="" width={56} height={56} />
             <span>
               <span className="block text-[clamp(1.5rem,2.5vw,2.25rem)] leading-tight [font-family:var(--registration-text),Georgia,serif]">
                 SSC COMELEC
