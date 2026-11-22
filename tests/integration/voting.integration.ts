@@ -74,6 +74,65 @@ describe('voting with PostgreSQL', () => {
     await expectStoredBallot(voter.id, false)
   })
 
+  it('tallies the official ballot and resolves its picks in the admin audit', async () => {
+    const voter = callerFor(await createVoter('APPROVED'))
+    const admin = callerFor(await createAdmin())
+    const input = validateBallot({
+      disclosureAccepted: true,
+      answers: {
+        president: { candidateIds: ['dyane-jhen-wagas'] },
+        'vice-president': { abstain: true },
+        councilors: { candidateIds: ['tristan-jude-gacrama', 'renie-jr-rizaldo'] },
+      },
+    })
+
+    await expect(voter.ballot.cast(input)).resolves.toEqual({ ok: true, held: false })
+
+    const results = await admin.results.get({ audience: 'admin' })
+    expect(results.countedBallots).toBe(1)
+    expect(results.questions.map(({ id, abstentions }) => [id, abstentions])).toEqual([
+      ['president', 0],
+      ['vice-president', 1],
+      ['councilors', 0],
+    ])
+    expect(
+      results.questions.flatMap(({ candidates }) =>
+        candidates.filter(({ votes }) => votes > 0).map(({ id, votes }) => [id, votes]),
+      ),
+    ).toEqual([
+      ['dyane-jhen-wagas', 1],
+      ['tristan-jude-gacrama', 1],
+      ['renie-jr-rizaldo', 1],
+    ])
+
+    const audit = await admin.admin.listBallots({})
+    expect(audit.items.map(({ status, choices }) => ({ status, choices }))).toEqual([
+      {
+        status: 'COUNTED',
+        choices: [
+          {
+            questionId: 'president',
+            questionTitle: 'President',
+            candidates: ['Wagas, Dyane Jhen P.'],
+            abstained: false,
+          },
+          {
+            questionId: 'vice-president',
+            questionTitle: 'Vice President',
+            candidates: [],
+            abstained: true,
+          },
+          {
+            questionId: 'councilors',
+            questionTitle: 'Councilors',
+            candidates: ['Gacrama, Tristan Jude G.', 'Rizaldo, Renie Jr. D.'],
+            abstained: false,
+          },
+        ],
+      },
+    ])
+  })
+
   it('returns AlreadyVoted on the second cast', async () => {
     const voter = await createVoter('APPROVED')
     const caller = callerFor(voter)

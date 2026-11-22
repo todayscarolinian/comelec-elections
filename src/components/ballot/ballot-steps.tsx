@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check } from 'lucide-react'
-import { ELECTION, type CandidateDef, type QuestionDef } from '@/election'
+import { ELECTION, type QuestionDef } from '@/election'
 import type { BallotInput } from '@/server/trpc/api/v1/ballot/schema'
 import { ballotAction, ballotEntrance, ballotHeading, ballotTextAction } from './ballot-styles'
 
@@ -239,7 +239,6 @@ export function BallotReviewList({
       {questions.map((question) => {
         const answer = answers[question.id]
         const selected = answer && 'candidateIds' in answer ? answer.candidateIds : []
-        const candidates: readonly CandidateDef[] = question.candidates
         return (
           <section
             key={question.id}
@@ -260,7 +259,7 @@ export function BallotReviewList({
             </div>
             {selected.length > 0 ? (
               <ul className="space-y-2">
-                {candidates
+                {question.candidates
                   .filter((candidate) => selected.includes(candidate.id))
                   .map((candidate) => (
                     <li key={candidate.id}>

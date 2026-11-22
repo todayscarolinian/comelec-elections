@@ -181,16 +181,17 @@ describe('ballot.cast', () => {
     await caller.ballot.cast(validBallot())
     expect(tx.ballotAnswer.createMany).toHaveBeenCalledWith({
       data: [
-        { ballotId: 'ballot-1', questionId: 'placeholder-question-1', candidateId: null },
+        { ballotId: 'ballot-1', questionId: 'president', candidateId: null },
+        { ballotId: 'ballot-1', questionId: 'vice-president', candidateId: null },
         {
           ballotId: 'ballot-1',
-          questionId: 'placeholder-question-2',
-          candidateId: 'placeholder-question-2-candidate-d',
+          questionId: 'councilors',
+          candidateId: 'renie-jr-rizaldo',
         },
         {
           ballotId: 'ballot-1',
-          questionId: 'placeholder-question-2',
-          candidateId: 'placeholder-question-2-candidate-c',
+          questionId: 'councilors',
+          candidateId: 'tristan-jude-gacrama',
         },
       ],
     })
@@ -199,12 +200,13 @@ describe('ballot.cast', () => {
   it('accepts an all-Abstention Ballot', async () => {
     const { caller, tx } = setup()
     const input = validBallot()
-    input.answers['placeholder-question-2'] = { abstain: true }
+    input.answers.councilors = { abstain: true }
     await expect(caller.ballot.cast(input)).resolves.toEqual({ ok: true, held: false })
     expect(tx.ballotAnswer.createMany).toHaveBeenCalledWith({
       data: [
-        { ballotId: 'ballot-1', questionId: 'placeholder-question-1', candidateId: null },
-        { ballotId: 'ballot-1', questionId: 'placeholder-question-2', candidateId: null },
+        { ballotId: 'ballot-1', questionId: 'president', candidateId: null },
+        { ballotId: 'ballot-1', questionId: 'vice-president', candidateId: null },
+        { ballotId: 'ballot-1', questionId: 'councilors', candidateId: null },
       ],
     })
   })
@@ -225,18 +227,15 @@ describe('ballot.cast', () => {
       ...validBallot(),
       answers: {
         ...validBallot().answers,
-        'placeholder-question-1': { candidateIds: ['private-unknown-candidate'] },
+        president: { candidateIds: ['private-unknown-candidate'] },
       },
     },
     {
       ...validBallot(),
       answers: {
         ...validBallot().answers,
-        'placeholder-question-2': {
-          candidateIds: [
-            'placeholder-question-2-candidate-c',
-            'placeholder-question-2-candidate-c',
-          ],
+        councilors: {
+          candidateIds: ['tristan-jude-gacrama', 'tristan-jude-gacrama'],
         },
       },
     },

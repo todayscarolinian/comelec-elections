@@ -33,7 +33,7 @@ vi.mock('@/lib/trpc/client', () => ({
 }))
 
 const account = { name: 'Alex Santos', email: 'alex.santos@example.org' }
-const [first, second] = ELECTION.questions
+const [first, vicePresident, councilors] = ELECTION.questions
 const candidate = first.candidates[0]
 const submitButton = (label: string) =>
   screen.getByRole<HTMLButtonElement>('button', { name: label })
@@ -59,13 +59,14 @@ async function acknowledgeDisclosure() {
 }
 
 function answerBallot() {
-  fireEvent.click(submitButton('Continue to ballot'))
   expect(submitButton('Review ballot').disabled).toBe(true)
   fireEvent.click(
     within(screen.getByRole('group', { name: first.title })).getByText(candidate.name),
   )
   expect(submitButton('Review ballot').disabled).toBe(true)
-  fireEvent.click(within(screen.getByRole('group', { name: second.title })).getByText('Abstain'))
+  for (const office of [vicePresident, councilors]) {
+    fireEvent.click(within(screen.getByRole('group', { name: office.title })).getByText('Abstain'))
+  }
   fireEvent.click(submitButton('Review ballot'))
 }
 
@@ -113,9 +114,35 @@ describe('BallotPage', () => {
     expect(cast).not.toHaveBeenCalled()
   })
 
+  it('shows all 15 candidates after disclosure and clears Councilor picks when abstaining', async () => {
+    showBallot()
+    await acknowledgeDisclosure()
+    fireEvent.click(submitButton('Continue to ballot'))
+
+    const choices = (office: string, role: 'radio' | 'checkbox') => {
+      const group = within(screen.getByRole('group', { name: office }))
+      const abstain = group.getByRole(role, { name: 'Abstain' })
+      return group.getAllByRole<HTMLInputElement>(role).filter((option) => option !== abstain)
+    }
+    expect(choices('President', 'radio')).toHaveLength(2)
+    expect(choices('Vice President', 'radio')).toHaveLength(2)
+    expect(choices('Councilors', 'checkbox')).toHaveLength(11)
+
+    const group = within(screen.getByRole('group', { name: 'Councilors' }))
+    expect(group.getByText('Choose up to 11 candidates or abstain.')).toBeTruthy()
+    const councilor = group.getByRole<HTMLInputElement>('checkbox', {
+      name: 'Gacrama, Tristan Jude G.',
+    })
+    fireEvent.click(councilor)
+    expect(councilor.checked).toBe(true)
+    fireEvent.click(group.getByRole('checkbox', { name: 'Abstain' }))
+    expect(councilor.checked).toBe(false)
+  })
+
   it('requires disclosure, lets a voter edit and review, then casts once and clears choices', async () => {
     showBallot()
     await acknowledgeDisclosure()
+    fireEvent.click(submitButton('Continue to ballot'))
     answerBallot()
 
     expect(cast).not.toHaveBeenCalled()
@@ -128,7 +155,11 @@ describe('BallotPage', () => {
     expect(cast).toHaveBeenCalledExactlyOnceWith(
       {
         disclosureAccepted: true,
-        answers: { [first.id]: { candidateIds: [candidate.id] }, [second.id]: { abstain: true } },
+        answers: {
+          [first.id]: { candidateIds: [candidate.id] },
+          [vicePresident.id]: { abstain: true },
+          [councilors.id]: { abstain: true },
+        },
       },
       expect.anything(),
     )
@@ -148,6 +179,7 @@ describe('BallotPage', () => {
     fireEvent.click(
       screen.getByRole('checkbox', { name: /only counts if my registration is approved/i }),
     )
+    fireEvent.click(submitButton('Continue to ballot'))
     answerBallot()
     fireEvent.click(submitButton('Cast my ballot'))
     await screen.findByRole('heading', { name: 'Your ballot is held.' })

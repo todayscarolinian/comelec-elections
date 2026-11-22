@@ -6,15 +6,13 @@ export type CandidateDef = {
   readonly id: string // stable, never changes once the Election has opened
   readonly name: string
   readonly party?: PartyId // Omitted means that the Candidate is Independent
-  readonly photo: string // path under /public/candidates
-  readonly bio: string
 }
 
 export type QuestionDef = {
   readonly id: string // stable, never changes once the Election has opened
   readonly title: string
   readonly selectionLimit: number // 1 = single choice
-  readonly candidates: CandidateDef[] // display order = array order
+  readonly candidates: readonly CandidateDef[] // display order = array order
 }
 
 export type ElectionDef = {
@@ -23,52 +21,54 @@ export type ElectionDef = {
   readonly questions: readonly QuestionDef[]
 }
 
+function candidates(entries: readonly (readonly [id: string, name: string, party?: PartyId])[]) {
+  return entries.map(([id, name, party]) => ({ id, name, party }))
+}
+
+// Listed in verified ballot-number order. Profile content lives in the public directory.
+const councilors = candidates([
+  ['andrie-levy-arizobal', 'Arizobal, Andrie Levy', 'TINGOG!'],
+  ['briar-cymone-cuizon', 'Cuizon, Briar Cymone', 'TINGOG!'],
+  ['ravioli-bueri-blanc-gabales', 'Gabales, Ravioli Bueri Blanc Manayaga', 'TINGOG!'],
+  ['tristan-jude-gacrama', 'Gacrama, Tristan Jude G.', 'SPP'],
+  ['adam-zachary-gaviola', 'Gaviola, Adam Zachary D.', 'STAND'],
+  ['yoshua-luke-majam', 'Majam, Yoshua Luke Lobitonia', 'TINGOG!'],
+  ['kent-deloria-reyes', 'Reyes, Kent Deloria', 'TINGOG!'],
+  ['renie-jr-rizaldo', 'Rizaldo, Renie Jr. D.', 'SPP'],
+  ['sean-joseph-solibaga', 'Solibaga, Sean Joseph', 'TINGOG!'],
+  ['weighne-princess-tan', 'Tan, Weighne Princess', 'TINGOG!'],
+  ['peter-allan-vilbar', 'Vilbar, Peter Allan', 'TINGOG!'],
+])
+
 // These IDs become persisted Ballot references once the Election opens.
 // Question and Candidate ids must never be renamed or removed after that point.
 export const ELECTION = {
   id: 'main',
-  title: 'Placeholder Election',
+  title: 'Supreme Student Council Elections 2026',
   questions: [
     {
-      id: 'placeholder-question-1',
-      title: 'Placeholder Question 1',
+      id: 'president',
+      title: 'President',
       selectionLimit: 1,
-      candidates: [
-        {
-          id: 'placeholder-question-1-candidate-a',
-          name: 'Candidate A',
-          party: 'STAND',
-          photo: '/candidates/placeholder-candidate-a.svg',
-          bio: 'Placeholder biography for Candidate A.',
-        },
-        {
-          id: 'placeholder-question-1-candidate-b',
-          name: 'Candidate B',
-          party: 'TINGOG!',
-          photo: '/candidates/placeholder-candidate-b.svg',
-          bio: 'Placeholder biography for Candidate B.',
-        },
-      ],
+      candidates: candidates([
+        ['mark-lawrence-gavas', 'Gavas, Mark Lawrence L.', 'TINGOG!'],
+        ['dyane-jhen-wagas', 'Wagas, Dyane Jhen P.', 'STAND'],
+      ]),
     },
     {
-      id: 'placeholder-question-2',
-      title: 'Placeholder Question 2',
-      selectionLimit: 2,
-      candidates: [
-        {
-          id: 'placeholder-question-2-candidate-c',
-          name: 'Candidate C',
-          party: 'SPP',
-          photo: '/candidates/placeholder-candidate-c.svg',
-          bio: 'Placeholder biography for Candidate C.',
-        },
-        {
-          id: 'placeholder-question-2-candidate-d',
-          name: 'Candidate D',
-          photo: '/candidates/placeholder-candidate-d.svg',
-          bio: 'Placeholder biography for Candidate D.',
-        },
-      ],
+      id: 'vice-president',
+      title: 'Vice President',
+      selectionLimit: 1,
+      candidates: candidates([
+        ['monica-denise-rodriguez', 'Rodriguez, Monica Denise T.', 'STAND'],
+        ['princess-jannah-ungab', 'Ungab, Princess Jannah', 'TINGOG!'],
+      ]),
+    },
+    {
+      id: 'councilors',
+      title: 'Councilors',
+      selectionLimit: Math.min(21, councilors.length),
+      candidates: councilors,
     },
   ],
 } as const satisfies ElectionDef

@@ -4,8 +4,7 @@ import { ZodError } from 'zod'
 import { ELECTION } from '@/election'
 import { validateBallot } from '@/server/trpc/api/v1/ballot/core/validateBallot'
 
-const single = ELECTION.questions[0]
-const multiple = ELECTION.questions[1]
+const [single, vicePresident, multiple] = ELECTION.questions
 
 function ballot() {
   return {
@@ -57,6 +56,15 @@ describe('validateBallot', () => {
     const input = ballot()
     delete input.answers[single.id]
     expect(() => validateBallot(input)).toThrow(ZodError)
+  })
+
+  it('rejects an empty Councilor selection without an explicit abstention', () => {
+    expect(() => validateBallot(withAnswer(multiple.id, { candidateIds: [] }))).toThrow(ZodError)
+  })
+
+  it('rejects two Vice President choices', () => {
+    const candidateIds = vicePresident.candidates.map(({ id }) => id)
+    expect(() => validateBallot(withAnswer(vicePresident.id, { candidateIds }))).toThrow(ZodError)
   })
 
   it('rejects an unknown Question', () => {

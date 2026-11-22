@@ -1,11 +1,39 @@
-import { existsSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ELECTION, PARTIES, type CandidateDef } from '@/election'
 
 const candidates = ELECTION.questions.flatMap<CandidateDef>((question) => question.candidates)
 
 describe('ELECTION', () => {
+  it('lists the verified candidates for each office in ballot-number order', () => {
+    expect(
+      ELECTION.questions.map((question) => [
+        question.id,
+        question.selectionLimit,
+        question.candidates.map(({ id }) => id),
+      ]),
+    ).toEqual([
+      ['president', 1, ['mark-lawrence-gavas', 'dyane-jhen-wagas']],
+      ['vice-president', 1, ['monica-denise-rodriguez', 'princess-jannah-ungab']],
+      [
+        'councilors',
+        11,
+        [
+          'andrie-levy-arizobal',
+          'briar-cymone-cuizon',
+          'ravioli-bueri-blanc-gabales',
+          'tristan-jude-gacrama',
+          'adam-zachary-gaviola',
+          'yoshua-luke-majam',
+          'kent-deloria-reyes',
+          'renie-jr-rizaldo',
+          'sean-joseph-solibaga',
+          'weighne-princess-tan',
+          'peter-allan-vilbar',
+        ],
+      ],
+    ])
+  })
+
   it('has unique Question ids', () => {
     const ids = ELECTION.questions.map((question) => question.id)
 
@@ -32,17 +60,6 @@ describe('ELECTION', () => {
     for (const question of ELECTION.questions) {
       expect(question.selectionLimit).toBeGreaterThanOrEqual(1)
       expect(question.selectionLimit).toBeLessThanOrEqual(question.candidates.length)
-    }
-  })
-
-  it('references Candidate photos under public/candidates', () => {
-    for (const candidate of candidates) {
-      expect(candidate.photo).toMatch(/^\/candidates\/[^/]+$/)
-
-      const relativePath = candidate.photo.replace(/^\/+/, '')
-      const absolutePath = resolve(process.cwd(), 'public', relativePath)
-
-      expect(existsSync(absolutePath)).toBe(true)
     }
   })
 })
