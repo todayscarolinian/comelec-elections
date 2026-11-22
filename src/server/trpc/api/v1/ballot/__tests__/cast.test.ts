@@ -111,7 +111,20 @@ describe('ballot.cast', () => {
       /SELECT\s+status,\s+"yearLevel",\s+school\s+FROM\s+"Registration"\s+WHERE\s+"personId"\s*=\s*\?\s+FOR SHARE/i,
     )
     expect(regValues).toEqual([personId])
-    expect(events).toEqual(['begin', 'lock', 'registration', 'ballot', 'answers', 'commit'])
+    expect(events).toEqual([
+      'begin',
+      'lock',
+      'registration',
+      'ballot',
+      'answers',
+      'notification',
+      'commit',
+    ])
+    // Only whether the Ballot is held: never choices or the Ballot id.
+    expect(tx.notification.create).toHaveBeenCalledExactlyOnceWith({
+      data: { personId, type: 'BALLOT_RECORDED', data: { held: false } },
+      select: { id: true },
+    })
   })
 
   it('stores authenticated Person, Registration year and School snapshots and server timestamp', async () => {

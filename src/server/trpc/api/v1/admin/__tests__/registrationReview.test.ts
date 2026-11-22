@@ -64,6 +64,7 @@ function setup({
     registration: { update: vi.fn(async (_args: unknown) => ({ id })) },
     ballot: { updateMany: vi.fn(async () => ({ count: 0 })) },
     auditLog: { create: vi.fn(async (_args: unknown) => ({ id: 'audit-1' })) },
+    notification: { create: vi.fn(async (_args: unknown) => ({ id: 'notification-1' })) },
   }
   const db = {
     person: {
@@ -347,6 +348,10 @@ describe('registration decisions', () => {
           },
         },
       })
+      expect(tx.notification.create).toHaveBeenCalledExactlyOnceWith({
+        data: { personId: 'student-person', type: 'REGISTRATION_APPROVED', data: undefined },
+        select: { id: true },
+      })
       expect(db.$transaction).toHaveBeenCalledWith(expect.any(Function), {
         isolationLevel: 'Serializable',
       })
@@ -421,6 +426,15 @@ describe('registration decisions', () => {
         action: 'REJECT_REGISTRATION',
         detail: { yearLevel: '3', originalYearLevel: '3', rejectionReason: 'Upload current term' },
       },
+    })
+    // The reason goes only to the Applicant's own notification, never a broadcast.
+    expect(tx.notification.create).toHaveBeenCalledExactlyOnceWith({
+      data: {
+        personId: 'student-person',
+        type: 'REGISTRATION_REJECTED',
+        data: { rejectionReason: 'Upload current term' },
+      },
+      select: { id: true },
     })
   })
   it.each(['', '   ', 'x'.repeat(2001)])('rejects invalid reason', async (reason) => {

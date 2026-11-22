@@ -50,7 +50,7 @@ describe('Google sign-in policy', () => {
     expect(isAllowedGoogleProfile({ ...member, email }, 'example.com')).toBe(false)
   })
 
-  it('does not accept an organization-looking personal account without hd', () => {
+  it('does not accept an university-looking personal account without hd', () => {
     expect(
       isAllowedGoogleProfile({ email: 'member@example.com', email_verified: true }, 'example.com'),
     ).toBe(false)

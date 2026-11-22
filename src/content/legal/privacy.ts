@@ -23,11 +23,11 @@ export const PRIVACY_POLICY: LegalDocument = {
       id: 'information-we-collect',
       heading: 'Information we collect',
       body: [
-        'When you sign in with your organization Google account, we receive and keep:',
+        'When you sign in with your USC Google account, we receive and keep:',
         {
           items: [
             'Your name and email address.',
-            'Confirmation from Google that the account belongs to the organization and that the email address is verified. We do not keep your Google password or other Google account data.',
+            'Confirmation from Google that the account belongs to the university and that the email address is verified. We do not keep your Google password or other Google account data.',
           ],
         },
         'When you register to vote, we collect:',
@@ -55,7 +55,7 @@ export const PRIVACY_POLICY: LegalDocument = {
       body: [
         {
           items: [
-            'To check that you are a member of the organization and eligible to vote.',
+            'To check that you are a bona fide student of the University of San Carlos and eligible to vote.',
             'To review your Registration. Our system reads your Student Profile on our own server to help reviewers, but a commission member makes every decision.',
             'To make sure each person casts only one Ballot, and to count only Ballots from approved Registrations.',
             'To audit the election and resolve disputes about the Results.',
@@ -108,7 +108,7 @@ export const PRIVACY_POLICY: LegalDocument = {
       body: [
         {
           items: [
-            'Only organization accounts with a verified email address can sign in.',
+            'Only school accounts with a verified email address can sign in.',
             'Student Profile images are stored in a private bucket and opened only through short-lived links given to commission members.',
             'The database blocks direct public access, and every admin action is checked against the commission list each time.',
             'Viewing and exporting Ballots is logged so the commission can hold its own members accountable.',
