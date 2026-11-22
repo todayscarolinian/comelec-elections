@@ -2,6 +2,7 @@ import { footerGutters } from '@/components/election/election-styles'
 import Image from 'next/image'
 import Link from 'next/link'
 import { BallotEntry } from '@/components/ballot/ballot-entry'
+import { CookieSettingsButton } from '@/components/analytics/cookie-settings-button'
 import { legalLinks } from '@/components/election/footer-links'
 
 export function ElectionFooter() {
@@ -31,6 +32,7 @@ export function ElectionFooter() {
               {label}
             </Link>
           ))}
+          <CookieSettingsButton className="inline-flex min-h-11 cursor-pointer items-center font-medium hover:underline hover:underline-offset-4" />
         </nav>
       </div>
     </footer>

@@ -4,7 +4,7 @@ import { contactInstruction, type LegalDocument } from './types'
 export const TERMS_OF_SERVICE: LegalDocument = {
   title: 'Terms of Service',
   status: 'final',
-  version: '0.1',
+  version: '1.0',
   lastUpdated: '2026-11-21',
   summary:
     'The rules for registering and voting in the SSC Elections on this site. By signing in, registering or voting, you agree to them.',
