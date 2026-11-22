@@ -1,4 +1,4 @@
-import { LogIn } from 'lucide-react'
+import { ChartColumn, House, LogIn, UsersRound, Vote, type LucideIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Suspense, type ComponentPropsWithoutRef } from 'react'
@@ -9,11 +9,11 @@ import { ElectionAccountMenu, type ElectionAccount } from './election-account-me
 import { NotificationBell } from './notification-bell'
 
 const sections = [
-  { section: 'home', label: 'Home' },
-  { section: 'candidates', label: 'Candidates' },
-  { section: 'ballot', label: 'Ballot' },
-  { section: 'turnout', label: 'Results' },
-] as const
+  { section: 'home', label: 'Home', icon: House },
+  { section: 'candidates', label: 'Candidates', icon: UsersRound },
+  { section: 'ballot', label: 'Ballot', icon: Vote },
+  { section: 'turnout', label: 'Results', icon: ChartColumn },
+] as const satisfies readonly { section: string; label: string; icon: LucideIcon }[]
 
 type Section = (typeof sections)[number]['section']
 type ElectionLinkProps = Omit<ComponentPropsWithoutRef<'a'>, 'href'> & {
@@ -70,7 +70,7 @@ function NavigationBar({
     <header className={`sticky top-0 z-20 ${isLanding ? 'h-0' : ''}`}>
       <div className="pointer-events-none w-full px-[clamp(0.5rem,1.1vw,1rem)] pt-[clamp(0.625rem,1.35vw,1.25rem)]">
         <nav
-          className="pointer-events-auto grid min-h-[4.625rem] grid-cols-[1fr_auto_1fr] items-center rounded-full border border-[#324e1f]/35 bg-[#e5efda]/44 px-[clamp(0.75rem,1.5vw,1.375rem)] py-3 text-[#17290e] shadow-[inset_0_1px_0_rgb(255_255_255/18%)] backdrop-blur-[16px] backdrop-saturate-125 max-[38rem]:grid-cols-[auto_1fr] max-[38rem]:gap-x-3 max-[38rem]:rounded-[1.25rem] max-[38rem]:py-[0.35rem] [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a]:font-medium [&_a:hover]:underline [&_a:hover]:underline-offset-4"
+          className="pointer-events-auto grid min-h-[4.625rem] grid-cols-[1fr_auto_1fr] items-center rounded-full border border-[#324e1f]/35 bg-[#e5efda]/44 px-[clamp(0.75rem,1.5vw,1.375rem)] py-3 text-[#17290e] shadow-[inset_0_1px_0_rgb(255_255_255/18%)] backdrop-blur-[16px] backdrop-saturate-125 max-[38rem]:min-h-14 max-[38rem]:grid-cols-[auto_1fr] max-[38rem]:gap-x-3 max-[38rem]:py-1 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a]:font-medium [&_a:hover]:underline [&_a:hover]:underline-offset-4"
           aria-label="Main navigation"
         >
           <div className="justify-self-start">
@@ -78,7 +78,7 @@ function NavigationBar({
               <Image src="/landing/mark.webp" alt="" width={33} height={33} />
             </ElectionLink>
           </div>
-          <ul className="flex flex-wrap gap-x-[clamp(1rem,4.4vw,4rem)] gap-y-1 max-[38rem]:col-span-2 max-[38rem]:row-start-2 max-[38rem]:justify-between max-[38rem]:gap-x-2 max-[38rem]:text-sm">
+          <ul className="flex flex-wrap gap-x-[clamp(1rem,4.4vw,4rem)] gap-y-1 max-[38rem]:hidden">
             {sections.map(({ section, label }) => {
               const isCurrent = section === (activeSection ?? (isLanding ? 'home' : undefined))
               return (
@@ -99,7 +99,7 @@ function NavigationBar({
               )
             })}
           </ul>
-          <div className="flex min-w-0 items-center gap-1 justify-self-end max-[38rem]:col-start-2 max-[38rem]:row-start-1">
+          <div className="flex min-w-0 items-center gap-1 justify-self-end max-[38rem]:col-start-2">
             {account ? (
               <>
                 <NotificationBell />
@@ -124,7 +124,55 @@ function NavigationBar({
           </div>
         </nav>
       </div>
+      <MobileTabBar isLanding={isLanding} activeSection={activeSection} account={account} />
     </header>
+  )
+}
+
+const tabClassName =
+  'flex min-h-14 w-full cursor-pointer flex-col items-center justify-center gap-0.5 rounded-full text-[0.6875rem] font-medium leading-none text-[#17290e]/75 transition-colors hover:text-[#17290e] aria-[current=page]:bg-[#324e1f] aria-[current=page]:text-[#faf3e0] focus-visible:outline-2 focus-visible:outline-offset-2'
+
+function MobileTabBar({
+  isLanding,
+  activeSection,
+  account,
+}: Pick<NavigationProps, 'isLanding' | 'activeSection'> & { account?: ElectionAccount | null }) {
+  return (
+    <nav
+      id="election-tab-bar"
+      aria-label="Sections"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-20 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] min-[38rem]:hidden"
+    >
+      <ul className="pointer-events-auto grid grid-cols-4 gap-1 rounded-full border border-[#324e1f]/35 bg-[#e5efda]/80 p-1 shadow-[0_8px_24px_rgb(10_20_5/12%),inset_0_1px_0_rgb(255_255_255/18%)] backdrop-blur-[16px] backdrop-saturate-125">
+        {sections.map(({ section, label, icon: Icon }) => {
+          const isCurrent = section === (activeSection ?? (isLanding ? 'home' : undefined))
+          const content = (
+            <>
+              <Icon aria-hidden="true" size={20} strokeWidth={isCurrent ? 2.25 : 1.75} />
+              {label}
+            </>
+          )
+          return (
+            <li key={section} className="flex">
+              {section === 'ballot' && !account ? (
+                <BallotEntryTrigger isCurrent={isCurrent} className={tabClassName}>
+                  {content}
+                </BallotEntryTrigger>
+              ) : (
+                <ElectionLink
+                  isLanding={isLanding}
+                  section={section}
+                  className={tabClassName}
+                  aria-current={isCurrent ? 'page' : undefined}
+                >
+                  {content}
+                </ElectionLink>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </nav>
   )
 }
 
