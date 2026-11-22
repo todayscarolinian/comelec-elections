@@ -8,7 +8,7 @@ vi.mock('@/server/ocr', () => ({ readStudentProfile: vi.fn() }))
 vi.mock('@/server/storage', () => ({ getSupabaseAdmin: vi.fn() }))
 
 import { POST } from '@/app/api/trpc/[trpc]/route'
-import { session, setup, validBallot } from './castHelpers'
+import { pickedCouncilors, session, setup, validBallot } from './castHelpers'
 
 const origin = 'http://localhost:3000'
 const sentinel = 'PRIVATE-BALLOT-SENTINEL'
@@ -63,11 +63,11 @@ describe('ballot.cast transport privacy', () => {
     { ...validBallot(), answers: { ...validBallot().answers, [sentinel]: { abstain: true } } },
     {
       ...validBallot(),
-      answers: { ...validBallot().answers, 'placeholder-question-1': { candidateIds: [sentinel] } },
+      answers: { ...validBallot().answers, president: { candidateIds: [sentinel] } },
     },
     {
       ...validBallot(),
-      answers: { ...validBallot().answers, 'placeholder-question-1': { [sentinel]: true } },
+      answers: { ...validBallot().answers, president: { [sentinel]: true } },
     },
     { ...validBallot(), disclosureAccepted: sentinel },
   ])('redacts invalid input %# from HTTP errors and logs', async (input) => {
@@ -79,7 +79,7 @@ describe('ballot.cast transport privacy', () => {
     expect(text).toContain('InvalidBallot')
     expect(text).not.toContain(sentinel)
     expect(text).not.toContain('candidateIds')
-    expect(text).not.toContain('placeholder-question-2-candidate-d')
+    expect(text).not.toContain(pickedCouncilors[0])
     expectNoLogs()
   })
 
@@ -109,7 +109,7 @@ describe('ballot.cast transport privacy', () => {
       expect(text).toContain('Unable to cast Ballot.')
       expect(text).not.toContain(sentinel)
       expect(text).not.toContain('candidateIds')
-      expect(text).not.toContain('placeholder-question-2-candidate-d')
+      expect(text).not.toContain(pickedCouncilors[0])
       expectNoLogs()
     },
   )
@@ -120,7 +120,7 @@ describe('ballot.cast transport privacy', () => {
       'invalid SuperJSON metadata',
       JSON.stringify({
         json: validBallot(),
-        meta: { values: { 'answers.placeholder-question-2.candidateIds.0': ['bigint'] }, v: 1 },
+        meta: { values: { 'answers.councilors.candidateIds.0': ['bigint'] }, v: 1 },
       }),
     ],
   ])('redacts %s decoding errors before the resolver', async (_, body) => {
@@ -132,7 +132,7 @@ describe('ballot.cast transport privacy', () => {
     expect(text).toContain('InvalidBallot')
     expect(text).not.toContain('candidateIds')
     expect(text).not.toContain('PRIVATE-')
-    expect(text).not.toContain('placeholder-question-2-candidate-d')
+    expect(text).not.toContain(pickedCouncilors[0])
     expect(db.$transaction).not.toHaveBeenCalled()
     expectNoLogs()
   })
@@ -144,7 +144,7 @@ describe('ballot.cast transport privacy', () => {
       JSON.stringify({
         0: {
           json: validBallot(),
-          meta: { values: { 'answers.placeholder-question-2.candidateIds.0': ['bigint'] }, v: 1 },
+          meta: { values: { 'answers.councilors.candidateIds.0': ['bigint'] }, v: 1 },
         },
         1: { json: { yearLevel: '2', studentProfilePath: 'person-1/profile' } },
       }),
@@ -158,7 +158,7 @@ describe('ballot.cast transport privacy', () => {
     expect(text).toContain('InvalidBallot')
     expect(text).not.toContain('candidateIds')
     expect(text).not.toContain('PRIVATE-')
-    expect(text).not.toContain('placeholder-question-2-candidate-d')
+    expect(text).not.toContain(pickedCouncilors[0])
     expect(db.$transaction).not.toHaveBeenCalled()
     expectNoLogs()
   })

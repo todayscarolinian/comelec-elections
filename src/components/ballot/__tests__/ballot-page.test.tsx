@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ELECTION } from '@/election'
+import { CANDIDATES } from '@/lib/candidates'
 import { BallotPage } from '../ballot-page'
 import { BallotSignInDialog } from '../ballot-sign-in'
 
@@ -33,7 +34,7 @@ vi.mock('@/lib/trpc/client', () => ({
 }))
 
 const account = { name: 'Alex Santos', email: 'alex.santos@example.org' }
-const [first, second] = ELECTION.questions
+const first = ELECTION.questions[0]
 const candidate = first.candidates[0]
 const submitButton = (label: string) =>
   screen.getByRole<HTMLButtonElement>('button', { name: label })
@@ -65,7 +66,11 @@ function answerBallot() {
     within(screen.getByRole('group', { name: first.title })).getByText(candidate.name),
   )
   expect(submitButton('Review ballot').disabled).toBe(true)
-  fireEvent.click(within(screen.getByRole('group', { name: second.title })).getByText('Abstain'))
+  for (const question of ELECTION.questions.slice(1)) {
+    fireEvent.click(
+      within(screen.getByRole('group', { name: question.title })).getByText('Abstain'),
+    )
+  }
   fireEvent.click(submitButton('Review ballot'))
 }
 
@@ -125,15 +130,17 @@ describe('BallotPage', () => {
           name: candidate.name,
         })
         const portrait = option.closest('label')?.querySelector('img')
-        expect(portrait).toBeDefined()
+        expect(portrait).toBeTruthy()
         const src = new URL(portrait!.src)
-        expect(src.searchParams.get('url') ?? src.pathname).toBe(candidate.photo)
+        const photo = CANDIDATES.find(({ id }) => id === candidate.id)?.photo
+        expect(photo).toBeTruthy()
+        expect(src.searchParams.get('url') ?? src.pathname).toBe(photo)
       }
       expect(group.getByText('Abstain').closest('label')?.querySelector('img')).toBeNull()
     }
   })
 
-  it('opens another candidate’s preview without changing the selected candidate', async () => {
+  it('opens the real candidate profile without changing the selected candidate', async () => {
     const prototype = HTMLDialogElement.prototype
     Object.defineProperty(prototype, 'showModal', {
       configurable: true,
@@ -147,14 +154,15 @@ describe('BallotPage', () => {
       await acknowledgeDisclosure()
       fireEvent.click(submitButton('Continue to ballot'))
 
-      const other = first.candidates[1]
       const selection = screen.getByRole<HTMLInputElement>('radio', { name: candidate.name })
       fireEvent.click(selection)
-      fireEvent.click(submitButton(`Details for ${other.name}`))
+      fireEvent.click(submitButton('Details for Wagas, Dyane Jhen P.'))
 
-      const preview = screen.getByRole('dialog', { name: other.name })
-      expect(within(preview).getByText(other.bio)).toBeTruthy()
-      expect(within(preview).queryByRole('link', { name: 'View full profile' })).toBeNull()
+      const preview = within(screen.getByRole('dialog', { name: 'Wagas, Dyane Jhen P.' }))
+      expect(preview.getByText('President · Ballot #2 · STAND')).toBeTruthy()
+      expect(preview.getByRole('link', { name: 'View full profile' }).getAttribute('href')).toBe(
+        '/candidates/dyane-jhen-wagas',
+      )
       expect(selection.checked).toBe(true)
       expect(cast).not.toHaveBeenCalled()
     } finally {
@@ -177,7 +185,11 @@ describe('BallotPage', () => {
     expect(cast).toHaveBeenCalledExactlyOnceWith(
       {
         disclosureAccepted: true,
-        answers: { [first.id]: { candidateIds: [candidate.id] }, [second.id]: { abstain: true } },
+        answers: {
+          president: { candidateIds: [candidate.id] },
+          'vice-president': { abstain: true },
+          councilors: { abstain: true },
+        },
       },
       expect.anything(),
     )

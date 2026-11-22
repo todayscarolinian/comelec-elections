@@ -6,6 +6,7 @@ import { appRouter } from '@/server/trpc/root'
 import { vi } from 'vitest'
 
 export const personId = 'person-1'
+export const pickedCouncilors = ['renie-jr-rizaldo', 'tristan-jude-gacrama'] as const
 export const now = new Date('2026-11-17T12:00:00.000Z')
 export const session: NonNullable<Session> = {
   user: { personId, email: 'voter@example.org' },
@@ -14,10 +15,9 @@ export const session: NonNullable<Session> = {
 export function validBallot(): BallotInput {
   return {
     answers: {
-      'placeholder-question-1': { abstain: true },
-      'placeholder-question-2': {
-        candidateIds: ['placeholder-question-2-candidate-d', 'placeholder-question-2-candidate-c'],
-      },
+      president: { abstain: true },
+      'vice-president': { abstain: true },
+      councilors: { candidateIds: [...pickedCouncilors] },
     },
     disclosureAccepted: true,
   }
@@ -60,7 +60,7 @@ export function setup({
     ballotAnswer: {
       createMany: vi.fn(async (_args: unknown) => {
         events.push('answers')
-        return { count: 3 }
+        return { count: 4 }
       }),
     },
     notification: {

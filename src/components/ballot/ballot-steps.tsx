@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check } from 'lucide-react'
 import { CandidatePortrait } from '@/components/candidates/candidate-portrait'
 import { ELECTION, type CandidateDef, type QuestionDef } from '@/election'
+import { ballotCandidateProfile } from '@/lib/candidates'
 import type { BallotInput } from '@/server/trpc/api/v1/ballot/schema'
 import {
   ballotAction,
@@ -204,7 +205,7 @@ export function BallotQuestion({
                   }}
                 />
                 <CandidatePortrait
-                  candidate={candidate}
+                  candidate={{ photo: ballotCandidateProfile(candidate)?.photo }}
                   sizes="48px"
                   className="max-w-12 shrink-0"
                 />

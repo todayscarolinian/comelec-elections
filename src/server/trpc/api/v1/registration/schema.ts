@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { SCHOOLS } from './core/school'
 
-export const YEAR_LEVELS = ['1', '2', '3', '4'] as const
+export const YEAR_LEVELS = ['1', '2', '3', '4', '5'] as const
 
 export type YearLevel = (typeof YEAR_LEVELS)[number]
 
@@ -10,6 +10,7 @@ export const YEAR_LEVEL_LABELS: Record<YearLevel, string> = {
   '2': '2nd Year',
   '3': '3rd Year',
   '4': '4th Year',
+  '5': '5th Year',
 }
 
 export const createStudentProfileUploadOutputSchema = z.object({
