@@ -1,6 +1,6 @@
 # Live Voting
 
-One-ballot-per-person voting in a single Election for registered members of one organization domain, counting only Ballots whose Registration is approved, with Ballots auditable by Admins and a public Turnout count while voting is open.
+One-ballot-per-person voting in a single Election for registered members of one university domain, counting only Ballots whose Registration is approved, with Ballots auditable by Admins and a public Turnout count while voting is open.
 
 ## Election
 
@@ -35,7 +35,7 @@ A person's request to become a Voter, made during the Registration Period or whi
 _Avoid_: Application, sign-up, enrollment
 
 **Applicant**:
-A person signed in with an organization-domain account whose Registration is not yet approved.
+A person signed in with an university-domain account whose Registration is not yet approved.
 _Avoid_: Registrant, pending voter
 
 **Student Profile**:

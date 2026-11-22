@@ -18,6 +18,9 @@ export function BallotCandidatePreview({
   const dialog = useRef<HTMLDialogElement>(null)
   const profile = CANDIDATES.find(({ id }) => id === (candidate.profileId ?? candidate.id))
   const highlights = profile?.platformHighlights ?? profile?.projects.map(({ name }) => name)
+  const academics = [profile?.school, profile?.program, profile?.year && `Year ${profile.year}`]
+    .filter(Boolean)
+    .join(' · ')
   const traits = [
     profile?.personalTrait && `${profile.personalTrait} as a person`,
     profile?.leadershipTrait && `${profile.leadershipTrait} as a leader`,
@@ -72,11 +75,7 @@ export function BallotCandidatePreview({
               {candidate.name}
             </h2>
             <p>{officeDetails}</p>
-            {profile && (
-              <p>
-                {profile.school} · {profile.program} · Year {profile.year}
-              </p>
-            )}
+            {academics && <p>{academics}</p>}
             {traits && <p className="first-letter:uppercase">{traits}</p>}
           </div>
           {profile?.motto && (

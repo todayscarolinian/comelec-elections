@@ -5,7 +5,7 @@ import { SCHOOLS } from '@/server/trpc/api/v1/registration/core/school'
 import { YEAR_LEVELS, ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
 import { resultsOutputSchema } from '@/server/trpc/api/v1/results/schema'
 
-const organizationEmail = z
+const schoolEmail = z
   .string()
   .trim()
   .toLowerCase()
@@ -15,13 +15,13 @@ const organizationEmail = z
       const domain = normalizeHostedDomain(process.env.ALLOWED_HOSTED_DOMAIN)
       return !!domain && email.endsWith(`@${domain}`)
     },
-    { message: 'Email must belong to the organization domain' },
+    { message: 'Email must belong to the USC domain' },
   )
 
-export const grantAdminInputSchema = z.object({ email: organizationEmail })
+export const grantAdminInputSchema = z.object({ email: schoolEmail })
 export const grantAdminOutputSchema = z.object({ email: z.string() })
 
-export const revokeAdminInputSchema = z.object({ email: organizationEmail })
+export const revokeAdminInputSchema = z.object({ email: schoolEmail })
 export const revokeAdminOutputSchema = z.object({ ok: z.literal(true) })
 
 export const listAdminsOutputSchema = z.array(

@@ -50,14 +50,27 @@ describe('setRegistrationStatus', () => {
       },
     )
     const auditCreate = vi.fn().mockResolvedValue({ id: 'audit-1' })
-    const tx = { electionState: { createMany, updateMany }, auditLog: { create: auditCreate } }
+    const notificationCreate = vi.fn().mockResolvedValue({ id: 'notification-1' })
+    const tx = {
+      electionState: { createMany, updateMany },
+      auditLog: { create: auditCreate },
+      notification: { create: notificationCreate },
+    }
     const transaction = vi.fn(async (work: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
       work(tx as unknown as Prisma.TransactionClient),
     )
     // Only the transaction client has write methods; accidental global writes fail the test.
     const db = { $transaction: transaction } as unknown as Db
 
-    return { db, createMany, updateMany, auditCreate, transaction, status: () => status }
+    return {
+      db,
+      createMany,
+      updateMany,
+      auditCreate,
+      notificationCreate,
+      transaction,
+      status: () => status,
+    }
   }
 
   it.each([
@@ -90,6 +103,14 @@ describe('setRegistrationStatus', () => {
     expect(s.auditCreate.mock.invocationCallOrder[0]).toBeGreaterThan(
       s.updateMany.mock.invocationCallOrder[0],
     )
+    expect(s.notificationCreate).toHaveBeenCalledExactlyOnceWith({
+      data: {
+        personId: null,
+        type: to === 'OPEN' ? 'REGISTRATION_OPENED' : 'REGISTRATION_CLOSED',
+        data: undefined,
+      },
+      select: { id: true },
+    })
     expect(s.status()).toBe(to)
   })
 
@@ -109,6 +130,7 @@ describe('setRegistrationStatus', () => {
       registrationStatus: status,
     })
     expect(s.auditCreate).not.toHaveBeenCalled()
+    expect(s.notificationCreate).not.toHaveBeenCalled()
   })
 
   it('lowercases the Admin email in the audit row', async () => {
@@ -188,10 +210,12 @@ describe('setElectionStatus', () => {
     const ballotAccess = vi.fn(() => {
       throw new Error('Election toggle must not access Ballots')
     })
+    const notificationCreate = vi.fn().mockResolvedValue({ id: 'notification-1' })
     const tx = {
       electionState: { createMany, update },
       $queryRaw: queryRaw,
       auditLog: { create: auditCreate },
+      notification: { create: notificationCreate },
       get ballot() {
         return ballotAccess()
       },
@@ -211,6 +235,7 @@ describe('setElectionStatus', () => {
       queryRaw,
       update,
       auditCreate,
+      notificationCreate,
       transaction,
       ballotAccess,
       state: () => state,
@@ -258,6 +283,14 @@ describe('setElectionStatus', () => {
     expect(s.auditCreate.mock.invocationCallOrder[0]).toBeGreaterThan(
       s.update.mock.invocationCallOrder[0],
     )
+    expect(s.notificationCreate).toHaveBeenCalledExactlyOnceWith({
+      data: {
+        personId: null,
+        type: status === 'OPEN' ? 'VOTING_OPENED' : 'VOTING_CLOSED',
+        data: undefined,
+      },
+      select: { id: true },
+    })
     expect(s.state()).toEqual({
       electionStatus: status,
       registrationStatus: 'OPEN',
@@ -302,6 +335,7 @@ describe('setElectionStatus', () => {
       expect(s.queryRaw).toHaveBeenCalledTimes(1)
       expect(s.update).not.toHaveBeenCalled()
       expect(s.auditCreate).not.toHaveBeenCalled()
+      expect(s.notificationCreate).not.toHaveBeenCalled()
     },
   )
 

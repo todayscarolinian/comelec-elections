@@ -5,9 +5,9 @@ export type CandidateProfileContent = {
   number: number
   name: string
   photo?: string
-  school: string
-  program: string
-  year: number
+  school?: string
+  program?: string
+  year?: number
   party?: PartyId
   motto?: string
   personalTrait?: string
@@ -24,6 +24,10 @@ type CandidateOffice = {
 
 const tingog = 'TINGOG!'
 
+function candidatePhoto(folder: 'Tingog' | 'STAND' | 'SPP', filename: string) {
+  return `/candidates/${folder}/${encodeURIComponent(filename)}`
+}
+
 // Public profile submissions are independent of the voting configuration in src/election.ts.
 export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
   {
@@ -34,6 +38,7 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
         id: 'mark-lawrence-gavas',
         number: 1,
         name: 'Gavas, Mark Lawrence L.',
+        photo: candidatePhoto('Tingog', '#1-Gavas_Mark.webp'),
         school: 'SAS',
         program: 'BS Psychology',
         year: 3,
@@ -64,6 +69,20 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
           },
         ],
       },
+      {
+        id: 'dyane-jhen-wagas',
+        number: 2,
+        name: 'Wagas, Dyane Jhen P.',
+        party: 'STAND',
+        photo: candidatePhoto('STAND', '#2-Wagas_Dyane_Jhen.webp'),
+        school: 'SAS',
+        program: 'BS Psychology',
+        year: 4,
+        motto: 'Serve the people',
+        personalTrait: 'Resilient',
+        leadershipTrait: 'Gritty',
+        projects: [],
+      },
     ],
   },
   {
@@ -71,9 +90,24 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
     title: 'Vice President',
     candidates: [
       {
+        id: 'monica-denise-rodriguez',
+        number: 1,
+        name: 'Rodriguez, Monica Denise T.',
+        party: 'STAND',
+        photo: candidatePhoto('STAND', '#1-Rodriguez_Monica_Denise_T.webp'),
+        school: 'SBE',
+        program: 'BSBA Operations Management',
+        year: 3,
+        motto: 'Fortune will always favor the bold.',
+        personalTrait: 'Thinker',
+        leadershipTrait: 'Perseverant',
+        projects: [],
+      },
+      {
         id: 'princess-jannah-ungab',
         number: 2,
         name: 'Ungab, Princess Jannah',
+        photo: candidatePhoto('Tingog', '#2-Ungab_Princess_Jannah.webp'),
         school: 'SBE',
         program: 'BS Management Accounting',
         year: 4,
@@ -109,6 +143,7 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
         id: 'andrie-levy-arizobal',
         number: 1,
         name: 'Arizobal, Andrie Levy',
+        photo: candidatePhoto('Tingog', '#1-Arizobal_Andrie_Levy.webp'),
         school: 'SAS',
         program: 'BS Psychology',
         year: 2,
@@ -128,6 +163,7 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
         id: 'briar-cymone-cuizon',
         number: 2,
         name: 'Cuizon, Briar Cymone',
+        photo: candidatePhoto('Tingog', '#2-Cuizon_Cymone.webp'),
         school: 'SLG',
         program: 'BA Political Science',
         year: 2,
@@ -147,7 +183,8 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
       {
         id: 'ravioli-bueri-blanc-gabales',
         number: 3,
-        name: 'Gabales, Ravioli Bueri Blanc M.',
+        name: 'Gabales, Ravioli Bueri Blanc Manayaga',
+        photo: candidatePhoto('Tingog', '#3-Gabales_Ravioli.webp'),
         school: 'SAS',
         program: 'BS Psychology',
         year: 2,
@@ -164,9 +201,50 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
         ],
       },
       {
+        id: 'tristan-jude-gacrama',
+        number: 4,
+        name: 'Gacrama, Tristan Jude G.',
+        party: 'SPP',
+        photo: candidatePhoto('SPP', '#4-Gacrama_Tristan_Jude_Garcia-v3.webp'),
+        school: 'SOE',
+        program: 'BS Mechanical Engineering',
+        year: 2,
+        motto: 'Lift as you climb.',
+        personalTrait: 'Grounded',
+        leadershipTrait: 'Advocacy-driven',
+        projects: [
+          {
+            name: 'C.A.R.E.E.R. (Creating Access for Relevant Experiences and Employment Resources)',
+            description:
+              'A student employment initiative that partners with companies to connect Carolinians with internships, part-time jobs, and entry-level roles—equipping students with practical skills, extra income.',
+          },
+        ],
+      },
+      {
+        id: 'adam-zachary-gaviola',
+        number: 5,
+        name: 'Gaviola, Adam Zachary D.',
+        party: 'STAND',
+        photo: candidatePhoto('STAND', '#5-Gaviola_Adam_Zachary.webp'),
+        school: 'SBE',
+        program: 'BS Accountancy',
+        year: 2,
+        motto:
+          'Life moves pretty fast. You don’t stop and look around once in a while. You could miss it.',
+        personalTrait: 'Optimistic',
+        leadershipTrait: 'Coherent',
+        projects: [
+          {
+            name: 'Grievance System through College Councils: Online Reklamo and Problem Exploration (GSCOPE)',
+            description: '',
+          },
+        ],
+      },
+      {
         id: 'yoshua-luke-majam',
         number: 6,
-        name: 'Majam, Yoshua Luke L.',
+        name: 'Majam, Yoshua Luke Lobitonia',
+        photo: candidatePhoto('Tingog', '#6-Majam_Yoshua.webp'),
         school: 'SLG',
         program: 'BA Political Science',
         year: 3,
@@ -187,6 +265,7 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
         id: 'kent-deloria-reyes',
         number: 7,
         name: 'Reyes, Kent Deloria',
+        photo: candidatePhoto('Tingog', '#7-Reyes_Kent.webp'),
         school: 'SBE',
         program: 'BS Accountancy',
         year: 2,
@@ -200,9 +279,30 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
         ],
       },
       {
+        id: 'renie-jr-rizaldo',
+        number: 8,
+        name: 'Rizaldo, Renie Jr. D.',
+        party: 'SPP',
+        photo: candidatePhoto('SPP', '#8-Rizaldo_Renie_Jr.webp'),
+        school: 'SHCP',
+        program: 'BS Nutrition and Dietetics',
+        year: 3,
+        motto: 'Be the change you wish to see in the world.',
+        personalTrait: 'Compassionate',
+        leadershipTrait: 'Visionary',
+        projects: [
+          {
+            name: 'Alagad Sa Kaalam (A.S.K.)',
+            description:
+              'Grounded in the belief that knowledge serves best when shared. As a Nutrition & Dietetics student, this initiative makes health and wellness accessible to every Carolinian through peer-led nutrition literacy, budget-friendly healthy eating guides, and campus wellness drives.',
+          },
+        ],
+      },
+      {
         id: 'sean-joseph-solibaga',
         number: 9,
         name: 'Solibaga, Sean Joseph',
+        photo: candidatePhoto('Tingog', '#9-Solibaga_Sean.webp'),
         school: 'SLG',
         program: 'BA Political Science',
         year: 3,
@@ -220,6 +320,7 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
         id: 'weighne-princess-tan',
         number: 10,
         name: 'Tan, Weighne Princess',
+        photo: candidatePhoto('Tingog', '#10-Tan_Weighne.webp'),
         school: 'SAS',
         program: 'BS Psychology',
         year: 2,
@@ -239,6 +340,7 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
         id: 'peter-allan-vilbar',
         number: 11,
         name: 'Vilbar, Peter Allan',
+        photo: candidatePhoto('Tingog', '#11-Vilbar_Peter.webp'),
         school: 'SLG',
         program: 'BA Political Science',
         year: 3,

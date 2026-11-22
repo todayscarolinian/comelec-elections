@@ -21,14 +21,14 @@ export function AuthErrorMessage({
   const heading = configurationError
     ? 'Sign-in unavailable'
     : accessDenied
-      ? 'Use your university account.'
+      ? 'Use your USC account.'
       : temporarilyUnavailable
         ? 'Please try again shortly.'
         : 'Unable to sign in'
   const message = configurationError
-    ? 'Organization sign-in is not configured. Contact the election administrator.'
+    ? 'University Email sign-in is not configured. Contact the election administrator.'
     : accessDenied
-      ? `Please choose your university account (@${domain}) in the Google account picker to continue.`
+      ? `Please choose your USC account (@${domain}) in the Google account picker to continue.`
       : temporarilyUnavailable
         ? 'Sign-in is temporarily unavailable. Please try again in a moment.'
         : 'We could not complete your Google sign-in. Please try again.'

@@ -39,6 +39,14 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Keep page content clear of the fixed mobile tab bar. */
+@media (width < 38rem) {
+  body:has(#election-tab-bar) {
+    background-color: var(--color-comelec-cream);
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+}
+
 .result-progress {
   appearance: none;
   border: 0;

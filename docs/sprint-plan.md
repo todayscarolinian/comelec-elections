@@ -43,7 +43,7 @@ Blocking items we need from the client, and the latest date each can arrive with
 
 ## Sprint 1: Foundation (Nov 4–7)
 
-**Goal:** an organization member can sign in, the database is ready for Registrations, and Study Loads can be uploaded.
+**Goal:** an university member can sign in, the database is ready for Registrations, and Study Loads can be uploaded.
 
 | # | Task | Depends on | Size | Ref |
 |---|---|---|---|---|
@@ -52,7 +52,7 @@ Blocking items we need from the client, and the latest date each can arrive with
 | S1-03 | **Create the Person on sign-in and keep the session small.** `upsertPerson`; session and JWT carry only `personId` and `email` (module augmentation, no casts); Google tokens are never stored | S1-01, S1-02 | S | FR-1.4, §4.2, ADR 0004 |
 | S1-04 | **Procedure guards.** `protectedProcedure`, `voterProcedure`, `adminProcedure` middleware in `trpc/init.ts`; Registration status and Admin rights read from the database on every call. Permission tests via `createCaller` | S1-03 | S | §4.3, §12, ADR 0007 |
 | S1-05 | **Election config.** `src/election.ts` with placeholder Questions and Candidates; no `YEAR_LEVELS` and no Year-Level Questions (no batch reps). Tests for unique ids, `1 ≤ selectionLimit ≤ number of Candidates`, and photos existing | S1-01 (conventions) | S | §2, ADR 0003 |
-| S1-06 | **UI design for the landing and auth pages.** Landing page (Election overview, Turnout placeholder, sign-in button), sign-in page, "organization accounts only" rejection page, signed-in header with sign-out. Mobile-first | — | S | US-1, US-4 |
+| S1-06 | **UI design for the landing and auth pages.** Landing page (Election overview, Turnout placeholder, sign-in button), sign-in page, "university accounts only" rejection page, signed-in header with sign-out. Mobile-first | — | S | US-1, US-4 |
 | S1-07 | **`AuditLog` write helper.** `writeAudit({ adminEmail, action, target, detail })` in `trpc/api/v1/audit/services/` and a typed list of actions. Append-only: no update or delete path | S1-01 | XS | §3, ADR 0002 |
 | S1-08 | **Study Load upload.** `registration.createStudyLoadUpload` tRPC procedure (`protectedProcedure`, Registration Period open, signed URL for `{personId}/{uuid}` valid 5 minutes) and a browser upload component that checks type and size. Leave room for the post-upload OCR step (S1-09) | S1-01, S1-04 | M | §5.1 |
 | S1-09 | **OCR spike (timeboxed to 1 day).** Run 5–10 real sample Study Loads through the OCR options in ADR 0006 (browser tesseract.js, server-side tesseract, server-side PaddleOCR via ONNX, a cloud API, a vision-capable LLM) and measure how reliably each extracts the fields Admins check. Output: ADR 0006 with a recommendation; no production code. **Result:** Applicants upload a Student Profile instead of a Study Load, read by server-side PaddleOCR (ADR 0006 accepted) | — | S | — |

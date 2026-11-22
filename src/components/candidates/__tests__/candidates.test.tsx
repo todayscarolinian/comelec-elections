@@ -32,9 +32,9 @@ describe('candidates directory', () => {
       page.rerender(<CandidatesDirectory />)
     }
 
-    expect(screen.getByRole('status').textContent).toBe('10 candidates')
+    expect(screen.getByRole('status').textContent).toBe('15 candidates')
     choose(/^Browse by office /, 'Browse by office', CANDIDATE_OFFICES[0].title)
-    expect(screen.getByRole('status').textContent).toBe('1 candidate')
+    expect(screen.getByRole('status').textContent).toBe('2 candidates')
     expect(screen.queryByRole('heading', { name: 'Vice President' })).toBeNull()
     choose(/^Browse by party /, 'Browse by party', party)
     expect(screen.getByRole('status').textContent).toBe('1 candidate')
@@ -46,7 +46,7 @@ describe('candidates directory', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
     page.rerender(<CandidatesDirectory />)
-    expect(screen.getByRole('status').textContent).toBe('10 candidates')
+    expect(screen.getByRole('status').textContent).toBe('15 candidates')
     expect(window.location.search).toBe('')
   })
 
@@ -61,14 +61,14 @@ describe('candidates directory', () => {
     const link = within(card).getByRole('link')
     expect(link.textContent).toContain('View profile')
     expect(link.getAttribute('href')).toBe(
-      `${candidateHref(CANDIDATES[7].id)}?${partyQuery}&q=Solibaga`,
+      `/candidates/sean-joseph-solibaga?${partyQuery}&q=Solibaga`,
     )
   })
 
   it('ignores unknown office and party values without hiding the directory', () => {
     window.history.replaceState(null, '', '/candidates?office=missing&party=missing')
     render(<CandidatesDirectory />)
-    expect(screen.getByRole('status').textContent).toBe('10 candidates')
+    expect(screen.getByRole('status').textContent).toBe('15 candidates')
     expect(screen.getByRole('button', { name: 'Browse by office All offices' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Browse by party All parties' })).toBeTruthy()
   })
@@ -79,27 +79,28 @@ describe('profile navigation', () => {
     window.history.replaceState(
       null,
       '',
-      `${candidateHref(CANDIDATES[2].id)}?${partyQuery}&q=Arizobal&returnTo=https://example.org`,
+      `${candidateHref(CANDIDATES[4].id)}?${partyQuery}&q=Arizobal&returnTo=https://example.org`,
     )
     render(
       <CandidateProfileNavigation
-        previousCandidate={CANDIDATES[1]}
-        nextCandidate={CANDIDATES[3]}
+        previousCandidate={CANDIDATES[3]}
+        nextCandidate={CANDIDATES[5]}
       />,
     )
     expect(screen.getByRole('link', { name: /Previous candidate/ }).getAttribute('href')).toBe(
-      `${candidateHref(CANDIDATES[1].id)}?${partyQuery}&q=Arizobal`,
+      `${candidateHref(CANDIDATES[3].id)}?${partyQuery}&q=Arizobal`,
     )
     expect(screen.getByRole('link', { name: /Next candidate/ }).getAttribute('href')).toBe(
-      `${candidateHref(CANDIDATES[3].id)}?${partyQuery}&q=Arizobal`,
+      `${candidateHref(CANDIDATES[5].id)}?${partyQuery}&q=Arizobal`,
     )
   })
 
   it('does not offer next-candidate navigation at the end of the ballot order', () => {
-    render(<CandidateProfileNavigation previousCandidate={CANDIDATES[2]} />)
+    const previousCandidate = CANDIDATES.at(-2)!
+    render(<CandidateProfileNavigation previousCandidate={previousCandidate} />)
     expect(screen.queryByRole('link', { name: /Next candidate/ })).toBeNull()
     expect(screen.getByRole('link', { name: /Previous candidate/ }).getAttribute('href')).toBe(
-      candidateHref(CANDIDATES[2].id),
+      candidateHref(previousCandidate.id),
     )
     expect(screen.queryByRole('link', { name: 'Back to candidates' })).toBeNull()
   })
@@ -113,11 +114,7 @@ describe('profile navigation', () => {
   })
 
   it('keeps the top All candidates link pointing to the filtered directory', () => {
-    window.history.replaceState(
-      null,
-      '',
-      `${candidateHref(CANDIDATES[1].id)}?${partyQuery}&q=Ungab`,
-    )
+    window.history.replaceState(null, '', `/candidates/princess-jannah-ungab?${partyQuery}&q=Ungab`)
     render(<CandidateProfileNavigation top />)
     expect(screen.getByRole('link', { name: 'All candidates' }).getAttribute('href')).toBe(
       `/candidates?${partyQuery}&q=Ungab`,

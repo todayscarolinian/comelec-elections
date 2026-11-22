@@ -57,7 +57,9 @@ export const ModelName = {
   Ballot: 'Ballot',
   BallotAnswer: 'BallotAnswer',
   Admin: 'Admin',
-  AuditLog: 'AuditLog'
+  AuditLog: 'AuditLog',
+  Notification: 'Notification',
+  NotificationRead: 'NotificationRead'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -158,6 +160,26 @@ export const AuditLogScalarFieldEnum = {
 } as const
 
 export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
+export const NotificationScalarFieldEnum = {
+  id: 'id',
+  personId: 'personId',
+  type: 'type',
+  data: 'data',
+  createdAt: 'createdAt'
+} as const
+
+export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+export const NotificationReadScalarFieldEnum = {
+  notificationId: 'notificationId',
+  personId: 'personId',
+  readAt: 'readAt'
+} as const
+
+export type NotificationReadScalarFieldEnum = (typeof NotificationReadScalarFieldEnum)[keyof typeof NotificationReadScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { Prisma } from '@/generated/prisma/client'
 import type { Db } from '@/server/trpc/init'
 import { writeAudit } from '@/server/trpc/api/v1/audit/services/writeAudit'
+import { notifyPerson } from '@/server/trpc/api/v1/notification/services/createNotification'
 import { ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
 import { ocrView } from '@/server/trpc/api/v1/registration/core/ocrView'
 import { createSignedStudentProfileView } from '@/server/trpc/api/v1/registration/services/studentProfileStorage'
@@ -177,6 +178,13 @@ export async function reviewRegistration(db: Db, decision: Decision) {
             },
           },
           tx,
+        )
+        // Only this Person's own notification ever carries their rejection reason.
+        await notifyPerson(
+          tx,
+          registration.personId,
+          decision.status === 'APPROVED' ? 'REGISTRATION_APPROVED' : 'REGISTRATION_REJECTED',
+          rejectionReason === null ? undefined : { rejectionReason },
         )
         return { ok: true as const }
       },

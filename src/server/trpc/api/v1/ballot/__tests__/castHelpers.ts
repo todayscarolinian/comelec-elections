@@ -63,6 +63,12 @@ export function setup({
         return { count: 3 }
       }),
     },
+    notification: {
+      create: vi.fn(async (_args: unknown) => {
+        events.push('notification')
+        return { id: 'notification-1' }
+      }),
+    },
   }
   const db = {
     person: {

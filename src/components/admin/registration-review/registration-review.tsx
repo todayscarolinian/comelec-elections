@@ -175,7 +175,7 @@ export function RegistrationReview() {
           Search applicants
           <input
             type="search"
-            placeholder="Name or organizational email"
+            placeholder="Name or USC email (@usc.edu.ph)"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value)
