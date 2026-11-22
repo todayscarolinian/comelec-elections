@@ -67,6 +67,7 @@ export type PartyId = (typeof PARTIES)[number];
 
 export type CandidateDef = {
   readonly id: string;      // stable, never changes once the Election has opened
+  readonly profileId?: string; // public profile ID when it differs from the ballot ID
   readonly name: string;
   readonly party?: PartyId; // omitted = Independent
 };
@@ -96,7 +97,7 @@ export const CURRENT_TERM = "1ST Semester 2026"; // compared with the term OCR r
 **Rules:**
 - Question and Candidate `id`s are stored in Ballot rows. **Never rename or remove an id after the Election has first opened**, or existing Ballots become orphaned.
 - A Candidate's `party` must be one of `PARTIES`, or omitted for an Independent. The UI shows "Independent" when it's omitted.
-- A unit test asserts that ids are unique and every `selectionLimit` is ≥ 1 and ≤ the number of Candidates. The Councilor limit is the lesser of 21 and the size of the roster. Photos and bios belong to the public candidate profiles, not the ballot config. `party` is checked by the type.
+- A unit test checks unique IDs, selection limits, and public portraits for the verified roster. The Councilor limit is the lesser of 21 and the roster size. Portraits and platforms come from the public candidate profiles. `party` is checked by the type.
 - Display order on the Ballot and in Results is the config array order.
 
 ## 3. Data model

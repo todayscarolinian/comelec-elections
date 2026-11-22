@@ -1,4 +1,4 @@
-import { PARTIES } from '@/election'
+import { PARTIES, type CandidateDef } from '@/election'
 import { CANDIDATE_OFFICES } from './candidate-profiles'
 
 export { CANDIDATE_OFFICES }
@@ -12,6 +12,10 @@ export const CANDIDATES = CANDIDATE_OFFICES.flatMap((office) =>
 )
 
 export type DirectoryCandidate = (typeof CANDIDATES)[number]
+
+export function ballotCandidateProfile(candidate: CandidateDef): DirectoryCandidate | undefined {
+  return CANDIDATES.find(({ id }) => id === (candidate.profileId ?? candidate.id))
+}
 export type CandidateFilters = { office: string; party: string; q: string }
 
 export const CANDIDATE_PARTIES: readonly string[] = [

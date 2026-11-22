@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ELECTION } from '@/election'
+import { CANDIDATES } from '@/lib/candidates'
 import { BallotPage } from '../ballot-page'
 import { BallotSignInDialog } from '../ballot-sign-in'
 
@@ -33,7 +34,7 @@ vi.mock('@/lib/trpc/client', () => ({
 }))
 
 const account = { name: 'Alex Santos', email: 'alex.santos@example.org' }
-const [first, vicePresident, councilors] = ELECTION.questions
+const first = ELECTION.questions[0]
 const candidate = first.candidates[0]
 const submitButton = (label: string) =>
   screen.getByRole<HTMLButtonElement>('button', { name: label })
@@ -59,13 +60,16 @@ async function acknowledgeDisclosure() {
 }
 
 function answerBallot() {
+  fireEvent.click(submitButton('Continue to ballot'))
   expect(submitButton('Review ballot').disabled).toBe(true)
   fireEvent.click(
     within(screen.getByRole('group', { name: first.title })).getByText(candidate.name),
   )
   expect(submitButton('Review ballot').disabled).toBe(true)
-  for (const office of [vicePresident, councilors]) {
-    fireEvent.click(within(screen.getByRole('group', { name: office.title })).getByText('Abstain'))
+  for (const question of ELECTION.questions.slice(1)) {
+    fireEvent.click(
+      within(screen.getByRole('group', { name: question.title })).getByText('Abstain'),
+    )
   }
   fireEvent.click(submitButton('Review ballot'))
 }
@@ -114,35 +118,61 @@ describe('BallotPage', () => {
     expect(cast).not.toHaveBeenCalled()
   })
 
-  it('shows all 15 candidates after disclosure and clears Councilor picks when abstaining', async () => {
+  it('shows each candidate’s portrait alongside their ballot option', async () => {
     showBallot()
     await acknowledgeDisclosure()
     fireEvent.click(submitButton('Continue to ballot'))
 
-    const choices = (office: string, role: 'radio' | 'checkbox') => {
-      const group = within(screen.getByRole('group', { name: office }))
-      const abstain = group.getByRole(role, { name: 'Abstain' })
-      return group.getAllByRole<HTMLInputElement>(role).filter((option) => option !== abstain)
+    for (const question of ELECTION.questions) {
+      const group = within(screen.getByRole('group', { name: question.title }))
+      for (const candidate of question.candidates) {
+        const option = group.getByRole(question.selectionLimit === 1 ? 'radio' : 'checkbox', {
+          name: candidate.name,
+        })
+        const portrait = option.closest('label')?.querySelector('img')
+        expect(portrait).toBeTruthy()
+        const src = new URL(portrait!.src)
+        const photo = CANDIDATES.find(({ id }) => id === candidate.id)?.photo
+        expect(photo).toBeTruthy()
+        expect(src.searchParams.get('url') ?? src.pathname).toBe(photo)
+      }
+      expect(group.getByText('Abstain').closest('label')?.querySelector('img')).toBeNull()
     }
-    expect(choices('President', 'radio')).toHaveLength(2)
-    expect(choices('Vice President', 'radio')).toHaveLength(2)
-    expect(choices('Councilors', 'checkbox')).toHaveLength(11)
+  })
 
-    const group = within(screen.getByRole('group', { name: 'Councilors' }))
-    expect(group.getByText('Choose up to 11 candidates or abstain.')).toBeTruthy()
-    const councilor = group.getByRole<HTMLInputElement>('checkbox', {
-      name: 'Gacrama, Tristan Jude G.',
+  it('opens the real candidate profile without changing the selected candidate', async () => {
+    const prototype = HTMLDialogElement.prototype
+    Object.defineProperty(prototype, 'showModal', {
+      configurable: true,
+      value(this: HTMLDialogElement) {
+        this.open = true
+      },
     })
-    fireEvent.click(councilor)
-    expect(councilor.checked).toBe(true)
-    fireEvent.click(group.getByRole('checkbox', { name: 'Abstain' }))
-    expect(councilor.checked).toBe(false)
+
+    try {
+      showBallot()
+      await acknowledgeDisclosure()
+      fireEvent.click(submitButton('Continue to ballot'))
+
+      const selection = screen.getByRole<HTMLInputElement>('radio', { name: candidate.name })
+      fireEvent.click(selection)
+      fireEvent.click(submitButton('Details for Wagas, Dyane Jhen P.'))
+
+      const preview = within(screen.getByRole('dialog', { name: 'Wagas, Dyane Jhen P.' }))
+      expect(preview.getByText('President · Ballot #2 · STAND')).toBeTruthy()
+      expect(preview.getByRole('link', { name: 'View full profile' }).getAttribute('href')).toBe(
+        '/candidates/dyane-jhen-wagas',
+      )
+      expect(selection.checked).toBe(true)
+      expect(cast).not.toHaveBeenCalled()
+    } finally {
+      Reflect.deleteProperty(prototype, 'showModal')
+    }
   })
 
   it('requires disclosure, lets a voter edit and review, then casts once and clears choices', async () => {
     showBallot()
     await acknowledgeDisclosure()
-    fireEvent.click(submitButton('Continue to ballot'))
     answerBallot()
 
     expect(cast).not.toHaveBeenCalled()
@@ -156,9 +186,9 @@ describe('BallotPage', () => {
       {
         disclosureAccepted: true,
         answers: {
-          [first.id]: { candidateIds: [candidate.id] },
-          [vicePresident.id]: { abstain: true },
-          [councilors.id]: { abstain: true },
+          president: { candidateIds: [candidate.id] },
+          'vice-president': { abstain: true },
+          councilors: { abstain: true },
         },
       },
       expect.anything(),
@@ -179,7 +209,6 @@ describe('BallotPage', () => {
     fireEvent.click(
       screen.getByRole('checkbox', { name: /only counts if my registration is approved/i }),
     )
-    fireEvent.click(submitButton('Continue to ballot'))
     answerBallot()
     fireEvent.click(submitButton('Cast my ballot'))
     await screen.findByRole('heading', { name: 'Your ballot is held.' })

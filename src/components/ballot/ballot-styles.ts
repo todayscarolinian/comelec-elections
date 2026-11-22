@@ -16,3 +16,6 @@ export const ballotTextAction =
 
 export const ballotColumns =
   'grid items-start gap-8 lg:grid-cols-[minmax(0,2.3fr)_minmax(16rem,1fr)] lg:gap-12'
+
+export const ballotOptionBorder = (checked: boolean) =>
+  `border motion-safe:transition-colors motion-safe:duration-150 ${checked ? 'border-comelec-forest bg-comelec-forest text-comelec-cream' : 'border-comelec-sage hover:bg-comelec-sage/35'}`

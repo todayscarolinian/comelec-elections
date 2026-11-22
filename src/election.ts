@@ -4,6 +4,7 @@ export type PartyId = (typeof PARTIES)[number]
 
 export type CandidateDef = {
   readonly id: string // stable, never changes once the Election has opened
+  readonly profileId?: string // public candidate profile ID when it differs from the ballot ID
   readonly name: string
   readonly party?: PartyId // Omitted means that the Candidate is Independent
 }
@@ -25,7 +26,7 @@ function candidates(entries: readonly (readonly [id: string, name: string, party
   return entries.map(([id, name, party]) => ({ id, name, party }))
 }
 
-// Listed in verified ballot-number order. Profile content lives in the public directory.
+// Snapshot in ballot-number order. Profile edits must not change persisted ballot IDs.
 const councilors = candidates([
   ['andrie-levy-arizobal', 'Arizobal, Andrie Levy', 'TINGOG!'],
   ['briar-cymone-cuizon', 'Cuizon, Briar Cymone', 'TINGOG!'],

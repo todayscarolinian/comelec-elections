@@ -21,9 +21,18 @@ export function CandidateProfile({
     { label: 'School', value: candidate.school },
     { label: 'Program', value: candidate.program },
     { label: 'Year level', value: candidate.year },
+    {
+      label: 'Political party',
+      value:
+        candidate.party === 'STAND'
+          ? 'Student Alliance for Nationalism and Democracy'
+          : candidate.party === 'SPP'
+            ? 'Student Power Party'
+            : undefined,
+    },
     { label: 'As a person', value: candidate.personalTrait },
     { label: 'As a student leader', value: candidate.leadershipTrait },
-  ]
+  ].filter(({ value }) => Boolean(value))
 
   return (
     <article key={candidate.id}>
@@ -50,29 +59,33 @@ export function CandidateProfile({
               <CandidateParty party={candidate.party} />
             </div>
           </header>
-          <section
-            aria-labelledby="projects-heading"
-            className={`order-4 min-w-0 border-t border-comelec-sage pt-4 motion-safe:[animation-delay:100ms] ${profileEntrance}`}
-          >
-            <h2
-              id="projects-heading"
-              className="font-display text-4xl leading-tight italic sm:text-5xl"
+          {candidate.projects.length > 0 && (
+            <section
+              aria-labelledby="projects-heading"
+              className={`order-4 min-w-0 border-t border-comelec-sage pt-4 motion-safe:[animation-delay:100ms] ${profileEntrance}`}
             >
-              Advocacies and projects
-            </h2>
-            <ul className="mt-2 divide-y divide-comelec-sage border-b border-comelec-sage">
-              {candidate.projects.map((project) => (
-                <li key={project.name} className="py-5 sm:py-6">
-                  <h3 className="max-w-[34ch] font-editorial text-[clamp(1.5rem,2.25vw,2.125rem)] leading-tight text-balance wrap-anywhere">
-                    {project.name}
-                  </h3>
-                  <p className="mt-3 max-w-[65ch] text-base leading-relaxed text-comelec-olive sm:text-lg">
-                    {project.description}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </section>
+              <h2
+                id="projects-heading"
+                className="font-display text-4xl leading-tight italic sm:text-5xl"
+              >
+                Advocacies and projects
+              </h2>
+              <ul className="mt-2 divide-y divide-comelec-sage border-b border-comelec-sage">
+                {candidate.projects.map((project) => (
+                  <li key={project.name} className="py-5 sm:py-6">
+                    <h3 className="max-w-[34ch] font-editorial text-[clamp(1.5rem,2.25vw,2.125rem)] leading-tight text-balance wrap-anywhere">
+                      {project.name}
+                    </h3>
+                    {project.description && (
+                      <p className="mt-3 max-w-[65ch] text-base leading-relaxed text-comelec-olive sm:text-lg">
+                        {project.description}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
         <div className="contents lg:col-start-1 lg:row-start-1 lg:flex lg:min-w-0 lg:flex-col lg:gap-7">
           <CandidatePortrait
@@ -80,31 +93,31 @@ export function CandidateProfile({
             sizes="(max-width: 40rem) 13rem, (max-width: 76rem) 28vw, 21rem"
             className={`order-2 max-w-52 sm:max-w-84 ${profileEntrance}`}
           />
-          <aside
-            aria-label="Candidate details"
-            className={`order-3 space-y-6 motion-safe:[animation-delay:55ms] ${profileEntrance}`}
-          >
-            <dl className="grid grid-cols-2 gap-x-5 gap-y-3 lg:grid-cols-1">
-              {details.map(({ label, value }) =>
-                value ? (
+          {(details.length > 0 || candidate.motto) && (
+            <aside
+              aria-label="Candidate details"
+              className={`order-3 space-y-6 motion-safe:[animation-delay:55ms] ${profileEntrance}`}
+            >
+              <dl className="grid grid-cols-2 gap-x-5 gap-y-3 lg:grid-cols-1">
+                {details.map(({ label, value }) => (
                   <div key={label} className="min-w-0 border-b border-comelec-sage/65 pb-2.5">
                     <dt className="text-sm text-comelec-olive">{label}</dt>
                     <dd className="mt-1 text-base leading-snug font-medium wrap-anywhere">
                       {value}
                     </dd>
                   </div>
-                ) : null,
+                ))}
+              </dl>
+              {candidate.motto && (
+                <div className="border-l-2 border-comelec-sage bg-comelec-sage/20 px-4 py-3">
+                  <p className="text-sm text-comelec-olive">Motto</p>
+                  <blockquote className="mt-2 font-editorial text-2xl leading-snug italic">
+                    {candidate.motto}
+                  </blockquote>
+                </div>
               )}
-            </dl>
-            {candidate.motto && (
-              <div className="border-l-2 border-comelec-sage bg-comelec-sage/20 px-4 py-3">
-                <p className="text-sm text-comelec-olive">Motto</p>
-                <blockquote className="mt-2 font-editorial text-2xl leading-snug italic">
-                  {candidate.motto}
-                </blockquote>
-              </div>
-            )}
-          </aside>
+            </aside>
+          )}
         </div>
       </div>
 
