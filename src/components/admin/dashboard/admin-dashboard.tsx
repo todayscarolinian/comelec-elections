@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { electionDay } from '@/components/landing/landing-schedule'
 import { useTRPC } from '@/lib/trpc/client'
+import { yearLevelLabel } from '@/server/trpc/api/v1/registration/schema'
 import type { AppRouter } from '@/server/trpc/root'
 import {
   AdminLoadError,
@@ -264,7 +265,7 @@ export function AdminDashboard() {
                     <p className="wrap-anywhere text-[11px] text-review-muted">{applicant.email}</p>
                   </div>
                   <span className="shrink-0 text-[11px] text-review-muted">
-                    Declared Year {applicant.yearLevel}
+                    Declared {yearLevelLabel(applicant.yearLevel)}
                   </span>
                 </li>
               ))}

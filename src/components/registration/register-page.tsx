@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useTRPC } from '@/lib/trpc/client'
 import { schoolLabel, type School } from '@/server/trpc/api/v1/registration/core/school'
-import { YEAR_LEVEL_LABELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
+import { type YearLevel, yearLevelLabel } from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationForm } from './registration-form'
 import { RegistrationSignIn } from './registration-sign-in'
 import { RegistrationStatusSkeleton } from './registration-skeletons'
@@ -138,10 +138,7 @@ export function RegisterPage() {
               {registration && (
                 <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-3 text-sm">
                   <dt className="text-[#56654a]">Year Level</dt>
-                  <dd className="text-end font-medium">
-                    {YEAR_LEVEL_LABELS[registration.yearLevel as YearLevel] ??
-                      registration.yearLevel}
-                  </dd>
+                  <dd className="text-end font-medium">{yearLevelLabel(registration.yearLevel)}</dd>
                   <dt className="text-[#56654a]">School</dt>
                   <dd className="text-end font-medium">{schoolLabel(registration.school)}</dd>
                   <dt className="text-[#56654a]">Student Profile</dt>

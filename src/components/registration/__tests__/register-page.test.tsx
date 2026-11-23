@@ -133,6 +133,7 @@ describe('RegisterPage', () => {
       '3rd Year',
       '4th Year',
       '5th Year',
+      'Graduate',
     ])
     expect(
       within(screen.getByLabelText('School'))

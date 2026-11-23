@@ -123,6 +123,12 @@ export function extractFields(boxes: OcrBox[]): ProfileFields {
 
 const digits = (text: string) => text.replace(/\D/g, '')
 
+function yearLevelMatches(expected: string, read: string): boolean {
+  // Graduate students have no numeric year; accept any read that names graduate standing.
+  if (expected === 'GRADUATE') return /grad/i.test(read)
+  return digits(read) === digits(expected)
+}
+
 export function nameMatches(expected: string, extracted: string): boolean {
   const got = normalize(extracted).split(' ').filter(Boolean)
   const want = normalize(expected).split(' ').filter(Boolean)
@@ -136,7 +142,7 @@ export function matchFields(fields: ProfileFields, expected: ExpectedFields): Fi
   return {
     name: expected.name ? nameMatches(expected.name, fields.name) : null,
     studentId: expected.studentId ? digits(fields.studentId) === digits(expected.studentId) : null,
-    yearLevel: expected.yearLevel ? digits(fields.yearLevel) === digits(expected.yearLevel) : null,
+    yearLevel: expected.yearLevel ? yearLevelMatches(expected.yearLevel, fields.yearLevel) : null,
     term: expected.term ? Boolean(fields.term) && similar(fields.term, wantTerm) >= 0.9 : null,
   }
 }
