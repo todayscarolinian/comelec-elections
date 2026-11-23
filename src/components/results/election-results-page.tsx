@@ -1,13 +1,14 @@
 import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 import { ElectionNavigation } from '@/components/election/election-navigation'
+import { electionContent, electionPageSpacing } from '@/components/election/election-styles'
 import { ElectionFooter } from '@/components/landing/election-footer'
 import type { ResultsOutput } from '@/server/trpc/api/v1/results/schema'
 import { ResultsTally } from './results-tally'
 
 function ReleasedResults({ results, sample }: { results: ResultsOutput; sample: boolean }) {
   return (
-    <main className="mx-auto w-full max-w-[82rem] flex-1 px-[clamp(1.25rem,4.5vw,4rem)] pb-12 pt-8 text-[#324e1f]">
+    <main className={`${electionContent} flex-1 pb-12 pt-8 text-[#324e1f]`}>
       <header className="border-b border-[#b6c89f] pb-7">
         <p className="mb-2 text-[0.68rem] font-medium uppercase tracking-[0.08em] text-[#647357]">
           SSC General Elections 2026
@@ -47,7 +48,7 @@ function ReleasedResults({ results, sample }: { results: ResultsOutput; sample: 
 
 function UnreleasedResults() {
   return (
-    <main className="mx-auto w-full max-w-[57rem] flex-1 px-[clamp(1.25rem,4.5vw,4rem)] pb-16 pt-[clamp(4rem,11vh,7rem)] text-[#324e1f]">
+    <main className={`${electionContent} flex-1 pb-16 pt-[clamp(4rem,11vh,7rem)] text-[#324e1f]`}>
       <p className="mb-2 text-[0.68rem] font-medium uppercase tracking-[0.08em] text-[#647357]">
         SSC General Elections 2026
       </p>
@@ -59,7 +60,7 @@ function UnreleasedResults() {
       <p className="mt-4 max-w-2xl text-sm leading-6 text-[#647357]">
         The commission will publish the results after voting closes and the audit is complete.
       </p>
-      <div className="mt-7 border border-[#b6c89f] px-5 py-5">
+      <div className="mt-7 max-w-[49rem] border border-[#b6c89f] px-5 py-5">
         <p className="text-sm font-semibold">Results are released by the commission</p>
         <p className="mt-2 text-xs leading-5 text-[#647357]">
           Candidate vote counts stay unavailable until the results are published.
@@ -93,7 +94,9 @@ export function ElectionResultsPage({
   sample?: boolean
 }) {
   return (
-    <div className="flex min-h-svh flex-col bg-[#faf3e0] text-comelec-forest [font-family:var(--font-inter),Arial,sans-serif] [&_:is(a,button):focus-visible]:outline-2 [&_:is(a,button):focus-visible]:outline-offset-4 [&_:is(a,button):focus-visible]:outline-[#324e1f]">
+    <div
+      className={`${electionPageSpacing} flex min-h-svh flex-col bg-[#faf3e0] text-comelec-forest [font-family:var(--font-inter),Arial,sans-serif] [&_:is(a,button):focus-visible]:outline-2 [&_:is(a,button):focus-visible]:outline-offset-4 [&_:is(a,button):focus-visible]:outline-[#324e1f]`}
+    >
       <ElectionNavigation activeSection="turnout" />
       {results ? <ReleasedResults results={results} sample={sample} /> : <UnreleasedResults />}
       <ElectionFooter />
