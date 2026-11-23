@@ -83,7 +83,7 @@ const banner: Record<
 const confirmCopy: Record<ElectionAction, { title: string; body: string }> = {
   OPEN: {
     title: 'Open the election?',
-    body: 'Approved voters can cast ballots as soon as the election opens.',
+    body: 'Registered voters can cast ballots as soon as the election opens.',
   },
   CLOSED: {
     title: 'Close the election?',
@@ -233,7 +233,7 @@ export function AdminDashboard() {
           detail="Manual registration review"
         />
         <Metric
-          label="Approved voters"
+          label="Registered voters"
           value={data.registrations.approved}
           detail={`${data.registrations.rejected.toLocaleString('en-US')} rejected · ${data.registrations.total.toLocaleString('en-US')} registrations`}
         />

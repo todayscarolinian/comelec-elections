@@ -241,7 +241,7 @@ export function BallotPage() {
         {registration.data?.account.email && !unauthorized && (
           <p className="wrap-anywhere">
             {registration.data.account.email}
-            {voter?.status === 'APPROVED' && ' · Approved voter'}
+            {voter?.status === 'APPROVED' && ' · Registered voter'}
           </p>
         )}
       </div>
