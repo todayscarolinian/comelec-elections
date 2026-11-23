@@ -1,15 +1,27 @@
 import type { NotificationType } from '@/generated/prisma/enums'
 
-type NotificationData = { rejectionReason?: string; held?: boolean } | null
+type NotificationData = { rejectionReason?: string; held?: boolean; votingOpen?: boolean } | null
 
 export type NotificationCopy = { title: string; body: string; href: string }
 
 const COPY: Record<NotificationType, (data: NotificationData) => NotificationCopy> = {
-  REGISTRATION_APPROVED: () => ({
-    title: 'Registration approved',
-    body: 'You are a Voter. Cast your Ballot while voting is open.',
-    href: '/ballot',
-  }),
+  REGISTRATION_APPROVED: (data) => {
+    const title = 'Registration approved'
+    if (data?.held) return { title, body: 'Your held Ballot now counts.', href: '/ballot' }
+    if (data?.votingOpen === true) {
+      return {
+        title,
+        body: 'You are now a Voter. Cast your Ballot before voting closes.',
+        href: '/ballot',
+      }
+    }
+    // Notices from before this snapshot existed were all sent before voting first opened.
+    return {
+      title,
+      body: "You are now a Voter. We'll notify you the moment voting opens. Until then, get to know your candidates.",
+      href: '/candidates',
+    }
+  },
   REGISTRATION_REJECTED: (data) => ({
     title: 'Registration needs changes',
     body: data?.rejectionReason

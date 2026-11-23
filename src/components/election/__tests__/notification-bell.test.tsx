@@ -115,7 +115,7 @@ describe('NotificationBell', () => {
     render(<NotificationBell />)
     fireEvent.click(screen.getByRole('button', { name: /Unread: Registration approved/ }))
     expect(markRead).toHaveBeenCalledExactlyOnceWith({ ids: ['n1'] })
-    expect(push).toHaveBeenCalledWith('/ballot')
+    expect(push).toHaveBeenCalledWith('/candidates')
   })
 
   it('does not re-mark an already read item', () => {

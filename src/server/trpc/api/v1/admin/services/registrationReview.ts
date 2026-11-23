@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { Prisma } from '@/generated/prisma/client'
 import type { Db } from '@/server/trpc/init'
 import { writeAudit } from '@/server/trpc/api/v1/audit/services/writeAudit'
+import type { NotificationData } from '@/server/trpc/api/v1/notification/schema'
 import { notifyPerson } from '@/server/trpc/api/v1/notification/services/createNotification'
 import { ocrResultSchema } from '@/server/trpc/api/v1/registration/schema'
 import { ocrView } from '@/server/trpc/api/v1/registration/core/ocrView'
@@ -157,12 +158,22 @@ export async function reviewRegistration(db: Db, decision: Decision) {
           },
           select: { id: true },
         })
+        let approvalNotice: NotificationData | undefined
         if (decision.status === 'APPROVED') {
           // Held Ballots inherit the corrected year and School in the same commit (ADR 0008).
-          await tx.ballot.updateMany({
+          const heldBallots = await tx.ballot.updateMany({
             where: { personId: registration.personId },
             data: { yearLevel, school },
           })
+          const election = await tx.electionState.findUnique({
+            where: { id: 'main' },
+            select: { electionStatus: true },
+          })
+          // Snapshot both so the notice never tells a Voter to vote while voting is closed.
+          approvalNotice = {
+            held: heldBallots.count > 0,
+            votingOpen: election?.electionStatus === 'OPEN',
+          }
         }
         await writeAudit(
           {
@@ -184,7 +195,7 @@ export async function reviewRegistration(db: Db, decision: Decision) {
           tx,
           registration.personId,
           decision.status === 'APPROVED' ? 'REGISTRATION_APPROVED' : 'REGISTRATION_REJECTED',
-          rejectionReason === null ? undefined : { rejectionReason },
+          rejectionReason === null ? approvalNotice : { rejectionReason },
         )
         return { ok: true as const }
       },
