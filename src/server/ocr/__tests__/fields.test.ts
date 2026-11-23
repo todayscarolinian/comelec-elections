@@ -109,17 +109,4 @@ describe('matchFields', () => {
   it('rejects a different term', () => {
     expect(matchFields(extractFields(desktop), { term: '2nd Semester 2026' }).term).toBe(false)
   })
-
-  it('matches a Graduate Year Level by name rather than digits', () => {
-    const fields = { name: '', studentId: '', term: '' }
-    expect(
-      matchFields({ ...fields, yearLevel: 'Graduate' }, { yearLevel: 'GRADUATE' }).yearLevel,
-    ).toBe(true)
-    expect(matchFields({ ...fields, yearLevel: '' }, { yearLevel: 'GRADUATE' }).yearLevel).toBe(
-      false,
-    )
-    expect(matchFields({ ...fields, yearLevel: '1' }, { yearLevel: 'GRADUATE' }).yearLevel).toBe(
-      false,
-    )
-  })
 })

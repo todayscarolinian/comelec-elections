@@ -220,7 +220,7 @@ People whose Registration isn't approved yet also see (FR-5.10):
 ## 10. Open items for the client
 
 - When does the Registration Period close? Admins need time to review before Nov 20.
-- **Decided:** the Year Levels are 1st to 5th Year and Graduate. Information only; there are no batch rep Questions.
+- **Decided:** the Year Levels are 1st to 5th Year. Information only; there are no batch rep Questions.
 - Final list of Questions, Selection Limits and Candidate profiles (name, photo, bio, Party). Candidate profiles are due from the client.
 - The university's Google Workspace domain, to replace `example.com`.
 - Who will be the first Admin.
