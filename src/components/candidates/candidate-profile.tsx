@@ -50,7 +50,7 @@ export function CandidateProfile({
         <div className="contents lg:col-start-2 lg:row-start-1 lg:flex lg:min-w-0 lg:flex-col lg:gap-7">
           <header className={`order-1 min-w-0 ${profileEntrance}`}>
             <p className="text-base font-medium text-comelec-olive">
-              {candidate.officeTitle} · Ballot #{candidate.number}
+              {candidate.officeTitle} · Candidate #{candidate.number}
             </p>
             <h1 className="mt-2 max-w-5xl font-display text-[clamp(2.5rem,4.8vw,4.75rem)] leading-[1.05] tracking-[-0.03em] text-balance italic wrap-anywhere">
               {candidate.name}

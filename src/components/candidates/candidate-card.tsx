@@ -37,7 +37,7 @@ export function CandidateCard({
         className="mb-3"
       />
       <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <p className="text-xs font-medium text-comelec-olive">Ballot #{candidate.number}</p>
+        <p className="text-xs font-medium text-comelec-olive">Candidate #{candidate.number}</p>
         <CandidateParty party={candidate.party} />
       </div>
       <div className="mt-2 min-h-20 lg:max-xl:min-h-25">

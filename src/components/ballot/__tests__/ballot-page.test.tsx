@@ -159,7 +159,7 @@ describe('BallotPage', () => {
       fireEvent.click(submitButton('Details for Wagas, Dyane Jhen P.'))
 
       const preview = within(screen.getByRole('dialog', { name: 'Wagas, Dyane Jhen P.' }))
-      expect(preview.getByText('President · Ballot #2 · STAND')).toBeTruthy()
+      expect(preview.getByText('President · Candidate #2 · STAND')).toBeTruthy()
       expect(preview.getByRole('link', { name: 'View full profile' }).getAttribute('href')).toBe(
         '/candidates/dyane-jhen-wagas',
       )

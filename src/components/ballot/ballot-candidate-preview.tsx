@@ -29,7 +29,7 @@ export function BallotCandidatePreview({
     .join(' · ')
   const officeDetails = [
     office,
-    profile && `Ballot #${profile.number}`,
+    profile && `Candidate #${profile.number}`,
     candidate.party ?? 'Independent',
   ]
     .filter(Boolean)
