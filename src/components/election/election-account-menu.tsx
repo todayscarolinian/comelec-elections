@@ -72,7 +72,7 @@ export function ElectionAccountMenu({ account }: { account: ElectionAccount }) {
         >
           {initials}
         </span>
-        <span className="max-w-24 truncate max-[38rem]:hidden sm:max-w-36">{name}</span>
+        <span className="hidden max-w-36 truncate lg:block">{name}</span>
         <ChevronDown
           aria-hidden="true"
           size={16}
