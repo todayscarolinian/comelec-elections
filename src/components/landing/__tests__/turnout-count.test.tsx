@@ -19,6 +19,16 @@ function mockFetch(response: Response) {
   return fetchMock
 }
 
+function turnoutCharacters(container: HTMLElement) {
+  return Array.from(container.querySelectorAll('[data-turnout-character]'))
+}
+
+function displayedCount(container: HTMLElement) {
+  return turnoutCharacters(container)
+    .map((character) => character.textContent)
+    .join('')
+}
+
 afterEach(() => {
   window.localStorage.removeItem(TURNOUT_STORAGE_KEY)
   vi.useRealTimers()
@@ -31,9 +41,10 @@ describe('TurnoutCount', () => {
       Response.json({ electionStatus: 'OPEN', ballotsCast: 1234, approvedVoters: 5678 }),
     )
 
-    renderCount()
+    const { container } = renderCount()
 
-    expect(await screen.findByText('1,234')).toBeTruthy()
+    expect(await screen.findByText('1,234 ballots cast reported')).toBeTruthy()
+    expect(displayedCount(container)).toBe('1,234')
     expect(screen.getByText('Ballots cast')).toBeTruthy()
     expect(screen.getByText('5,678 approved Voters · Voting is open')).toBeTruthy()
     expect(fetchMock).toHaveBeenCalledWith('/api/turnout', { cache: 'no-store' })
@@ -88,31 +99,58 @@ describe('TurnoutCount', () => {
 
     const first = renderCount()
     await act(() => vi.advanceTimersByTimeAsync(TURNOUT_REFRESH_MS - 1000))
-    expect(screen.getByText('100')).toBeTruthy()
+    expect(displayedCount(first.container)).toBe('100')
     expect(fetchMock).not.toHaveBeenCalled()
 
     await act(() => vi.advanceTimersByTimeAsync(1100))
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(screen.getByText('100')).toBeTruthy()
+    expect(displayedCount(first.container)).toBe('100')
     expect(screen.getByText('200 ballots cast reported')).toBeTruthy()
 
     await act(() => vi.advanceTimersByTimeAsync(30_000))
-    const intermediate = first.container.querySelector(
-      '[aria-hidden="true"].grid > span:last-child',
-    )?.textContent
+    const intermediate = displayedCount(first.container)
     expect(Number(intermediate)).toBeGreaterThan(100)
     expect(Number(intermediate)).toBeLessThan(200)
 
     first.unmount()
     const second = renderCount()
     await act(() => vi.advanceTimersByTimeAsync(1))
-    expect(
-      second.container.querySelector('[aria-hidden="true"].grid > span:last-child')?.textContent,
-    ).toBe(intermediate)
+    expect(displayedCount(second.container)).toBe(intermediate)
     expect(fetchMock).toHaveBeenCalledTimes(1)
 
     await act(() => vi.advanceTimersByTimeAsync(30_000))
-    expect(screen.getByText('200')).toBeTruthy()
+    expect(displayedCount(second.container)).toBe('200')
     expect(screen.queryByText('Updating to the latest reported count.')).toBeNull()
+  })
+
+  it.each([
+    [12345, 12346, '6'],
+    [1299, 1300, '300'],
+    [999, 1000, '1000'],
+  ])('rolls only the digits that change from %i to %i', async (from, ballotsCast, rolling) => {
+    vi.useFakeTimers()
+    window.localStorage.setItem(
+      TURNOUT_STORAGE_KEY,
+      JSON.stringify({
+        electionStatus: 'OPEN',
+        ballotsCast,
+        approvedVoters: 20_000,
+        receivedAt: Date.now(),
+        growth: { from, offsets: [500] },
+      }),
+    )
+
+    const { container } = renderCount()
+    await act(() => vi.advanceTimersByTimeAsync(1))
+    expect(displayedCount(container)).toBe(from.toLocaleString('en-US'))
+
+    await act(() => vi.advanceTimersByTimeAsync(500))
+    expect(displayedCount(container)).toBe(ballotsCast.toLocaleString('en-US'))
+    expect(
+      turnoutCharacters(container)
+        .filter((character) => character.className.includes('election-turnout-in'))
+        .map((character) => character.textContent)
+        .join(''),
+    ).toBe(rolling)
   })
 })

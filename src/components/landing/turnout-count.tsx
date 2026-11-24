@@ -32,7 +32,10 @@ function useTurnoutFrame(snapshot: TurnoutSnapshot | undefined) {
       )
       setFrame((last) => {
         if (last?.count === count) return last
-        return { count, previous: motion?.matches ? undefined : last?.count }
+        return {
+          count,
+          previous: last && last.count < count && !motion?.matches ? last.count : undefined,
+        }
       })
       if (nextUpdateIn !== undefined) timer = window.setTimeout(update, nextUpdateIn)
     }
@@ -77,6 +80,13 @@ export function TurnoutCount() {
   const snapshot = stored && (!data || stored.receivedAt > data.receivedAt) ? stored : data
   const frame = useTurnoutFrame(snapshot)
   const count = frame?.count ?? snapshot?.growth?.from ?? snapshot?.ballotsCast
+  const figure = count === undefined ? '—' : formatCount(count)
+  const previousFigure = frame?.previous === undefined ? undefined : formatCount(frame.previous)
+  const widestFigure = formatCount(Math.max(count ?? 0, snapshot?.ballotsCast ?? 0))
+  const digits = widestFigure.replaceAll(',', '').length
+  const separators = widestFigure.length - digits
+  // Reserve room for the italic overhangs outside the digits' advance widths.
+  const widthInEm = digits * 0.66 + separators * 0.3 + 0.4
   const caption = snapshot
     ? count === 1
       ? 'Ballot cast'
@@ -88,7 +98,7 @@ export function TurnoutCount() {
 
   return (
     <div
-      className="grid flex-1 content-center justify-items-center py-8 text-center"
+      className="grid min-w-0 flex-1 content-center justify-items-center py-8 text-center [container-type:inline-size]"
       aria-busy={isPending && !snapshot}
     >
       <span aria-live="polite" className="sr-only">
@@ -98,22 +108,42 @@ export function TurnoutCount() {
       </span>
       <span
         aria-hidden="true"
-        className="grid overflow-hidden text-[clamp(6rem,min(20vw,32svh),18rem)] leading-none italic [font-family:var(--landing-fraunces),Georgia,serif]"
+        className="flex max-w-full overflow-hidden px-[0.2em] leading-none whitespace-nowrap italic tabular-nums [font-family:var(--landing-fraunces),Georgia,serif]"
+        style={{ fontSize: `min(clamp(6rem, min(20vw, 32svh), 18rem), ${100 / widthInEm}cqi)` }}
       >
-        {frame?.previous !== undefined && (
-          <span
-            key={`previous-${count}`}
-            className="col-start-1 row-start-1 motion-safe:animate-[election-turnout-out_280ms_ease-in-out_both] motion-reduce:hidden"
-          >
-            {formatCount(frame.previous)}
-          </span>
-        )}
-        <span
-          key={count}
-          className={`col-start-1 row-start-1 ${frame?.previous === undefined ? '' : 'motion-safe:animate-[election-turnout-in_280ms_ease-in-out_both]'}`}
-        >
-          {count === undefined ? '—' : formatCount(count)}
-        </span>
+        {Array.from(figure, (character, index) => {
+          const place = figure.length - index
+          if (character === ',' || character === '—') {
+            return (
+              <span key={place} data-turnout-character>
+                {character}
+              </span>
+            )
+          }
+
+          const previousDigit = previousFigure?.at(-place)
+          const rolls = previousFigure !== undefined && previousDigit !== character
+
+          return (
+            <span key={place} className="grid w-[0.9ch] shrink-0 justify-items-center">
+              {rolls && previousDigit !== undefined && (
+                <span
+                  key={`previous-${previousDigit}`}
+                  className="col-start-1 row-start-1 motion-safe:animate-[election-turnout-out_280ms_ease-in-out_both] motion-reduce:hidden"
+                >
+                  {previousDigit}
+                </span>
+              )}
+              <span
+                key={character}
+                data-turnout-character
+                className={`col-start-1 row-start-1 ${rolls ? 'motion-safe:animate-[election-turnout-in_280ms_ease-in-out_both]' : ''}`}
+              >
+                {character}
+              </span>
+            </span>
+          )
+        })}
       </span>
       <p
         aria-hidden={snapshot ? true : undefined}
