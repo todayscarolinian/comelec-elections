@@ -1,4 +1,4 @@
-import { electionDay, novemberEvents } from './landing-schedule'
+import { electionCloses, electionDay, electionOpens, novemberEvents } from './landing-schedule'
 import { displayHeading, sectionAnchor, sectionInner, sectionPadding } from './landing-styles'
 
 const year = 2026
@@ -99,8 +99,8 @@ export function ElectionCalendar() {
             </tbody>
           </table>
           <p className="sr-only">
-            Voting is scheduled for November {electionDay}, from 8 AM to 5 PM Philippine time, and
-            may be extended.
+            Voting is scheduled for November {electionDay}, from {electionOpens} to {electionCloses}{' '}
+            Philippine time, and may be extended.
           </p>
         </div>
       </div>
