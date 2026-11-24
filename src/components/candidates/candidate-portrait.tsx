@@ -17,7 +17,7 @@ export function CandidatePortrait({
 }) {
   return (
     <span
-      className={`relative grid aspect-square w-full place-items-center overflow-hidden bg-comelec-sage/25 ${className}`}
+      className={`relative grid aspect-square w-full place-items-center overflow-hidden bg-comelec-sage/25 select-none ${className}`}
     >
       <PortraitImage
         key={candidate.photo}
@@ -46,6 +46,7 @@ function PortraitImage({
         src={src}
         alt=""
         fill
+        draggable={false}
         sizes={sizes}
         className="object-cover"
         onError={() => setFailed(true)}

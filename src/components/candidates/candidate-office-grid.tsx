@@ -10,6 +10,10 @@ export const candidateGalleryIntro =
 export const candidateGalleryDescription =
   'max-w-[22.2rem] text-[clamp(1rem,1.4vw,1.25rem)] leading-[1.12] text-comelec-olive'
 
+export function candidatePreviewLimit(officeIndex: number) {
+  return officeIndex >= 2 ? 4 : 2
+}
+
 export function CandidateOfficeGrid({
   candidates = CANDIDATES,
   query = '',
@@ -28,7 +32,7 @@ export function CandidateOfficeGrid({
         if (!group.length) return null
 
         const wide = index >= 2
-        const cards = preview ? group.slice(0, wide ? 4 : 2) : group
+        const cards = preview ? group.slice(0, candidatePreviewLimit(index)) : group
         const columns = wide ? 'min-[38.01rem]:grid-cols-2 lg:grid-cols-4' : 'lg:grid-cols-2'
         return (
           <section

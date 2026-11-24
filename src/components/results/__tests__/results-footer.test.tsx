@@ -4,12 +4,9 @@ import { ElectionResultsPage } from '../election-results-page'
 import { ResultsPageSkeleton } from '../results-skeleton'
 import { SAMPLE_RESULTS } from '../sample-results'
 
-// These components read the server session; the footer links don't depend on it.
+// The navigation reads the server session.
 vi.mock('@/components/election/election-navigation', () => ({
   ElectionNavigation: () => null,
-}))
-vi.mock('@/components/ballot/ballot-entry', () => ({
-  BallotEntry: () => null,
 }))
 
 afterEach(() => {
@@ -27,7 +24,7 @@ it.each([
 
   const footer = within(screen.getByRole('contentinfo'))
   const nav = within(footer.getByRole('navigation', { name: 'Footer navigation' }))
-  expect(nav.getByRole('link', { name: 'Registration' }).getAttribute('href')).toBe('/register')
+  expect(nav.queryByRole('link', { name: 'Registration' })).toBeNull()
   expect(nav.getByRole('link', { name: 'Privacy' }).getAttribute('href')).toBe('/privacy')
   expect(nav.getByRole('link', { name: 'Terms' }).getAttribute('href')).toBe('/terms')
   expect(nav.getByRole('button', { name: 'Cookie settings' })).toBeDefined()

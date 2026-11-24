@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono, Inter } from 'next/font/google'
+import { Geist, Geist_Mono, Inter, Roboto_Condensed } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Suspense } from 'react'
 import { AnalyticsConsentBanner } from '@/components/analytics/analytics-consent-banner'
@@ -32,6 +32,13 @@ const geistMono = Geist_Mono({
 const inter = Inter({
   variable: '--font-inter',
   subsets: ['latin'],
+})
+
+const robotoCondensed = Roboto_Condensed({
+  variable: '--font-roboto-condensed',
+  subsets: ['latin'],
+  weight: '700',
+  preload: false,
 })
 
 const antinomiaText = localFont({
@@ -82,7 +89,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${antinomiaText.variable} ${antinomiaDisplay.variable} h-full antialiased motion-safe:data-[landing-scroll=true]:scroll-smooth`}
+      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${robotoCondensed.variable} ${antinomiaText.variable} ${antinomiaDisplay.variable} h-full antialiased motion-safe:data-[landing-scroll=true]:scroll-smooth`}
     >
       <body className="min-h-full flex flex-col">
         <Toaster position="bottom-right" richColors />

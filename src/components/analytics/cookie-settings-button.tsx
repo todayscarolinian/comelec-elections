@@ -1,11 +1,18 @@
 'use client'
 
+import Link from 'next/link'
 import { disableAnalytics } from '@/lib/analytics/client'
 import { measurementId } from '@/lib/analytics/config'
 import { getConsent, setConsent } from '@/lib/analytics/consent'
 
 export function CookieSettingsButton({ className }: { className?: string }) {
-  if (!measurementId()) return null
+  if (!measurementId()) {
+    return (
+      <Link href="/privacy#cookies" className={className}>
+        Cookie settings
+      </Link>
+    )
+  }
 
   return (
     <button

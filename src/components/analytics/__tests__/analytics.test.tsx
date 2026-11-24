@@ -43,12 +43,14 @@ afterEach(() => {
 })
 
 describe('analytics consent', () => {
-  it('renders nothing when analytics is not configured', async () => {
+  it('links to cookie information when analytics is not configured', async () => {
     vi.stubEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID', '')
     await renderAnalytics()
 
     expect(banner()).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Cookie settings' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Cookie settings' }).getAttribute('href')).toBe(
+      '/privacy#cookies',
+    )
     expect(gtagScripts()).toHaveLength(0)
   })
 

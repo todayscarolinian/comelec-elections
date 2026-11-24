@@ -30,7 +30,7 @@ type NavigationProps = {
 function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkProps) {
   if (section === 'candidates' || section === 'ballot') {
     return (
-      <Link href={`/${section}`} {...props}>
+      <Link href={`/${section}`} draggable={false} {...props}>
         {children}
       </Link>
     )
@@ -39,7 +39,7 @@ function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkPr
   const hash = `#${section}`
   if (section === 'turnout') {
     return (
-      <Link href="/results" {...props}>
+      <Link href="/results" draggable={false} {...props}>
         {children}
       </Link>
     )
@@ -47,14 +47,14 @@ function ElectionLink({ isLanding, section, children, ...props }: ElectionLinkPr
 
   if (isLanding) {
     return (
-      <a href={hash} {...props}>
+      <a href={hash} draggable={false} {...props}>
         {children}
       </a>
     )
   }
 
   return (
-    <Link href={section === 'home' ? '/' : `/${hash}`} {...props}>
+    <Link href={section === 'home' ? '/' : `/${hash}`} draggable={false} {...props}>
       {children}
     </Link>
   )
@@ -67,7 +67,7 @@ function NavigationBar({
   account,
 }: NavigationProps & { account?: ElectionAccount | null }) {
   return (
-    <header className={`sticky top-0 z-20 ${isLanding ? 'h-0' : ''}`}>
+    <header className={`sticky top-0 z-20 select-none ${isLanding ? 'h-0' : ''}`}>
       <div className="pointer-events-none w-full px-[clamp(0.5rem,1.1vw,1rem)] pt-[clamp(0.625rem,1.35vw,1.25rem)]">
         <nav
           className="pointer-events-auto grid min-h-[4.625rem] grid-cols-[1fr_auto_1fr] items-center rounded-full border border-[#324e1f]/35 bg-[#e5efda]/44 px-[clamp(0.75rem,1.5vw,1.375rem)] py-3 text-[#17290e] shadow-[inset_0_1px_0_rgb(255_255_255/18%)] backdrop-blur-[16px] backdrop-saturate-125 max-[38rem]:min-h-14 max-[38rem]:grid-cols-[auto_1fr] max-[38rem]:gap-x-3 max-[38rem]:py-1 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a]:font-medium [&_a:hover]:underline [&_a:hover]:underline-offset-4"
@@ -75,7 +75,13 @@ function NavigationBar({
         >
           <div className="justify-self-start">
             <ElectionLink isLanding={isLanding} section="home" aria-label="SSC COMELEC home">
-              <Image src="/landing/mark.webp" alt="" width={33} height={33} />
+              <Image
+                src="/branding/comelec-seal.png"
+                alt=""
+                width={33}
+                height={33}
+                draggable={false}
+              />
             </ElectionLink>
           </div>
           <ul className="flex flex-wrap gap-x-[clamp(1rem,4.4vw,4rem)] gap-y-1 max-[38rem]:hidden">
@@ -115,6 +121,7 @@ function NavigationBar({
                 <Link
                   href={isLanding ? '/auth/sign-in' : '/auth/sign-in?next=%2Fregister'}
                   className="gap-2 px-1 text-sm"
+                  draggable={false}
                 >
                   <LogIn aria-hidden="true" size={18} />
                   Sign in
