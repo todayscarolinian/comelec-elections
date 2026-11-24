@@ -28,20 +28,22 @@ export function ElectionHero() {
               Check registration <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
             </Link>
           </div>
-          <div className="relative isolate mx-[calc(var(--landing-section-gutter)-var(--landing-nav-gutter))] [--hero-title-limit:29svh] [container-type:inline-size] [@media(max-height:50rem)]:[--hero-title-limit:27svh]">
+          <div className="relative isolate mx-[calc(var(--landing-section-gutter)-var(--landing-nav-gutter))] select-none [--hero-title-limit:29svh] [container-type:inline-size] [@media(max-height:50rem)]:[--hero-title-limit:27svh]">
             <Image
               className="election-hero-die pointer-events-none absolute left-[37%] top-[5%] -z-10 h-auto w-[13.2%] min-[52.01rem]:w-[15%]"
               src="/landing/motif.webp"
               alt=""
               width={240}
               height={194}
+              draggable={false}
             />
             <Image
-              className="election-hero-die pointer-events-none absolute left-[28%] top-[-24%] -z-10 h-auto w-[13.2%] rotate-[-163deg] opacity-70 [--hero-die-delay:160ms] [--hero-die-drift:-0.55rem] min-[52.01rem]:w-[15%]"
+              className="election-hero-die pointer-events-none absolute left-[28%] top-[-24%] -z-10 h-auto w-[13.2%] rotate-[-163deg] [--hero-die-delay:480ms] [--hero-die-drift:-0.55rem] [--hero-die-tilt:-5deg] min-[52.01rem]:w-[15%]"
               src="/landing/motif-two.webp"
               alt=""
               width={240}
               height={194}
+              draggable={false}
             />
             <h1
               id="election-title"

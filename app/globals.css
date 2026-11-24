@@ -145,19 +145,15 @@ body {
 }
 
 @keyframes election-hero-die-float {
-  from {
-    translate: 0 0.75rem;
-    transform: rotate(-6deg);
-  }
-
-  22%, 68% {
-    translate: var(--hero-die-drift, 0.55rem) -1rem;
-    transform: rotate(5deg);
-  }
-
-  46%, to {
+  from,
+  to {
     translate: 0 0;
     transform: rotate(0deg);
+  }
+
+  50% {
+    translate: var(--hero-die-drift, 0.55rem) -1rem;
+    transform: rotate(var(--hero-die-tilt, 5deg));
   }
 }
 
@@ -168,11 +164,15 @@ body {
   }
 }
 
+.election-hero-die {
+  filter: grayscale(1);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .election-hero-die {
     animation:
       election-hero-die-in 480ms ease-out both,
-      election-hero-die-float 4.4s ease-in-out both;
+      election-hero-die-float 5.5s ease-in-out infinite;
     animation-delay: var(--hero-die-delay, 0ms);
   }
 }
