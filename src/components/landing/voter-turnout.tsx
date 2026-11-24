@@ -7,6 +7,7 @@ import {
 } from './landing-styles'
 import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
+import { TurnoutCount } from './turnout-count'
 
 export function VoterTurnout() {
   return (
@@ -22,15 +23,7 @@ export function VoterTurnout() {
         >
           Voter turnout
         </h2>
-        <div className="grid flex-1 content-center justify-items-center py-8 text-center">
-          <span
-            className="text-[clamp(6rem,min(20vw,32svh),18rem)] leading-none italic [font-family:var(--landing-fraunces),Georgia,serif]"
-            aria-hidden="true"
-          >
-            —
-          </span>
-          <p className="text-[0.8rem] tracking-[0.12em] uppercase">Live turnout is unavailable.</p>
-        </div>
+        <TurnoutCount />
         <div className="flex items-center justify-between gap-5 max-[38rem]:flex-col max-[38rem]:items-start">
           <p>Results are published after the Commission completes its audit.</p>
           <Link
