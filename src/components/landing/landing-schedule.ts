@@ -1,6 +1,6 @@
 export const electionDay = 24
 export const electionOpens = '8 AM'
-export const electionCloses = '6 PM'
+export const electionCloses = '8:30 PM'
 
 type CalendarEvent = {
   start: number
