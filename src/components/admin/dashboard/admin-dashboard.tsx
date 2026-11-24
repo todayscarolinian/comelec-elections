@@ -5,7 +5,7 @@ import type { inferRouterOutputs } from '@trpc/server'
 import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
-import { electionDay } from '@/components/landing/landing-schedule'
+import { electionCloses, electionDay, electionOpens } from '@/components/landing/landing-schedule'
 import { useTRPC } from '@/lib/trpc/client'
 import { yearLevelLabel } from '@/server/trpc/api/v1/registration/schema'
 import type { AppRouter } from '@/server/trpc/root'
@@ -60,7 +60,7 @@ const banner: Record<
   VOTING_OPEN: {
     eyebrow: 'ELECTION STATUS',
     title: 'Voting is open.',
-    detail: () => `${ELECTION_DATE} · 8:00 AM–5:00 PM`,
+    detail: () => `${ELECTION_DATE} · ${electionOpens}–${electionCloses}`,
     action: { label: 'Close election', status: 'CLOSED' },
   },
   VOTING_CLOSED: {
