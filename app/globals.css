@@ -141,6 +141,7 @@ body {
 @keyframes election-hero-die-in {
   from {
     opacity: 0;
+    scale: 0.78;
   }
 }
 
@@ -157,10 +158,43 @@ body {
   }
 }
 
-@keyframes election-hero-title-in {
+@keyframes election-hero-word-in {
+  from {
+    clip-path: inset(100% -14% -30%);
+    opacity: 0;
+    translate: 0 0.22em;
+  }
+
+  to {
+    clip-path: inset(-30% -14%);
+  }
+}
+
+@keyframes election-hero-year-in {
   from {
     opacity: 0;
-    translate: 0 1.25rem;
+    scale: 0.82;
+    translate: 0 0.1em;
+  }
+
+  72% {
+    scale: 1.04;
+  }
+}
+
+@keyframes election-hero-light-pass {
+  from {
+    background-position: 150% 0;
+    opacity: 0;
+  }
+
+  35% {
+    opacity: 1;
+  }
+
+  to {
+    background-position: -50% 0;
+    opacity: 0;
   }
 }
 
@@ -169,11 +203,35 @@ body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .election-hero::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(112deg, transparent 42%, rgb(250 243 224 / 45%) 50%, transparent 58%);
+    background-size: 220% 100%;
+    content: '';
+    opacity: 0;
+    animation: election-hero-light-pass 870ms ease-out both;
+  }
+
+  .election-hero-word {
+    animation: election-hero-word-in 590ms cubic-bezier(0.2, 0.72, 0.3, 1) var(--hero-word-delay, 0ms) backwards;
+  }
+
+  .election-hero-year {
+    animation: election-hero-year-in 510ms cubic-bezier(0.2, 0.72, 0.3, 1) 240ms backwards;
+  }
+
+  .election-hero-details:not(:focus-within) {
+    animation: election-page-in 400ms cubic-bezier(0.2, 0.65, 0.3, 1) 290ms backwards;
+  }
+
   .election-hero-die {
     animation:
-      election-hero-die-in 480ms ease-out both,
+      election-hero-die-in 520ms cubic-bezier(0.2, 0.72, 0.3, 1) backwards,
       election-hero-die-float 5.5s ease-in-out infinite;
-    animation-delay: var(--hero-die-delay, 0ms);
+    animation-delay: var(--hero-die-delay, 100ms);
   }
 }
 

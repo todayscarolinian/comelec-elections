@@ -9,13 +9,13 @@ import { HeroShader } from './hero-shader'
 export function ElectionHero() {
   return (
     <section
-      className="relative top-0 isolate flex min-h-svh flex-col bg-[#d8e9bd] bg-[url('/landing/hero.webp')] bg-position-[73.73%_90.78%] bg-size-[137.88%_109%] motion-safe:[@media(min-height:36rem)]:sticky has-[:focus-visible]:relative"
+      className="election-hero relative top-0 isolate flex min-h-svh flex-col bg-[#d8e9bd] bg-[url('/landing/hero.webp')] bg-position-[73.73%_90.78%] bg-size-[137.88%_109%] motion-safe:[@media(min-height:36rem)]:sticky has-[:focus-visible]:relative"
       aria-labelledby="election-title"
     >
       <HeroShader />
       <div className="flex w-full flex-1 flex-col px-(--landing-nav-gutter) pt-(--landing-header-space)">
-        <div className="flex flex-1 flex-col justify-between gap-6 pt-[clamp(2rem,6svh,5.5rem)] pb-[clamp(1rem,3.4svh,2.25rem)] [@media(max-height:50rem)]:gap-4 [@media(max-height:50rem)]:pt-8">
-          <div className="relative z-10 grid w-full max-w-sm justify-items-start gap-4 self-end me-[clamp(0rem,6.2vw,5.5625rem)] max-[38rem]:me-0 max-[38rem]:self-start max-[38rem]:bg-(--landing-cream)/68 max-[38rem]:p-3.5">
+        <div className="flex flex-1 flex-col justify-between gap-6 pt-[clamp(2rem,6svh,5.5rem)] pb-[clamp(1rem,3.4svh,2.25rem)] max-[38rem]:pb-[calc(5.25rem+env(safe-area-inset-bottom))] [@media(max-height:50rem)]:gap-4 [@media(max-height:50rem)]:pt-8">
+          <div className="election-hero-details relative z-10 grid w-full max-w-sm justify-items-start gap-4 self-end me-[clamp(0rem,6.2vw,5.5625rem)] max-[38rem]:me-0 max-[38rem]:self-start max-[38rem]:bg-(--landing-cream)/68 max-[38rem]:p-3.5">
             <ElectionStatus />
             <p>
               Cast one Ballot online on November {electionDay}. Anyone can follow Turnout. The
@@ -38,7 +38,7 @@ export function ElectionHero() {
               draggable={false}
             />
             <Image
-              className="election-hero-die pointer-events-none absolute left-[28%] top-[-24%] -z-10 h-auto w-[13.2%] rotate-[-163deg] [--hero-die-delay:480ms] [--hero-die-drift:-0.55rem] [--hero-die-tilt:-5deg] min-[52.01rem]:w-[15%]"
+              className="election-hero-die pointer-events-none absolute left-[28%] top-[-24%] -z-10 h-auto w-[13.2%] rotate-[-163deg] [--hero-die-delay:300ms] [--hero-die-drift:-0.55rem] [--hero-die-tilt:-5deg] min-[52.01rem]:w-[15%]"
               src="/landing/motif-two.webp"
               alt=""
               width={240}
@@ -47,16 +47,16 @@ export function ElectionHero() {
             />
             <h1
               id="election-title"
-              className="grid grid-cols-[auto_1fr] items-end text-[min(20.2cqi,var(--hero-title-limit))] leading-[0.89] font-normal tracking-[-0.015em] text-(--landing-cream) uppercase italic motion-safe:animate-[election-hero-title-in_560ms_cubic-bezier(0.2,0.65,0.3,1)_80ms_both] [font-family:var(--landing-fraunces),Georgia,serif] [font-variation-settings:'opsz'_144,'SOFT'_0,'WONK'_1] min-[52rem]:leading-[0.96]"
+              className="grid grid-cols-[auto_1fr] items-end text-[min(20.2cqi,var(--hero-title-limit))] leading-[0.89] font-normal tracking-[-0.015em] text-(--landing-cream) uppercase italic [font-family:var(--landing-fraunces),Georgia,serif] [font-variation-settings:'opsz'_144,'SOFT'_0,'WONK'_1] min-[52rem]:leading-[0.96]"
             >
-              <span className="col-start-1 row-start-1 w-fit origin-bottom-left scale-x-105 scale-y-112 tracking-[-0.04em] min-[52rem]:leading-[0.8]">
+              <span className="election-hero-word col-start-1 row-start-1 w-fit origin-bottom-left scale-x-105 scale-y-112 tracking-[-0.04em] min-[52rem]:leading-[0.8]">
                 SSC
               </span>{' '}
               {/* Offset the wider letters with tighter tracking to preserve the line width. */}
-              <span className="col-span-2 row-start-2 w-fit origin-bottom-left scale-x-105 scale-y-112 tracking-[calc((var(--line-tracking)-0.027em)/1.05)] whitespace-nowrap [--line-tracking:clamp(-0.015em,calc((98cqi-4.89em)/9),0.07em)]">
+              <span className="election-hero-word col-span-2 row-start-2 w-fit origin-bottom-left scale-x-105 scale-y-112 tracking-[calc((var(--line-tracking)-0.027em)/1.05)] whitespace-nowrap [--hero-word-delay:150ms] [--line-tracking:clamp(-0.015em,calc((98cqi-4.89em)/9),0.07em)]">
                 Elections
               </span>{' '}
-              <span className="col-start-2 row-start-1 justify-self-end pe-[0.06em] text-[1.36em] font-bold text-transparent [font-family:var(--landing-display),Georgia,serif] [font-variation-settings:normal] [-webkit-text-stroke:clamp(1px,0.14vw,2px)_var(--landing-cream)] min-[52rem]:leading-[0.68] forced-colors:text-[CanvasText] forced-colors:[-webkit-text-stroke:0]">
+              <span className="election-hero-year col-start-2 row-start-1 origin-bottom-right justify-self-end pe-[0.06em] text-[1.36em] font-bold text-transparent [font-family:var(--landing-display),Georgia,serif] [font-variation-settings:normal] [-webkit-text-stroke:clamp(1px,0.14vw,2px)_var(--landing-cream)] min-[52rem]:leading-[0.68] forced-colors:text-[CanvasText] forced-colors:[-webkit-text-stroke:0]">
                 ‘26
               </span>
             </h1>
