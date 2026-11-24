@@ -30,14 +30,14 @@ export function ElectionHero() {
           </div>
           <div className="relative isolate mx-[calc(var(--landing-section-gutter)-var(--landing-nav-gutter))] [--hero-title-limit:29svh] [container-type:inline-size] [@media(max-height:50rem)]:[--hero-title-limit:27svh]">
             <Image
-              className="absolute left-[37%] top-[5%] -z-10 h-auto w-[13.2%] min-[52.01rem]:w-[15%]"
+              className="election-hero-die pointer-events-none absolute left-[37%] top-[5%] -z-10 h-auto w-[13.2%] min-[52.01rem]:w-[15%]"
               src="/landing/motif.webp"
               alt=""
               width={240}
               height={194}
             />
             <Image
-              className="absolute left-[28%] top-[-24%] -z-10 h-auto w-[13.2%] rotate-[-163deg] opacity-70 min-[52.01rem]:w-[15%]"
+              className="election-hero-die pointer-events-none absolute left-[28%] top-[-24%] -z-10 h-auto w-[13.2%] rotate-[-163deg] opacity-70 [--hero-die-delay:160ms] [--hero-die-drift:-0.55rem] min-[52.01rem]:w-[15%]"
               src="/landing/motif-two.webp"
               alt=""
               width={240}
@@ -45,7 +45,7 @@ export function ElectionHero() {
             />
             <h1
               id="election-title"
-              className="grid grid-cols-[auto_1fr] items-end text-[min(20.2cqi,var(--hero-title-limit))] leading-[0.89] font-normal tracking-[-0.015em] text-(--landing-cream) uppercase italic [font-family:var(--landing-fraunces),Georgia,serif] [font-variation-settings:'opsz'_144,'SOFT'_0,'WONK'_1] min-[52rem]:leading-[0.96]"
+              className="grid grid-cols-[auto_1fr] items-end text-[min(20.2cqi,var(--hero-title-limit))] leading-[0.89] font-normal tracking-[-0.015em] text-(--landing-cream) uppercase italic motion-safe:animate-[election-hero-title-in_560ms_cubic-bezier(0.2,0.65,0.3,1)_80ms_both] [font-family:var(--landing-fraunces),Georgia,serif] [font-variation-settings:'opsz'_144,'SOFT'_0,'WONK'_1] min-[52rem]:leading-[0.96]"
             >
               <span className="col-start-1 row-start-1 w-fit origin-bottom-left scale-x-105 scale-y-112 tracking-[-0.04em] min-[52rem]:leading-[0.8]">
                 SSC

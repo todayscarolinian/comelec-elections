@@ -125,6 +125,45 @@ body {
   }
 }
 
+@keyframes election-hero-die-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes election-hero-die-float {
+  from {
+    translate: 0 0.75rem;
+    transform: rotate(-6deg);
+  }
+
+  22%, 68% {
+    translate: var(--hero-die-drift, 0.55rem) -1rem;
+    transform: rotate(5deg);
+  }
+
+  46%, to {
+    translate: 0 0;
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes election-hero-title-in {
+  from {
+    opacity: 0;
+    translate: 0 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .election-hero-die {
+    animation:
+      election-hero-die-in 480ms ease-out both,
+      election-hero-die-float 4.4s ease-in-out both;
+    animation-delay: var(--hero-die-delay, 0ms);
+  }
+}
+
 .election-dialog::backdrop {
   background-color: transparent;
 }
