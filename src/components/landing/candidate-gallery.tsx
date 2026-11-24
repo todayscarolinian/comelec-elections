@@ -2,7 +2,7 @@
 
 import { ArrowUpRight, Shuffle } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   CandidateOfficeGrid,
   candidateGalleryBackdrop,
@@ -15,14 +15,17 @@ import { displayHeading, sectionInner, sectionPadding } from './landing-styles'
 
 const firstShufflableOffice = CANDIDATE_OFFICES.find(({ candidates }) => candidates.length > 1)
 
-function shuffleCandidates(candidates: readonly DirectoryCandidate[]) {
+function shuffleCandidates(
+  candidates: readonly DirectoryCandidate[],
+  { changePreview = false } = {},
+) {
   return CANDIDATE_OFFICES.flatMap((office, officeIndex) => {
     const group = candidates.filter((candidate) => candidate.officeId === office.id)
     const limit = candidatePreviewLimit(officeIndex)
     // Start with someone outside the current preview when the office has more candidates.
     const firstChoice = group.length > limit ? limit : 1
     for (let index = 0; index < group.length - 1; index++) {
-      const start = index === 0 ? firstChoice : index
+      const start = changePreview && index === 0 ? firstChoice : index
       const swap = start + Math.floor(Math.random() * (group.length - start))
       const candidate = group[index]
       group[index] = group[swap]
@@ -35,10 +38,18 @@ function shuffleCandidates(candidates: readonly DirectoryCandidate[]) {
 export function CandidateGallery() {
   const [candidates, setCandidates] = useState(CANDIDATES)
 
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const initialPreview = shuffleCandidates(CANDIDATES)
+      setCandidates((current) => (current === CANDIDATES ? initialPreview : current))
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [])
+
   function shuffle() {
     if (!firstShufflableOffice) return
 
-    setCandidates(shuffleCandidates(candidates))
+    setCandidates(shuffleCandidates(candidates, { changePreview: true }))
     const section = document
       .getElementById(`office-${firstShufflableOffice.id}`)
       ?.closest('section')
