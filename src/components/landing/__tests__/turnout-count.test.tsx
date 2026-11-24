@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TurnoutCount } from '../turnout-count'
+import { TURNOUT_REFRESH_MS, TURNOUT_STORAGE_KEY } from '../turnout-snapshot'
 
 function renderCount() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -19,6 +20,8 @@ function mockFetch(response: Response) {
 }
 
 afterEach(() => {
+  window.localStorage.removeItem(TURNOUT_STORAGE_KEY)
+  vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 
@@ -63,5 +66,53 @@ describe('TurnoutCount', () => {
 
     expect(await screen.findByText('Live turnout is unavailable.')).toBeTruthy()
     expect(screen.getByText('—')).toBeTruthy()
+  })
+
+  it('reuses the browser snapshot and resumes animating to the reported total after a reload', async () => {
+    vi.useFakeTimers()
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        Response.json({ electionStatus: 'OPEN', ballotsCast: 200, approvedVoters: 500 }),
+      ),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    window.localStorage.setItem(
+      TURNOUT_STORAGE_KEY,
+      JSON.stringify({
+        electionStatus: 'OPEN',
+        ballotsCast: 100,
+        approvedVoters: 500,
+        receivedAt: Date.now(),
+      }),
+    )
+
+    const first = renderCount()
+    await act(() => vi.advanceTimersByTimeAsync(TURNOUT_REFRESH_MS - 1000))
+    expect(screen.getByText('100')).toBeTruthy()
+    expect(fetchMock).not.toHaveBeenCalled()
+
+    await act(() => vi.advanceTimersByTimeAsync(1100))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(screen.getByText('100')).toBeTruthy()
+    expect(screen.getByText('200 ballots cast reported')).toBeTruthy()
+
+    await act(() => vi.advanceTimersByTimeAsync(30_000))
+    const intermediate = first.container.querySelector(
+      '[aria-hidden="true"].grid > span:last-child',
+    )?.textContent
+    expect(Number(intermediate)).toBeGreaterThan(100)
+    expect(Number(intermediate)).toBeLessThan(200)
+
+    first.unmount()
+    const second = renderCount()
+    await act(() => vi.advanceTimersByTimeAsync(1))
+    expect(
+      second.container.querySelector('[aria-hidden="true"].grid > span:last-child')?.textContent,
+    ).toBe(intermediate)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    await act(() => vi.advanceTimersByTimeAsync(30_000))
+    expect(screen.getByText('200')).toBeTruthy()
+    expect(screen.queryByText('Updating to the latest reported count.')).toBeNull()
   })
 })

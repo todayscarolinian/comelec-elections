@@ -125,6 +125,19 @@ body {
   }
 }
 
+@keyframes election-turnout-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes election-turnout-out {
+  to {
+    transform: translateY(-100%);
+    visibility: hidden;
+  }
+}
+
 @keyframes election-hero-die-in {
   from {
     opacity: 0;
