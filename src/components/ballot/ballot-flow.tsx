@@ -1,6 +1,7 @@
 import { ArrowRight, Check } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { CandidateDef } from '@/election'
+import { trackEventOnce } from '@/lib/analytics/client'
 import { ballotInputSchema, type BallotInput } from '@/server/trpc/api/v1/ballot/schema'
 import { BallotCandidatePreview } from './ballot-candidate-preview'
 import {
@@ -28,6 +29,7 @@ export function BallotFlow({
   onCast: (input: BallotInput) => void
 }) {
   const [step, setStep] = useState<Step>('disclosure')
+  useEffect(() => trackEventOnce('ballot_started'), [])
   const [disclosure, setDisclosure] = useState(false)
   const [heldAcknowledgement, setHeldAcknowledgement] = useState(false)
   const [answers, setAnswers] = useState<DraftAnswers>({})

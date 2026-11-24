@@ -5,6 +5,7 @@ import { NotificationType } from '@/generated/prisma/enums'
 export const notificationDataSchema = z.object({
   rejectionReason: z.string().optional(),
   held: z.boolean().optional(),
+  votingOpen: z.boolean().optional(),
 })
 export type NotificationData = z.infer<typeof notificationDataSchema>
 

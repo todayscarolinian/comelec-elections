@@ -5,6 +5,7 @@ import { ArrowUpRight, Check } from 'lucide-react'
 import Link from 'next/link'
 import { useRef, useState } from 'react'
 import { electionDay } from '@/components/landing/landing-schedule'
+import { trackEvent } from '@/lib/analytics/client'
 import { useTRPC } from '@/lib/trpc/client'
 import { BallotFlow } from './ballot-flow'
 import { BallotSignIn } from './ballot-sign-in'
@@ -135,6 +136,7 @@ export function BallotPage() {
     ...trpc.ballot.cast.mutationOptions(),
     gcTime: 0,
     onSuccess: (result) => {
+      trackEvent('ballot_submitted')
       setReceipt({ held: result.held })
       cast.reset()
       void refresh()
@@ -239,7 +241,7 @@ export function BallotPage() {
         {registration.data?.account.email && !unauthorized && (
           <p className="wrap-anywhere">
             {registration.data.account.email}
-            {voter?.status === 'APPROVED' && ' · Approved voter'}
+            {voter?.status === 'APPROVED' && ' · Registered voter'}
           </p>
         )}
       </div>

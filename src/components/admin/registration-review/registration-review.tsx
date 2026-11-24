@@ -5,7 +5,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
 import { useTRPC } from '@/lib/trpc/client'
 import { schoolLabel, type School } from '@/server/trpc/api/v1/registration/core/school'
-import { YEAR_LEVELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
+import {
+  YEAR_LEVELS,
+  type YearLevel,
+  yearLevelLabel,
+} from '@/server/trpc/api/v1/registration/schema'
 import { RegistrationReviewSkeleton } from '../admin-skeletons'
 import { formatTime } from '../admin-ui'
 import { ApplicationReview } from './application-review'
@@ -213,7 +217,7 @@ export function RegistrationReview() {
             <option value="ALL">All years</option>
             {YEAR_LEVELS.map((value) => (
               <option key={value} value={value}>
-                Year {value}
+                {yearLevelLabel(value)}
               </option>
             ))}
           </select>
@@ -294,7 +298,8 @@ export function RegistrationReview() {
                       </span>
                     </span>
                     <span>
-                      {item.studentId} · Year {item.yearLevel} · {schoolLabel(item.school)}
+                      {item.studentId} · {yearLevelLabel(item.yearLevel)} ·{' '}
+                      {schoolLabel(item.school)}
                     </span>
                     <span className="text-xs min-[761px]:!text-[10px]">
                       {item.email} · {statusLabels[item.status]}

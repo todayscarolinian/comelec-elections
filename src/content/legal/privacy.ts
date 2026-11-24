@@ -5,8 +5,8 @@ import { contactInstruction, type LegalDocument } from './types'
 export const PRIVACY_POLICY: LegalDocument = {
   title: 'Privacy Policy',
   status: 'final',
-  version: '0.1',
-  lastUpdated: '2026-11-21',
+  version: '1.1',
+  lastUpdated: '2026-11-22',
   summary:
     'How the SSC COMELEC collects, uses, shares and keeps your personal information when you register and vote in the SSC Elections.',
   related: { href: '/terms', label: 'Terms of Service' },
@@ -47,6 +47,17 @@ export const PRIVACY_POLICY: LegalDocument = {
           ],
         },
         'We also keep a log of what commission members do in the admin area, such as reviewing Registrations and viewing or exporting Ballots.',
+        'If you accept analytics cookies, Google Analytics also records how the site is used:',
+        {
+          items: [
+            'Which pages you open and how long you stay on them, without anything you type into search boxes or forms.',
+            'Whether you started or finished registering or voting, but never your choices.',
+            'Your device type, operating system, browser, screen size and language.',
+            'Your approximate location, at country or city level. Google does not store your IP address.',
+            'A random ID stored in your browser, so repeat visits are counted once.',
+          ],
+        },
+        'Analytics never receives your name, email address, student ID, Student Profile or Ballot. It does not run in the admin area.',
       ],
     },
     {
@@ -62,7 +73,9 @@ export const PRIVACY_POLICY: LegalDocument = {
             'To show the public how many Ballots have been cast, and the Results once released. These are totals only and never name anyone.',
           ],
         },
-        'We do not use your information for advertising, sell it, or use it for anything unrelated to the election.',
+        'If you accept analytics cookies, we use the visit counts to find where people have trouble and improve the site.',
+        'Members of the team that built this site may mention overall figures, such as total visits or the number of Ballots cast, in their professional portfolios. These figures never identify anyone, and the commission reviews them before they are shared.',
+        'We do not use your information for advertising, sell it, or use it for anything else unrelated to the election.',
       ],
     },
     {
@@ -70,6 +83,7 @@ export const PRIVACY_POLICY: LegalDocument = {
       heading: 'Why we are allowed to use it',
       body: [
         'We process your information with your consent, which you give when you submit your Registration and when you acknowledge the ballot disclosure before voting. We also rely on the legitimate interest of the student council in running a fair and verifiable election.',
+        'We use analytics cookies only if you accept them. You can withdraw your consent at any time through Cookie settings in the site footer.',
         'Your date of birth and the way you vote can count as sensitive personal information. We collect them only because they are part of the Student Profile and the Ballot, and we protect them as described below.',
       ],
     },
@@ -90,6 +104,7 @@ export const PRIVACY_POLICY: LegalDocument = {
             'Google, for signing in.',
             'Supabase, for the database and for storing Student Profile images in a private storage bucket.',
             'Vercel, for hosting the site. Like most hosts, it may keep standard request logs, such as IP addresses and browser details, for security.',
+            'Google Analytics, for counting visits, only if you accept analytics cookies. Its advertising features and data sharing are turned off.',
           ],
         },
         'We share information with anyone else only if the law requires it.',
@@ -99,7 +114,9 @@ export const PRIVACY_POLICY: LegalDocument = {
       id: 'cookies',
       heading: 'Cookies',
       body: [
-        'We use only the cookies needed to sign you in and protect your session. The session cookie is encrypted, cannot be read by scripts on the page, and expires after 8 hours. We do not use analytics or advertising cookies.',
+        'We use cookies needed to sign you in and protect your session. The session cookie is encrypted, cannot be read by scripts on the page, and expires after 8 hours.',
+        'With your permission, we also use Google Analytics cookies to count visits. On your first visit, a banner asks you to accept or decline. Analytics does not load at all until you accept, and declining does not affect registering or voting.',
+        'Your choice is saved in your browser. To change it, select Cookie settings in the site footer. Withdrawing consent removes the analytics cookies. We do not use advertising cookies.',
       ],
     },
     {
@@ -128,6 +145,7 @@ export const PRIVACY_POLICY: LegalDocument = {
             'Ballots and the admin activity log: deleted after 1 year, so a contested result can still be audited.',
             'Your name and email address: deleted together with your Registration and Ballot.',
             'Published totals (Turnout and Results), which do not identify anyone: kept as a public record.',
+            'Analytics visit records: deleted automatically by Google 2 months after each visit, rather than from the release of the Results. Summary totals, which do not identify anyone, are kept.',
           ],
         },
       ],

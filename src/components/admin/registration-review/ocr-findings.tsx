@@ -1,5 +1,6 @@
 import { Check, CircleCheck, TriangleAlert, X } from 'lucide-react'
 import { CURRENT_TERM } from '@/election'
+import { yearLevelLabel } from '@/server/trpc/api/v1/registration/schema'
 import type { Registration } from './types'
 
 /** Compact OCR status for a queue row, so mismatches stand out before an application is opened. */
@@ -58,7 +59,7 @@ export function OcrFindings({ registration }: { registration: Registration }) {
         },
         {
           label: 'Year level',
-          expected: `Year ${registration.yearLevel}`,
+          expected: yearLevelLabel(registration.yearLevel),
           read: ocr.fields.yearLevel,
           matches: ocr.matches.yearLevel,
         },
@@ -146,7 +147,7 @@ export function OcrFindings({ registration }: { registration: Registration }) {
             </div>
             <div>
               <dt>Declared year</dt>
-              <dd>Year {registration.yearLevel}</dd>
+              <dd>{yearLevelLabel(registration.yearLevel)}</dd>
             </div>
           </dl>
           <p className="text-xs text-review-muted">Verify the name, ID, year, and current term.</p>

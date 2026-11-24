@@ -1,5 +1,4 @@
 import { CURRENT_TERM } from '@/election'
-import { readStudentProfile } from '@/server/ocr'
 import type { Db } from '@/server/trpc/init'
 import { downloadStudentProfile } from '../services/studentProfileStorage'
 import { Prisma } from '@/generated/prisma/client'
@@ -19,6 +18,9 @@ export async function runStudentProfileOcr(job: StudentProfileOcrJob): Promise<v
   const { db, personId, studentProfilePath, submittedAt } = job
   const where = { personId, studentProfilePath, submittedAt }
   try {
+    // Lazy import: onnxruntime-node's native lib is only traced into /api/trpc (next.config.ts).
+    // A static import would load it in every page that uses the server-side tRPC caller.
+    const { readStudentProfile } = await import('@/server/ocr')
     const image = await downloadStudentProfile(studentProfilePath)
     const { fields, matches } = await readStudentProfile(image, {
       name: job.name,

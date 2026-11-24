@@ -134,10 +134,10 @@ describe('candidate profiles', () => {
     expect(screen.getByText('BS Psychology')).toBeTruthy()
   })
 
-  it('shows the supplied ballot number and omits blank personal details', () => {
+  it('shows the supplied candidate number and omits blank personal details', () => {
     const candidate = CANDIDATES.find(({ id }) => id === 'kent-deloria-reyes')!
     render(<CandidateProfile candidate={candidate} />)
-    expect(screen.getByText('Councilors · Ballot #7')).toBeTruthy()
+    expect(screen.getByText('Councilors · Candidate #7')).toBeTruthy()
     expect(screen.queryByText('Motto')).toBeNull()
     expect(screen.queryByText('As a person')).toBeNull()
     expect(screen.queryByText('As a student leader')).toBeNull()

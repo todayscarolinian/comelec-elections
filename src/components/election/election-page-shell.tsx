@@ -5,6 +5,7 @@ import localFont from 'next/font/local'
 import type { ReactNode } from 'react'
 import { BallotEntry } from '@/components/ballot/ballot-entry'
 import { ElectionNavigation } from './election-navigation'
+import { CookieSettingsButton } from '@/components/analytics/cookie-settings-button'
 import { legalLinks } from './footer-links'
 import { footerGutters } from './election-styles'
 
@@ -77,6 +78,7 @@ export function ElectionPageShell({
                 {label}
               </Link>
             ))}
+            <CookieSettingsButton className={`${footerLinkClass} cursor-pointer`} />
           </nav>
         </div>
       </footer>

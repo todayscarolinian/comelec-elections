@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { electionDay } from '@/components/landing/landing-schedule'
 import { useTRPC } from '@/lib/trpc/client'
+import { yearLevelLabel } from '@/server/trpc/api/v1/registration/schema'
 import type { AppRouter } from '@/server/trpc/root'
 import {
   AdminLoadError,
@@ -82,7 +83,7 @@ const banner: Record<
 const confirmCopy: Record<ElectionAction, { title: string; body: string }> = {
   OPEN: {
     title: 'Open the election?',
-    body: 'Approved voters can cast ballots as soon as the election opens.',
+    body: 'Registered voters can cast ballots as soon as the election opens.',
   },
   CLOSED: {
     title: 'Close the election?',
@@ -232,7 +233,7 @@ export function AdminDashboard() {
           detail="Manual registration review"
         />
         <Metric
-          label="Approved voters"
+          label="Registered voters"
           value={data.registrations.approved}
           detail={`${data.registrations.rejected.toLocaleString('en-US')} rejected · ${data.registrations.total.toLocaleString('en-US')} registrations`}
         />
@@ -264,7 +265,7 @@ export function AdminDashboard() {
                     <p className="wrap-anywhere text-[11px] text-review-muted">{applicant.email}</p>
                   </div>
                   <span className="shrink-0 text-[11px] text-review-muted">
-                    Declared Year {applicant.yearLevel}
+                    Declared {yearLevelLabel(applicant.yearLevel)}
                   </span>
                 </li>
               ))}

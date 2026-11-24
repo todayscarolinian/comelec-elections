@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono, Inter } from 'next/font/google'
 import localFont from 'next/font/local'
+import { Suspense } from 'react'
+import { AnalyticsConsentBanner } from '@/components/analytics/analytics-consent-banner'
+import { AnalyticsPageViews } from '@/components/analytics/analytics-page-views'
 import { BallotSignInDialog } from '@/components/ballot/ballot-sign-in'
 import { LandingScroll } from '@/components/landing/landing-scroll'
 import {
@@ -86,6 +89,10 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         <LandingScroll />
         <TRPCReactProvider>{children}</TRPCReactProvider>
         <BallotSignInDialog />
+        <Suspense fallback={null}>
+          <AnalyticsPageViews />
+          <AnalyticsConsentBanner />
+        </Suspense>
       </body>
     </html>
   )

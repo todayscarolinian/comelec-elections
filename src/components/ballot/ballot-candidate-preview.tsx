@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 import { CandidatePortrait } from '@/components/candidates/candidate-portrait'
 import type { CandidateDef } from '@/election'
-import { CANDIDATES, candidateHref } from '@/lib/candidates'
+import { ballotCandidateProfile, candidateHref } from '@/lib/candidates'
 import { ballotTextAction } from './ballot-styles'
 
 export function BallotCandidatePreview({
@@ -16,7 +16,7 @@ export function BallotCandidatePreview({
   onClose: () => void
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
-  const profile = CANDIDATES.find(({ id }) => id === (candidate.profileId ?? candidate.id))
+  const profile = ballotCandidateProfile(candidate)
   const highlights = profile?.platformHighlights ?? profile?.projects.map(({ name }) => name)
   const academics = [profile?.school, profile?.program, profile?.year && `Year ${profile.year}`]
     .filter(Boolean)
@@ -29,7 +29,7 @@ export function BallotCandidatePreview({
     .join(' · ')
   const officeDetails = [
     office,
-    profile && `Ballot #${profile.number}`,
+    profile && `Candidate #${profile.number}`,
     candidate.party ?? 'Independent',
   ]
     .filter(Boolean)
@@ -61,7 +61,7 @@ export function BallotCandidatePreview({
       </div>
       <div className="grid gap-3 md:grid-cols-[minmax(0,360px)_minmax(0,1fr)] md:items-center md:gap-8">
         <CandidatePortrait
-          candidate={candidate.photo ? candidate : (profile ?? candidate)}
+          candidate={{ photo: profile?.photo }}
           sizes="(min-width: 768px) 360px, (min-width: 432px) 358px, calc(100vw - 74px)"
           className="border border-comelec-sage"
           plainPlaceholder
@@ -81,7 +81,7 @@ export function BallotCandidatePreview({
           {profile?.motto && (
             <blockquote className="font-display text-xl italic">“{profile.motto}”</blockquote>
           )}
-          {highlights?.length ? (
+          {highlights && highlights.length > 0 && (
             <section
               aria-labelledby="ballot-candidate-highlights"
               className="space-y-1.5 border-t border-comelec-sage pt-3 text-sm md:border-0 md:pt-0"
@@ -95,8 +95,6 @@ export function BallotCandidatePreview({
                 ))}
               </ul>
             </section>
-          ) : (
-            candidate.bio && <p className="text-sm text-comelec-olive">{candidate.bio}</p>
           )}
           {profile && (
             <Link

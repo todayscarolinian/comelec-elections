@@ -63,6 +63,11 @@ function setup({
     ]),
     registration: { update: vi.fn(async (_args: unknown) => ({ id })) },
     ballot: { updateMany: vi.fn(async () => ({ count: 0 })) },
+    electionState: {
+      findUnique: vi.fn(async (_args: unknown) => ({
+        electionStatus: 'OPEN' as 'OPEN' | 'CLOSED',
+      })),
+    },
     auditLog: { create: vi.fn(async (_args: unknown) => ({ id: 'audit-1' })) },
     notification: { create: vi.fn(async (_args: unknown) => ({ id: 'notification-1' })) },
   }
@@ -349,7 +354,11 @@ describe('registration decisions', () => {
         },
       })
       expect(tx.notification.create).toHaveBeenCalledExactlyOnceWith({
-        data: { personId: 'student-person', type: 'REGISTRATION_APPROVED', data: undefined },
+        data: {
+          personId: 'student-person',
+          type: 'REGISTRATION_APPROVED',
+          data: { held: false, votingOpen: true },
+        },
         select: { id: true },
       })
       expect(db.$transaction).toHaveBeenCalledWith(expect.any(Function), {
@@ -447,7 +456,7 @@ describe('registration decisions', () => {
   it('rejects invalid year and ID', async () => {
     const { caller, db } = setup()
     // @ts-expect-error exercises runtime enum validation
-    const invalidYear = caller.approveRegistration({ ...reviewInput, yearLevel: '5' })
+    const invalidYear = caller.approveRegistration({ ...reviewInput, yearLevel: '6' })
     await expect(invalidYear).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
@@ -576,4 +585,19 @@ describe('registration decisions', () => {
     expect(tx.$queryRaw).toHaveBeenCalledTimes(1)
     expect(tx.$queryRaw.mock.calls[0][0].join('')).not.toContain('ElectionState')
   })
+
+  it.each([
+    ['OPEN', 0, { held: false, votingOpen: true }],
+    ['CLOSED', 0, { held: false, votingOpen: false }],
+    ['CLOSED', 1, { held: true, votingOpen: false }],
+  ] as const)(
+    'records voting %s and %i held Ballots on the approval notice',
+    async (electionStatus, heldCount, expected) => {
+      const { caller, tx } = setup()
+      tx.electionState.findUnique.mockResolvedValue({ electionStatus })
+      tx.ballot.updateMany.mockResolvedValue({ count: heldCount })
+      await expect(caller.approveRegistration(reviewInput)).resolves.toEqual({ ok: true })
+      expect(tx.notification.create.mock.calls[0][0]).toMatchObject({ data: { data: expected } })
+    },
+  )
 })

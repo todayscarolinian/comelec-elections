@@ -4,7 +4,11 @@ import { useInfiniteQuery, useMutation } from '@tanstack/react-query'
 import { Download } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useTRPC } from '@/lib/trpc/client'
-import { YEAR_LEVELS, type YearLevel } from '@/server/trpc/api/v1/registration/schema'
+import {
+  YEAR_LEVELS,
+  type YearLevel,
+  yearLevelLabel,
+} from '@/server/trpc/api/v1/registration/schema'
 import {
   AdminLoadError,
   AdminPage,
@@ -133,7 +137,7 @@ export function BallotAudit() {
             <option value="">All years</option>
             {YEAR_LEVELS.map((value) => (
               <option key={value} value={value}>
-                Year {value}
+                {yearLevelLabel(value)}
               </option>
             ))}
           </select>
@@ -167,7 +171,7 @@ export function BallotAudit() {
                       <span className="block font-editorial text-base">{row.name}</span>
                       <span className="wrap-anywhere text-review-muted">{row.email}</span>
                     </td>
-                    <td>{row.yearLevel}</td>
+                    <td>{yearLevelLabel(row.yearLevel)}</td>
                     <td className="whitespace-nowrap">
                       <time dateTime={row.castAt.toISOString()}>{formatDateTime(row.castAt)}</time>
                     </td>

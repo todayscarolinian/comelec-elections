@@ -13,8 +13,8 @@ const election: ElectionDef = {
       title: 'President',
       selectionLimit: 1,
       candidates: [
-        { id: 'a', name: 'Ana', photo: '', bio: '' },
-        { id: 'b', name: 'Ben', photo: '', bio: '' },
+        { id: 'a', name: 'Ana' },
+        { id: 'b', name: 'Ben' },
       ],
     },
     {
@@ -22,8 +22,8 @@ const election: ElectionDef = {
       title: 'Councilors',
       selectionLimit: 2,
       candidates: [
-        { id: 'c', name: 'Cy', photo: '', bio: '' },
-        { id: 'd', name: 'Di', photo: '', bio: '' },
+        { id: 'c', name: 'Cy' },
+        { id: 'd', name: 'Di' },
       ],
     },
   ],

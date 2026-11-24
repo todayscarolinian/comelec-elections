@@ -50,7 +50,7 @@ export function CandidateProfile({
         <div className="contents lg:col-start-2 lg:row-start-1 lg:flex lg:min-w-0 lg:flex-col lg:gap-7">
           <header className={`order-1 min-w-0 ${profileEntrance}`}>
             <p className="text-base font-medium text-comelec-olive">
-              {candidate.officeTitle} · Ballot #{candidate.number}
+              {candidate.officeTitle} · Candidate #{candidate.number}
             </p>
             <h1 className="mt-2 max-w-5xl font-display text-[clamp(2.5rem,4.8vw,4.75rem)] leading-[1.05] tracking-[-0.03em] text-balance italic wrap-anywhere">
               {candidate.name}
@@ -73,13 +73,20 @@ export function CandidateProfile({
               <ul className="mt-2 divide-y divide-comelec-sage border-b border-comelec-sage">
                 {candidate.projects.map((project) => (
                   <li key={project.name} className="py-5 sm:py-6">
-                    <h3 className="max-w-[34ch] font-editorial text-[clamp(1.5rem,2.25vw,2.125rem)] leading-tight text-balance wrap-anywhere">
+                    <h3 className="max-w-[48ch] font-editorial text-[clamp(1.5rem,2.25vw,2.125rem)] leading-tight text-balance wrap-anywhere">
                       {project.name}
                     </h3>
                     {project.description && (
                       <p className="mt-3 max-w-[65ch] text-base leading-relaxed text-comelec-olive sm:text-lg">
                         {project.description}
                       </p>
+                    )}
+                    {project.points && project.points.length > 0 && (
+                      <ol className="mt-3 max-w-[65ch] list-decimal space-y-1.5 pl-6 text-base leading-relaxed text-comelec-olive marker:text-comelec-olive/70 sm:text-lg">
+                        {project.points.map((point) => (
+                          <li key={point}>{point}</li>
+                        ))}
+                      </ol>
                     )}
                   </li>
                 ))}

@@ -13,7 +13,7 @@ export type CandidateProfileContent = {
   personalTrait?: string
   leadershipTrait?: string
   platformHighlights?: readonly string[]
-  projects: readonly { name: string; description: string }[]
+  projects: readonly { name: string; description: string; points?: readonly string[] }[]
 }
 
 type CandidateOffice = {
@@ -81,7 +81,23 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
         motto: 'Serve the people',
         personalTrait: 'Resilient',
         leadershipTrait: 'Gritty',
-        projects: [],
+        projects: [
+          {
+            name: '9 Point Carolinian Demand',
+            description: '',
+            points: [
+              'Stand for accessible education',
+              'Stand for student welfare and well-being!',
+              'Stand for genuine student representation!',
+              'Stand for press freedom!',
+              'Stand for the right to form organizations, protest and expression!',
+              'Stand for women’s and LGBTQIA+ rights and welfare!',
+              'Stand for livable wages and an affordable cost of living!',
+              'Stand for alternative, pro-people politics!',
+              'Stand for national sovereignty!',
+            ],
+          },
+        ],
       },
     ],
   },
@@ -101,7 +117,12 @@ export const CANDIDATE_OFFICES: readonly CandidateOffice[] = [
         motto: 'Fortune will always favor the bold.',
         personalTrait: 'Thinker',
         leadershipTrait: 'Perseverant',
-        projects: [],
+        projects: [
+          {
+            name: 'KITA-KITA',
+            description: '',
+          },
+        ],
       },
       {
         id: 'princess-jannah-ungab',
