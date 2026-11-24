@@ -1,9 +1,9 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import type { ReactNode } from 'react'
 import { BallotEntry } from '@/components/ballot/ballot-entry'
+import { ElectionFooterBrand } from './election-footer-brand'
 import { ElectionNavigation } from './election-navigation'
 import { CookieSettingsButton } from '@/components/analytics/cookie-settings-button'
 import { legalLinks } from './footer-links'
@@ -58,15 +58,7 @@ export function ElectionPageShell({
       <footer className={footerGutters}>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#b6c89f] py-5">
           <Link href="/" className="flex items-center gap-3" aria-label="SSC COMELEC home">
-            <Image src="/branding/comelec-seal.png" alt="" width={56} height={56} />
-            <span>
-              <span className="block text-[clamp(1.5rem,2.5vw,2.25rem)] leading-tight [font-family:var(--registration-text),Georgia,serif]">
-                SSC COMELEC
-              </span>
-              <span className="block text-sm text-[#56654a]">
-                Supreme Student Council Elections · 2026
-              </span>
-            </span>
+            <ElectionFooterBrand />
           </Link>
           <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-6 text-sm">
             <Link className={footerLinkClass} href="/candidates">
