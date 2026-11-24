@@ -20,23 +20,6 @@ export function ElectionFooterBrand() {
             </small>
           </span>
         </span>
-        <span aria-hidden="true" className="shrink-0 self-center text-sm text-comelec-olive">
-          ×
-        </span>
-        <span className="inline-flex min-w-0 items-center gap-2">
-          <span
-            aria-hidden="true"
-            className="w-6 shrink-0 text-center font-(family-name:--font-roboto-condensed) text-[0.9375rem]/6 font-bold tracking-tight text-[#000000] select-none min-[38rem]:w-10 min-[38rem]:text-[2.375rem]/10"
-          >
-            TC
-          </span>
-          <span className="grid min-w-0 gap-0.5">
-            <span className="text-base/5 font-bold tracking-tight min-[38rem]:text-lg/6">
-              Today’s Carolinian
-            </span>
-            <small className="text-xs/4 text-comelec-olive">Your paper, our commitment</small>
-          </span>
-        </span>
       </span>
     </span>
   )
