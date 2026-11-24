@@ -1,13 +1,16 @@
 import { ElectionNavigation } from '@/components/election/election-navigation'
+import { electionContent, electionPageSpacing } from '@/components/election/election-styles'
 import { ElectionFooter } from '@/components/landing/election-footer'
 import { Bone, LoadingRegion, Repeat, boneWidths } from '@/components/skeleton'
 
 /** Keeps the real navigation and footer in place while the release status is checked. */
 export function ResultsPageSkeleton() {
   return (
-    <div className="flex min-h-svh flex-col bg-[#faf3e0] text-comelec-forest [font-family:var(--font-inter),Arial,sans-serif] [&_:is(a,button):focus-visible]:outline-2 [&_:is(a,button):focus-visible]:outline-offset-4 [&_:is(a,button):focus-visible]:outline-[#324e1f]">
+    <div
+      className={`${electionPageSpacing} flex min-h-svh flex-col bg-[#faf3e0] text-comelec-forest [font-family:var(--font-inter),Arial,sans-serif] [&_:is(a,button):focus-visible]:outline-2 [&_:is(a,button):focus-visible]:outline-offset-4 [&_:is(a,button):focus-visible]:outline-[#324e1f]`}
+    >
       <ElectionNavigation activeSection="turnout" />
-      <main className="mx-auto w-full max-w-[82rem] flex-1 px-[clamp(1.25rem,4.5vw,4rem)] pb-12 pt-8">
+      <main className={`${electionContent} flex-1 pb-12 pt-8`}>
         <LoadingRegion label="Loading results…">
           <div className="border-b border-comelec-sage pb-7">
             <Bone className="mb-3 h-2.5 w-44" />
